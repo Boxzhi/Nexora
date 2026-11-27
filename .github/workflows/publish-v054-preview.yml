@@ -1,0 +1,112 @@
+name: Publish Nexora v0.5.4-preview
+on:
+  push:
+    branches:
+      - release/v0.5.4-preview
+    paths:
+      - .github/workflows/publish-v054-preview.yml
+permissions:
+  contents: write
+concurrency:
+  group: nexora-v054-preview-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: github.repository == 'Boxzhi/Nexora' && github.ref == 'refs/heads/release/v0.5.4-preview'
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Boxzhi/Nexora
+      RELEASE_TAG: v0.5.4-preview
+      RELEASE_SHA: f387dc569b72da14c33da1388bdadbe46cabbaf4
+    steps:
+      - name: Verify fixed candidate and publish prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GH_REPO/commits/$RELEASE_SHA" --jq .sha | grep -Fx "$RELEASE_SHA"
+          gh api "repos/$GH_REPO/actions/runs/46039981952" --jq .head_sha | grep -Fx "$RELEASE_SHA"
+          gh api "repos/$GH_REPO/actions/runs/46039981952/jobs" --jq '.jobs[] | select(.name == "tests" or .name == "hassfest") | [.name,.conclusion] | @tsv' > checks.tsv
+          grep -Fx 
+          if gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "Release already exists; refusing overwrite."
+            exit 1
+          fi
+          if gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag already exists; refusing reuse."
+            exit 1
+          fi
+          cat > release-notes.md <<'EOF'
+          ## 本版变更
+          - 保留150项业务场景（水电气65、灯光37、家电24、全屋状态24）及全部443项原始注册只读能力，不合并不同业务用途。
+          - help 为唯一公开菜单；旧 detail 仅兼容返回相同主菜单。原始能力仍可按单项自然语言查询，内部回归不依赖公开旧菜单。
+          - 明确注册的自然语言场景与数字菜单共享查询计划，不依赖备用 AI；连续追问及原安全边界保持。
+          - 统一已验证的水电气、灯光、家电、全屋状态回复格式，按账户/设备/房间分组；仅在信息一致时去重，保留数据缺失、统计范围、时效及状态冲突。
+          - 原四套能力目录与场景布局 Git Blob SHA 完全一致；bindings.yaml 可选。
+          ## 验证
+          - 固定候选 f387dc5：333/333 自动化测试通过，443项原始能力、150项场景及374项成员模拟执行通过。
+          - 此前实机配置模拟：149个可见场景、420项可见原始能力及23项隐藏原始能力；实际数量须实机确认。
+          - 候选 CI tests / Hassfest 通过；HACS 8/10（原有 Topics、Brands 未通过），不绕过。真实 HA 及微信验收待执行。
+          ## 升级及回滚
+          - 仅升级 Nexora，保留原8个 YAML、现有配置、CN IM Hub、AI Hub、SGCC Add-on。
+          - HACS 安装预览版并重启 Core；异常恢复 v0.5.3-preview，升级后先发送 help。
+          - 独立验收 ZIP 单独交付，不上传 Release；非正式稳定版。
+          EOF
+          gh release create "$RELEASE_TAG" --repo "$GH_REPO" --target "$RELEASE_SHA" --title "Nexora v0.5.4-preview" --prerelease --latest=false --notes-file release-notes.md
+          gh release view "$RELEASE_TAG" --repo "$GH_REPO" --json url,tagName,isPrerelease,isDraft
+tests\tsuccess' checks.tsv
+          grep -Fx 
+          if gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "Release already exists; refusing overwrite."
+            exit 1
+          fi
+          if gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag already exists; refusing reuse."
+            exit 1
+          fi
+          cat > release-notes.md <<'EOF'
+          ## 本版变更
+          - 保留150项业务场景（水电气65、灯光37、家电24、全屋状态24）及全部443项原始注册只读能力，不合并不同业务用途。
+          - help 为唯一公开菜单；旧 detail 仅兼容返回相同主菜单。原始能力仍可按单项自然语言查询，内部回归不依赖公开旧菜单。
+          - 明确注册的自然语言场景与数字菜单共享查询计划，不依赖备用 AI；连续追问及原安全边界保持。
+          - 统一已验证的水电气、灯光、家电、全屋状态回复格式，按账户/设备/房间分组；仅在信息一致时去重，保留数据缺失、统计范围、时效及状态冲突。
+          - 原四套能力目录与场景布局 Git Blob SHA 完全一致；bindings.yaml 可选。
+          ## 验证
+          - 固定候选 f387dc5：333/333 自动化测试通过，443项原始能力、150项场景及374项成员模拟执行通过。
+          - 此前实机配置模拟：149个可见场景、420项可见原始能力及23项隐藏原始能力；实际数量须实机确认。
+          - 候选 CI tests / Hassfest 通过；HACS 8/10（原有 Topics、Brands 未通过），不绕过。真实 HA 及微信验收待执行。
+          ## 升级及回滚
+          - 仅升级 Nexora，保留原8个 YAML、现有配置、CN IM Hub、AI Hub、SGCC Add-on。
+          - HACS 安装预览版并重启 Core；异常恢复 v0.5.3-preview，升级后先发送 help。
+          - 独立验收 ZIP 单独交付，不上传 Release；非正式稳定版。
+          EOF
+          gh release create "$RELEASE_TAG" --repo "$GH_REPO" --target "$RELEASE_SHA" --title "Nexora v0.5.4-preview" --prerelease --latest=false --notes-file release-notes.md
+          gh release view "$RELEASE_TAG" --repo "$GH_REPO" --json url,tagName,isPrerelease,isDraft
+hassfest\tsuccess' checks.tsv
+          if gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "Release already exists; refusing overwrite."
+            exit 1
+          fi
+          if gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag already exists; refusing reuse."
+            exit 1
+          fi
+          cat > release-notes.md <<'EOF'
+          ## 本版变更
+          - 保留150项业务场景（水电气65、灯光37、家电24、全屋状态24）及全部443项原始注册只读能力，不合并不同业务用途。
+          - help 为唯一公开菜单；旧 detail 仅兼容返回相同主菜单。原始能力仍可按单项自然语言查询，内部回归不依赖公开旧菜单。
+          - 明确注册的自然语言场景与数字菜单共享查询计划，不依赖备用 AI；连续追问及原安全边界保持。
+          - 统一已验证的水电气、灯光、家电、全屋状态回复格式，按账户/设备/房间分组；仅在信息一致时去重，保留数据缺失、统计范围、时效及状态冲突。
+          - 原四套能力目录与场景布局 Git Blob SHA 完全一致；bindings.yaml 可选。
+          ## 验证
+          - 固定候选 f387dc5：333/333 自动化测试通过，443项原始能力、150项场景及374项成员模拟执行通过。
+          - 此前实机配置模拟：149个可见场景、420项可见原始能力及23项隐藏原始能力；实际数量须实机确认。
+          - 候选 CI tests / Hassfest 通过；HACS 8/10（原有 Topics、Brands 未通过），不绕过。真实 HA 及微信验收待执行。
+          ## 升级及回滚
+          - 仅升级 Nexora，保留原8个 YAML、现有配置、CN IM Hub、AI Hub、SGCC Add-on。
+          - HACS 安装预览版并重启 Core；异常恢复 v0.5.3-preview，升级后先发送 help。
+          - 独立验收 ZIP 单独交付，不上传 Release；非正式稳定版。
+          EOF
+          gh release create "$RELEASE_TAG" --repo "$GH_REPO" --target "$RELEASE_SHA" --title "Nexora v0.5.4-preview" --prerelease --latest=false --notes-file release-notes.md
+          gh release view "$RELEASE_TAG" --repo "$GH_REPO" --json url,tagName,isPrerelease,isDraft
