@@ -7,7 +7,7 @@ import asyncio
 from dataclasses import dataclass
 import re
 
-from .business_model import MAX_SCENE_QUERIES, STOP_CONDITIONS
+from .business_model import MAX_SCENE_QUERIES, MAX_MENU_QUERIES, STOP_CONDITIONS
 
 @dataclass(frozen=True)
 class Outcome:
@@ -86,6 +86,9 @@ def unpack(step,result):
     return Outcome(step,classify_speech(step.key,speech),speech)
 
 def stop_supplements(plan,outcomes):
+    washer_conflict=any(o.step.key.family=="appliance" and o.step.key.target=="w" and o.step.key.metric=="power"
+        and o.kind=="ok" and o.speech.rstrip("。.") in {"海尔洗衣机已开机","海尔洗衣机：已开机","洗衣机已开机"}
+        for o in outcomes)
     for outcome in outcomes:
         k=outcome.step.key
         s=outcome.speech.rstrip("。.")
@@ -97,7 +100,9 @@ def stop_supplements(plan,outcomes):
                 return True
         if k.family!="appliance" or k.metric!="status":
             continue
-        name=AC_NAMES.get(k.target,"洗衣机" if k.target=="w" else "")
+        if k.target=="w" and washer_conflict:
+            continue
+        name=AC_NAMES.get(k.target,{"w":"洗衣机","f":"餐厅风扇"}.get(k.target,""))
         if "device_off" in plan.stop_on and name and s in {
             name+"已关闭",name+"：已关闭",name+"已关机",name+"：已关机",
             name+"已关闭，无当前运行参数",name+"已关机，无当前运行参数",
@@ -123,7 +128,7 @@ async def run_plan(plan,dispatch,current,*,timeout=12,concurrency=2):
     supplements. Timeout and failed members are not forwarded to AI.
     """
     members=plan.primary+plan.supplements
-    if (not plan.primary or len(members)>MAX_SCENE_QUERIES or len(set(members))!=len(members)
+    if (not plan.primary or len(members)>(MAX_MENU_QUERIES if getattr(plan,"menu_scene","") else MAX_SCENE_QUERIES) or len(set(members))!=len(members)
             or not set(plan.stop_on)<=STOP_CONDITIONS or not 1<=concurrency<=2 or timeout<=0):
         raise ValueError("Invalid read-only plan")
     results={}

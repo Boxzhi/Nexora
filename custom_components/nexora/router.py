@@ -6,6 +6,7 @@ from typing import Any
 class Route(str, Enum):
     LOCAL_REPLY = "local_reply"
     LOCAL_QUERY = "local_query"
+    LOCAL_SCENE = "local_scene"
     FALLBACK = "fallback"
 
 @dataclass(frozen=True)
@@ -17,7 +18,7 @@ class RouteDecision:
 def from_reply(reply,source="local_menu"):
     if reply is None:
         return RouteDecision(Route.FALLBACK)
-    return RouteDecision(Route.LOCAL_REPLY if reply.capability is None else Route.LOCAL_QUERY,reply,source)
+    return RouteDecision(Route.LOCAL_SCENE if getattr(reply,"scene",None) else Route.LOCAL_REPLY if reply.capability is None else Route.LOCAL_QUERY,reply,source)
 
 def decide(menu,key,text,visible,*,today):
     """Menu, parameter and follow-up handling always precedes native recognition."""

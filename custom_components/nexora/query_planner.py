@@ -4,7 +4,7 @@ import re
 
 from .business_model import BusinessRegistry, PolicyRegistry, QueryKey, PolicyKey, MAX_SCENE_QUERIES
 from .natural_language import QueryParser, Frame, TimeSpec, surface
-from .menu import parse_parameter
+from .menu import parse_parameter, PARAMETERS
 
 @dataclass(frozen=True)
 class Step:
@@ -19,6 +19,8 @@ class Plan:
     stop_on: tuple = ()
     caveat: str = ""
     focus: Frame | None = None
+    title: str = ""
+    menu_scene: str = ""
 
 @dataclass(frozen=True)
 class PlanningResult:
@@ -36,6 +38,43 @@ class QueryPlanner:
         self.registry=BusinessRegistry(menu.capabilities)
         self.policies=PolicyRegistry(self.registry)
         self.parser=QueryParser(menu,self.registry)
+
+    def menu_plan(self, scene_id, params, visible, context, today):
+        spec=self.menu.scenes[scene_id]
+        reference=self.menu.capabilities[spec.members[0]]
+        kind=reference.get("parameter")
+        fields=PARAMETERS.get(kind,())
+        if set(params)!=set(fields) or any(type(v) is not int for v in params.values()):
+            raise ValueError("invalid shared parameter")
+        if fields and parse_parameter(kind,"-".join(str(params[k]) for k in fields),today,
+                base_year=today.year+reference.get("parameter_year_offset",0))!=params:
+            raise ValueError("invalid shared date")
+        primary=[]
+        extra=[]
+        for cid in spec.members:
+            if not self.menu._available(cid,visible):
+                continue
+            item=self.registry.by_id[cid]
+            cap=self.menu.capabilities[cid]
+            if set(params)!=set(cap.get("parameter_slots",{})):
+                raise ValueError("inconsistent shared parameter")
+            step=Step(item.key,cid,tuple(sorted(params.items())))
+            (extra if cid in spec.supplements else primary).append(step)
+        if not primary:
+            raise ValueError("no visible primary")
+        focus=None
+        if context and spec.anchor in {s.capability for s in primary}:
+            focus=context.from_registered(spec.anchor,params,today)
+        item=self.menu.items[scene_id]
+        parent=self.menu.items[item.parent]
+        # Account/room/device is part of the displayed heading. A period
+        # submenu also retains its account label rather than just "本月".
+        names=[item.name]
+        if parent.id!="scene":
+            names.insert(0,parent.name)
+            if parent.id.endswith((".monthly",".annual",".day")):
+                names.insert(0,self.menu.items[parent.parent].name)
+        return Plan(tuple(primary),tuple(extra),spec.stop_on,"",focus," · ".join(names),scene_id)
 
     def _step(self,key,params=()):
         item=self.registry.require(key)
