@@ -62,6 +62,10 @@ class QueryPlanner:
         metric=frame.metric
         if time.period=="invalid":
             raise ValueError("查询日期无效，请检查年月日。")
+        if metric=="payment_amount":
+            if target=="g" and time==TimeSpec(period="year"):
+                return self._step(QueryKey("utility","g","year_pay",account=account))
+            raise ValueError("当前未注册该账户及账期的缴费金额查询，不能替换为账单费用。")
         if metric not in {"usage","cost"}:
             if time!=TimeSpec():
                 raise ValueError("该指标没有已注册的历史日期查询，不能替换为当前数据。")

@@ -43,7 +43,7 @@ def surface(text):
 WRAPPERS=tuple(sorted({
     "能不能帮我看看","能不能帮我查一下","能否帮我查询","能不能告诉我",
     "麻烦帮我看看","麻烦帮我查一下","请帮我查一下","请帮我看看",
-    "我想知道","我想了解","想知道","我想问一下","帮我看一下","帮我查一下",
+    "我想知道","我想了解","我想查一下","想查一下","想知道","我想问一下","帮我看一下","帮我查一下",
     "帮我看看","帮我查查","帮我查询","帮我查","麻烦查一下","麻烦看看",
     "请问","请告诉我","告诉我","查一下","查查","查一查","查询","看看",
 },key=lambda s:(-len(s),s)))
@@ -125,7 +125,8 @@ UTILITY_RULES=(
     (r"(?:还)?(?:剩(?:下)?|有)(?:多少|几)(?:方|立方米|m3|m³)","","remaining_physical"),
     (r"(?:还)?(?:剩(?:下)?|有)(?:多少|几)(?:度|吨)","","remaining_physical"),
     (r"(?:是不是|是否|有没有|有无)?欠费(?:了)?(?:吗|没|没有|多少)?","debt",""),
-    (r"(?:还)?(?:要|需要|该)(?:交费|缴费|交钱|交了|交|充值)(?:了)?(?:吗|没|没有)?|够不够用","","payment_needed"),
+    (r"(?:还)?(?:要|需要|该)(?:交费|缴费|交钱|交了|交|充值)(?:了)?(?:吗|没|没有)?|(?:账户|余额)?够不够用","","payment_needed"),
+    (r"(?:累计|总计|总共)?(?:交|缴|支付)(?:了)?(?:多少|几)(?:块钱|元|钱)(?:费)?","payment_amount",""),
     (r"(?:账户)?(?:情况|健康|怎么样|如何)","","account_health"),
     (r"(?:累计|总计)?(?:用量|用电量|耗电量|用水量|用气量|耗电|用电|用水|用气)(?:是|有|为)?(?:多少|几)?","usage",""),
     (r"(?:累计|总计)?(?:用了|消耗了)(?:多少|几)(?:度电|吨水|方气|立方米|度|吨|方)?","usage",""),
@@ -133,18 +134,20 @@ UTILITY_RULES=(
     (r"(?:余额|数据)?(?:更新|刷新)(?:时间|了没|了吗|了没有|于何时|是什么时候|什么时候)","update",""),
 )
 LIGHT_RULES=(
-    (r"(?:还)?(?:亮着|开着)(?:吗|没|没有)|(?:都|全)?关(?:好|了)(?:吗|没|没有)|(?:有没有|还有没有)(?:开着|亮着|没关)的?灯?(?:具)?","","any_lights_on"),
+    (r"(?:是)?(?:还)?(?:亮着|开着)(?:的)?(?:吗|没|没有)|(?:都|全)?关(?:好|了)(?:吗|没|没有)|(?:有没有|还有没有)(?:开着|亮着|没关)的?灯?(?:具)?","","any_lights_on"),
     (r"(?:还有|有|开了|亮着|还亮着|还开着)?(?:多少|几)(?:组|盏|个)灯?(?:具)?(?:是)?(?:开着|亮着|没关)(?:的)?|(?:开着|亮着|开了|还亮着)(?:多少|几)(?:组|盏|个)灯?(?:具)?","count_on",""),
     (r"(?:还)?(?:有)?(?:哪些|什么)灯?(?:具)?(?:是)?(?:亮着|开着|没关)(?:的)?|(?:开着|亮着)(?:的)?(?:有)?哪些","list_on",""),
     (r"(?:情况|概况|怎么样|如何|状态)","","overview"),
+    (r"(?:离线|掉线)(?:情况|状态|有哪些|了吗|了没)?","offline",""),
+    (r"(?:异常|故障)(?:情况|状态|有哪些)?","abnormal",""),
     (r"(?:亮度|亮度百分比)(?:是|有|为)?(?:多少|几)?","brightness",""),
     (r"(?:色温)(?:是|有|为)?(?:多少|几k)?","temperature",""),
 )
 APPLIANCE_RULES=(
     (r"(?:设定|设置|设|调)(?:的|是|了|的是|定在)?(?:温度|多少度|几度)(?:是多少|多少|几度)?","target",""),
     (r"(?:实际|检测|测得|测到|室内|室)(?:的)?(?:温度|多少度|几度)(?:是多少|多少|几度)?","temp",""),
-    (r"(?:温度|多少度|几度)(?:是多少|多少)?","","temperature_unspecified"),
-    (r"(?:现在)?(?:怎么样|如何|情况|状态)","","overview"),
+    (r"(?:是|为)?(?:温度|多少度|几度)(?:是多少|多少)?","","temperature_unspecified"),
+    (r"(?:现在)?(?:工作|运行)?(?:怎么样|如何|情况|状态)","","overview"),
     (r"(?:还)?(?:在)?(?:运行|工作|开着|开机|开启)(?:了吗|吗|没|没有)|(?:开了|关了)(?:吗|没|没有)","status",""),
 )
 HOME_ENV_RULES=(
@@ -153,29 +156,32 @@ HOME_ENV_RULES=(
     (r"(?:环境|温湿度)(?:怎么样|如何|是多少|多少)?","","environment"),
     (r"(?:环境)?(?:光照度|光照强度|光照|环境亮度)(?:是多少|多少)?","lux",""),
     (r"(?:亮不亮|有多亮|亮度怎么样)","","brightness_unspecified"),
-    (r"(?:现在)?(?:有|有没有|是否有|是不是有)人(?:吗|没|没有)?|有人没有","presence",""),
+    (r"(?:现在)?(?:有|有没有|是否有|是不是有)人(?:在)?(?:吗|没|没有)?|有人没有","presence",""),
+    (r"(?:有没有|是否|是不是|有无)(?:漏水|水浸)(?:报警)?|漏水(?:了吗|了没|了没有)","water",""),
 )
 SPECIAL_RULES={
     "washer":((r"(?:洗(?:好|完)(?:了)?(?:吗|没|没有)|还在洗吗)","status",""),
-              (r"(?:还(?:有|要)?|剩)?(?:多久|多少分钟)(?:才能|能|才)?(?:洗完|洗好|完成|结束)?","remaining",""),
+              (r"(?:还(?:有|要|剩)?|剩)?(?:多久|多少分钟)(?:才能|能|才)?(?:洗完|洗好|完成|结束)?","remaining",""),
               (r"洗到(?:哪|哪儿|哪里|哪一步)(?:了)?|洗衣进度|运行阶段","phase",""),
               (r"(?:洗衣)?进度(?:怎么样|如何)?","","progress"),
               (r"(?:怎么样|如何|情况|状态)","","progress")),
     "purifier":((r"(?:滤芯|滤芯寿命)(?:怎么样|还剩多少|剩多少|如何|寿命多少)?","filters",""),
-                (r"滤芯(?:该|要|需要)(?:更换|换)(?:了)?(?:吗|没)?","","maintenance")),
+                (r"滤芯(?:该|要|需要)(?:更换|换)(?:了)?(?:吗|没)?","","maintenance"),
+                (r"(?:出水温度|出水水温|水温)(?:现在|目前|当前)?(?:是多少|多少|几度)?","temp","")),
     "door":((r"(?:关好|关严)(?:了)?(?:吗|没|没有)|(?:好|安全)(?:了)?(?:吗|没|没有)|(?:状态|情况|怎么样)","","entry_safety"),
-             (r"(?:反锁)(?:了)?(?:吗|没|没有|状态)","deadbolt",""),
+             (r"(?:反锁)(?:了)?(?:吗|没|没有|状态)|(?:有没有|是否|是不是)反锁(?:了)?","deadbolt",""),
              (r"(?:上锁|锁好|锁)(?:了)?(?:吗|没|没有|状态)","lock",""),
              (r"(?:关着|关闭|关)(?:了)?(?:吗|没|没有|状态)","door","")),
     "family":((r"(?:现在)?(?:都)?(?:有)?(?:哪些人|什么人|些什么人|谁)(?:在家|在)?|(?:有没有|有)人(?:吗|没|没有)?","","family_presence"),
               (r"(?:现在)?(?:有)?(?:多少|几)(?:个)?人(?:在家|在)?","family_count","")),
     "person":((r"(?:现在)?(?:在家|回家|到家|在不在家)(?:了)?(?:吗|没|没有)?","person",""),),
-    "battery":((r"(?:电池)?(?:电量|剩余电量|还有多少电|还剩多少电)(?:多少|是多少)?","battery",""),),
+    "battery":((r"(?:电池)?(?:电量|剩余电量|还有多少电|还剩多少电)(?:多少|是多少|还有多少|还剩多少)?","battery",""),),
     "curtain":((r"(?:开着|关着|打开|关闭)(?:了)?(?:吗|没|没有|状态)","curtain",""),
                (r"(?:打开|开)(?:了)?(?:多少|百分之多少)|位置(?:多少|是多少)?","curtain_pos","")),
     "lid":((r"(?:盖上|合上|打开|关着|开着)(?:了)?(?:吗|没|没有|状态)","lid",""),),
     "heater":((r"(?:开着|工作|运行)(?:吗|没|没有)?","heater",""),),
-    "safety":((r"(?:异常|提醒|问题|警报|告警)(?:有哪些|多少|吗)?","","alerts"),),
+    "safety":((r"(?:异常|提醒|问题|警报|告警)(?:有哪些|多少|吗)?","","alerts"),
+              (r"(?:有)?(?:哪些|什么)设备(?:快没电了|电量低|电量不足)","battery_low","")),
 }
 
 # Only reviewed, high-certainty lexical substitutions. No edit-distance
@@ -232,9 +238,12 @@ class QueryParser:
                 if k.target=="all":
                     add("lights",k.target,"light_scope",("全屋灯光","全屋灯","家里的灯","家里灯","灯光","灯具","灯"))
                 elif k.target.startswith("lights.fixtures."):
-                    add("lights",k.target,"fixture",(name,))
+                    aliases=(name,)
+                    if k.target=="lights.fixtures.dining_fan":
+                        aliases+=("餐厅吊扇灯",)
+                    add("lights",k.target,"fixture",aliases)
                 else:
-                    add("lights",k.target,"light_scope",tuple(a+b for a in ROOMS.get(name,(name,)) for b in ("灯光","灯具","灯")))
+                    add("lights",k.target,"light_scope",tuple(a+join+b for a in ROOMS.get(name,(name,)) for join in ("","的","那边","那边的") for b in ("灯光","灯具","灯")))
                     add("lights",k.target,"light_room",ROOMS.get(name,(name,)))
             if k.family=="home":
                 if k.metric in {"temp","hum","room_env","presence","lux","duration","duration_present","duration_absent","water"}:
@@ -244,7 +253,7 @@ class QueryParser:
                 elif k.metric=="battery":
                     add("home",k.target,"battery",(k.target,))
                 elif k.metric in {"curtain","curtain_pos"}:
-                    add("home",k.target,"curtain",tuple(a+"窗帘" for a in ROOMS.get(k.target,(k.target,))))
+                    add("home",k.target,"curtain",tuple(a+join+"窗帘" for a in ROOMS.get(k.target,(k.target,)) for join in ("","的","那边","那边的")))
                 # Fragments from existing vocabulary remain scoped by semantic
                 # subject; no full question expansion or arbitrary token deletion.
             if k.family=="appliance":
@@ -285,8 +294,17 @@ class QueryParser:
 
     def _metrics(self,sub,tail):
         out=set()
-        if sub.domain=="light_room" and not re.search(r"灯|灯具|灯光",tail):
-            return out
+        if sub.domain=="light_room":
+            if not re.search(r"灯|灯具|灯光",tail):
+                return out
+            # A separated light noun is consumed at its own boundary, not
+            # deleted from arbitrary positions in the query.
+            for word in ("灯光","灯具","灯"):
+                if tail.startswith(word):
+                    tail=modifiers(tail[len(word):])
+                    break
+        if sub.family=="appliance" and sub.target=="f" and re.fullmatch(r"风速(?:多少|是多少|几档)",tail):
+            return {("speed","")}
         # Domain rules take precedence over legacy fragment aliases. This is
         # essential for broad status queries and temperature ambiguity.
         for pattern,metric,goal in self.rules[sub.domain]:

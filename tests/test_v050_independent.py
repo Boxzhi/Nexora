@@ -75,10 +75,18 @@ class IndependentAdapterCorpus(unittest.IsolatedAsyncioTestCase):
         self.conv.async_converse=AsyncMock(return_value=SimpleNamespace(response=response,conversation_id="ai"))
         for i,text in enumerate(CORPUS["negative"]):
             self.calls.clear()
+            before=self.conv.async_converse.await_count
             await self.ask(text,"negative:"+str(i))
             with self.subTest(text=text):
                 self.assertEqual(self.calls,[])
                 self.assertIsNone(self.agent.planner.plan(text,TODAY).plan)
+                if text in {"不要查燃气余额","别再查询水费","燃气余额然后关灯",
+                            "天燃气余额，顺便关灯","燃气还剩多少吨","水费用了多少度电",
+                            "燃气用了多少吨","次住所燃气余额","第二账户水费余额",
+                            "2025年2月29日电费用了几度电","2026年12月燃气费花了多少钱",
+                            "三月份电费花了多少钱","2024年3月水费花了多少钱","主卧空调多少度并关灯",
+                            "燃气账户余额还有多少方","洗衣机室温多少","水费还剩几吨"}:
+                    self.assertEqual(self.conv.async_converse.await_count,before)
         self.conv.async_converse.reset_mock()
         for i,text in enumerate(CORPUS["delegate"]):
             self.calls.clear()
