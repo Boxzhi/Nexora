@@ -324,4 +324,40 @@ class V03Tests(unittest.TestCase):
         self.assertTrue(f.is_followup_message("费用"))
         self.assertEqual(self.route("费用").slots["utility_metric"],"history_cost")
 
+
+class SemanticTests(unittest.TestCase):
+    def setUp(self):
+        from importlib import import_module
+        SemanticIndex=import_module(mod.__package__+".semantic").SemanticIndex
+        self.menu=mod.Menu([json.loads(p.read_text()) for p in sorted((BASE/"catalogs").glob("*.json"))],settings=SET)
+        self.index=SemanticIndex(self.menu)
+    def test_all_four_modules(self):
+        for text,cid in {
+            "阳台光照度":"home.presence.balcony.lux_balcony",
+            "阳台光照强度是多少":"home.presence.balcony.lux_balcony",
+            "请问阳台的光照度是多少？":"home.presence.balcony.lux_balcony",
+            "主卧的温度":"home.env.master.temp_master",
+            "客厅吸顶灯的亮度":"lights.fixtures.living_ceiling.brightness",
+            "洗衣机还剩多久":"appliance.washer.remaining",
+            "净水器当前状态":"appliance.purifier.status",
+            "水费还有多少钱":"utility.water.balance",
+            "电费余额是多少":"utility.electric.j.basic.balance",
+            "第二账户的电费余额":"utility.electric.l.basic.balance",
+        }.items():
+            with self.subTest(text=text):
+                self.assertEqual(self.index.match(text).capability,cid)
+    def test_ambiguous_brightness_and_hidden_capability(self):
+        for text in ("阳台有多亮","阳台亮度是多少"):
+            self.assertIn("还是",self.index.match(text).clarification)
+        match=self.index.match("爷爷在家吗")
+        self.assertEqual(match.capability,"home.family.person_grandfather")
+        self.assertIn("不可用",self.index.reply(match,lambda c:False).text)
+    def test_reject_controls_negation_compound_and_unknown(self):
+        for text in ("打开客厅灯","把客厅吸顶灯亮度调到50%","阳台光照度不要查",
+                     "阳台光照度是多少然后开灯","主卧温度和水费余额",
+                     "昨天阳台光照度","不存在的房间光照度","2024年3月电费是多少"):
+            with self.subTest(text=text):
+                self.assertIsNone(self.index.match(text))
+        self.assertEqual(self.index.match("阳台无人多久了").capability,"home.presence.balcony.duration_absent_balcony")
+
 if __name__=="__main__":unittest.main()

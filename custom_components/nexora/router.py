@@ -18,9 +18,11 @@ class RouteDecision:
     reply: Any = None
 
 
-def decide(menu, key, text, visible, *, today):
+def decide(menu, key, text, visible, *, today, semantic=None, semantic_match=None):
     """Preserve the existing menu/follow-up precedence and state transitions."""
     reply = menu.route(key, text, visible, today=today)
+    if reply is None and semantic is not None and semantic_match is not None:
+        reply = semantic.reply(semantic_match, visible)
     if reply is None:
         return RouteDecision(Route.FALLBACK)
     if reply.capability is None:

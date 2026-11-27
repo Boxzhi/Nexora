@@ -240,3 +240,38 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertTrue(self.agent.is_menu_message("另一个账户呢"))
         self.assertFalse(self.agent.is_menu_message("阳台有人吗"))
         self.assertIn("失效",self.menu.followups.route("missing","费用呢",lambda c:True))
+
+    async def test_semantic_query_uses_strict_executor_and_no_fallback(self):
+        from importlib import import_module
+        SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
+        self.menu.capabilities["water"].update(sentence="水费余额是多少",slots=self.slots)
+        self.menu._available=lambda cid,visible:visible(self.menu.capabilities[cid])
+        self.menu._query=lambda cid,p:SimpleNamespace(capability=cid,sentence="水费余额是多少",slots=self.slots)
+        self.menu.route=lambda *a,**kw:None
+        self.agent.semantic=SemanticIndex(self.menu)
+        self.u.text="请问水费余额？"
+        self.assertTrue(self.agent.is_semantic_message(self.u.text))
+        await self.agent.async_process_semantic(self.u)
+        self.it.async_handle.assert_awaited_once()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_semantic_hidden_or_missing_handler_is_terminal(self):
+        from importlib import import_module
+        SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
+        self.menu.capabilities["water"].update(sentence="水费余额是多少",slots=self.slots)
+        self.menu._available=lambda cid,visible:visible(self.menu.capabilities[cid])
+        self.menu.route=lambda *a,**kw:None
+        self.agent.semantic=SemanticIndex(self.menu)
+        self.u.text="水费余额"
+        self.h.config["action"]={}
+        r=await self.agent.async_process_semantic(self.u)
+        self.assertIn("不可用",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_semantic_unknown_never_uses_ai(self):
+        self.u.text="打开客厅灯"
+        r=await self.agent.async_process_semantic(self.u)
+        self.assertIn("查询能力已变化",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
