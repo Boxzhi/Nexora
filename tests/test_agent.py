@@ -354,3 +354,15 @@ class Tests(IsolatedAsyncioTestCase):
         r=await self.agent.async_process_guarded(self.u)
         self.assertIn("无法确认",r.response.speech)
         self.conv.async_converse.assert_not_awaited()
+
+    async def test_ordinary_ai_turn_never_touches_business_context(self):
+        from unittest.mock import Mock
+        self.u.text="讲个故事"
+        self.menu.followups.begin=Mock()
+        self.menu.followups.clear=Mock()
+        self.menu.route=Mock(side_effect=AssertionError("local state touched"))
+        self.conv.async_converse=AsyncMock(return_value=SimpleNamespace(response=Response("zh-CN"),conversation_id="ai"))
+        await self.agent.async_process(self.u)
+        self.menu.followups.begin.assert_not_called()
+        self.menu.followups.clear.assert_not_called()
+        self.menu.route.assert_not_called()

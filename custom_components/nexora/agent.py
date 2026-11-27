@@ -175,9 +175,11 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 self.ai_sessions.fail(key)
                 self._record("ai","error",started)
                 return self._reply(u,cid,"AI 对话暂时不可用，请稍后重试。")
-            self.ai_sessions.complete(key,getattr(result,"conversation_id",None))
+            returned_id=getattr(result,"conversation_id",None)
+            self.ai_sessions.complete(key,returned_id if returned_id!=cid else None)
             self._record("ai","completed",started)
-            return conversation.ConversationResult(response=response,conversation_id=cid)
+            return conversation.ConversationResult(response=response,conversation_id=cid,
+                                                   continue_conversation=getattr(result,"continue_conversation",False))
         except TimeoutError:
             self.ai_sessions.fail(key)
             self._record("ai","timeout",started)
@@ -197,6 +199,12 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         started=self.route_diagnostics.clock()
         cid = u.conversation_id or uuid4().hex
         key = (u.context.user_id, u.device_id, u.satellite_id, cid)
+        # An unrelated AI turn must not clear or advance local business state,
+        # including when its transport worker starts after a later local turn.
+        semantic_match = self.semantic.match(u.text)
+        if (not menu_only and not self.is_menu_message(u.text)
+                and semantic_match is None and not self.fallback_guard.blocked(u.text)):
+            return await self._async_fallback(u,cid,key,started)
         generation = self.menu.followups.begin(key)
         handlers = [h for h in intent.async_get(self.hass) if type(h) is ScriptIntentHandler and "speech" in h.config and not any(k in h.config for k in ("action", "reprompt", "card"))]
         available = {h.intent_type for h in handlers}
@@ -207,7 +215,6 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             self.resolver.invalidate()
         from .menu import HELP, BACK, NEXT, PREV, TRANSLATE
         t=u.text.strip().casefold().translate(TRANSLATE)
-        semantic_match = self.semantic.match(u.text)
         needs_native = (semantic_match is not None and semantic_match.capability is not None
                         and self.menu.capabilities[semantic_match.capability].get("native_slots"))
         if needs_native or t in HELP|BACK|NEXT|PREV or t in self.menu.aliases or re.fullmatch(r"[1-8](?:\.[1-8])*",t):
