@@ -271,11 +271,11 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             self.resolver.targets.clear()
             self.resolver.modes.clear()
             self.resolver.invalidate()
-        from .menu import HELP, BACK, NEXT, PREV, TRANSLATE
+        from .menu import HELP, BACK, NEXT, PREV, TRANSLATE, PATH_RE
         t=u.text.strip().casefold().translate(TRANSLATE)
         needs_native = (semantic_match is not None and semantic_match.capability is not None
                         and self.menu.capabilities[semantic_match.capability].get("native_slots"))
-        if needs_native or t in HELP|BACK|NEXT|PREV or t in self.menu.aliases or re.fullmatch(r"[1-8](?:\.[1-8])*",t):
+        if needs_native or t in HELP|BACK|NEXT|PREV or t in self.menu.aliases or PATH_RE.fullmatch(t):
             await self._prepare_capabilities(u,available)
         get_state=getattr(getattr(self.hass,"states",None),"get",lambda _:None)
         statuses={}

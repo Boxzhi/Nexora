@@ -199,7 +199,7 @@ class Tests(IsolatedAsyncioTestCase):
 
     def test_menu_protocol_classifies_only_reserved_syntax(self):
         self.menu.aliases={"阳台":"home.balcony"}
-        for text in ("HELP","退出","１","1.2.1","2026-11-27","prev","阳台"):
+        for text in ("HELP","退出","１","12","20","98","99","1.2.12","1.2.1","2026-11-27","prev","阳台"):
             with self.subTest(text=text):
                 self.assertTrue(self.agent.is_menu_message(text))
         for text in ("阳台有人吗","关闭客厅灯","上个月呢","请帮我分析",""):

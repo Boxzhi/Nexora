@@ -17,7 +17,7 @@
  const inputs={"日期（YYYY-MM-DD）":dt.year+"-"+dt.month+"-"+dt.day,"年月（YYYY-MM）":dt.year+"-01","月日（MM-DD）":"01-01","月份（1–12）":"1","年份（2000–2099）":String(Number(dt.year)-1)};
  report.test_parameters=inputs;
  const isMenu=s=>s.trimEnd().endsWith(footer);
- const choices=s=>[...s.matchAll(/^([1-8])\.\s+(.+)$/gm)].map(m=>({n:m[1],label:m[2].trim()}));
+ const choices=s=>[...s.matchAll(/^([1-9]|1[0-9]|20)\.\s+(.+)$/gm)].map(m=>({n:m[1],label:m[2].trim()}));
  const isParam=s=>/^请输入/.test(s);
  const failure=s=>/^(该问句与已安装意图库不匹配|查询参数与已安装意图库不一致|本地严格识别不可用|只读查询配置不可用|本地查询暂时失败|该查询已不可用|该查询目标已变化|当前没有有效菜单|无效选项|输入无效|备用对话代理配置错误|该分类暂无已配置)/.test(s);
  function classify(s){
@@ -55,7 +55,7 @@
     if(r.type!=="error"&&isMenu(r.speech)){
      await walk(r.speech,next,depth+1);
      let restored=menu(await call("0"),path.join(" / "));
-     for(let i=0;i<page;i++)restored=menu(await call("9"),path.join(" / "));
+     for(let i=0;i<page;i++)restored=menu(await call("99"),path.join(" / "));
      if(restored!==s)throw Error("返回后数字映射变化");
     }else if(isParam(r.speech)){
      const input=Object.entries(inputs).find(([k])=>r.speech.includes(k));
@@ -69,8 +69,8 @@
      if(/^该查询已不可用/.test(r.speech))throw Error("运行期间能力变化");
     }
    }
-   if(!/^9\. 下一页$/m.test(s))break;
-   s=menu(await call("9"),path.join(" / "));page++;
+   if(!/^99\. 下一页$/m.test(s))break;
+   s=menu(await call("99"),path.join(" / "));page++;
   }
  }
  console.log("========== Nexora v0.3.1-preview 全量只读验收 ==========");
