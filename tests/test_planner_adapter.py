@@ -136,3 +136,12 @@ class PlannerAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("上下文",r)
         self.assertFalse(self.calls)
         self.conv.async_converse.assert_not_awaited()
+
+    async def test_canonical_and_structured_speech_use_same_formatter(self):
+        cap=self.menu.capabilities["utility.gas.basic.balance"]
+        for query in (self.menu._query(cap["id"],{}).sentence,
+                      "能不能帮我看看家里的天燃气费还剩下多少钱"):
+            self.calls.clear()
+            self.assertEqual(await self.ask(query),"华润燃气账户余额：83.36元。")
+            self.assertEqual(self.calls,[cap["id"]])
+        self.conv.async_converse.assert_not_awaited()

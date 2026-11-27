@@ -64,3 +64,23 @@ class ResponseComposerTests(unittest.TestCase):
             s=rc.compose(p,r,label).text
             self.assertIn("主账户余额："+value,s)
             self.assertIn("第二账户余额："+value,s)
+
+    def test_response_formatter_preserves_metadata_and_nonplain_speech(self):
+        from types import SimpleNamespace
+        key=bm.QueryKey("utility","g","balance")
+        class Response:
+            def __init__(self,kind="action_done",extra=False):
+                self.data={"response_type":kind,"speech":{"plain":{"speech":"华润燃气燃气账户余额：83.36元。"}},"data":{"targets":[]}}
+                if extra:
+                    self.data["speech"]["ssml"]={"speech":"<speak>原文</speak>"}
+            def as_dict(self):
+                return self.data
+            def async_set_speech(self,value):
+                self.data["speech"]["plain"]["speech"]=value
+        r=Response()
+        self.assertIs(rc.format_response(key,r),r)
+        self.assertEqual(r.data["speech"]["plain"]["speech"],"华润燃气账户余额：83.36元。")
+        self.assertEqual(r.data["data"],{"targets":[]})
+        for r in (Response("error"),Response(extra=True)):
+            rc.format_response(key,r)
+            self.assertIn("燃气燃气",r.data["speech"]["plain"]["speech"])

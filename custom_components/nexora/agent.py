@@ -12,7 +12,7 @@ from .business_model import QueryKey
 from .query_planner import QueryPlanner
 from .query_context import QueryContext
 from .plan_executor import run_plan
-from .response_composer import compose
+from .response_composer import compose, format_response
 from .menu import Menu, PARAMETERS, parse_parameter
 from .fallback import AIConversations, FallbackGuard, AI_PROMPT
 from .diagnostics import RouteDiagnostics
@@ -445,5 +445,9 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             params={k:reply.slots[v] for k,v in cap.get("parameter_slots",{}).items()}
             focus=self.query_context.from_registered(reply.capability,params,today)
             self.query_context.remember(key,focus,today,scene=False)
+        if ok:
+            p=describe(cap)
+            if p is not None:
+                response=format_response(QueryKey(p.family,p.target,p.metric,p.period,p.parameter,p.account),response)
         self._record(route,"completed" if ok else "error",started)
         return conversation.ConversationResult(response=response, conversation_id=cid)

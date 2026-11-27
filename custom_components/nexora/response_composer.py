@@ -6,14 +6,35 @@ class Composed:
     text: str
     primary_completed: bool
 
-def _clean(outcome):
-    value=outcome.speech.strip()
-    k=outcome.step.key
+def normalize_speech(k, speech):
+    """Shared formatter for registered read-only speech, not menus or AI."""
+    value=speech.strip()
     # Only this known duplicate label at the metric boundary is redundant.
     # Do not rewrite arbitrary text, numeric values or units.
     if (k.family,k.target,k.metric)==("utility","g","balance"):
         value=value.replace("燃气燃气账户余额","燃气账户余额",1)
     return value
+
+def _clean(outcome):
+    return normalize_speech(outcome.step.key,outcome.speech)
+
+def format_response(key,response):
+    """Preserve the original IntentResponse and metadata; plain speech only."""
+    data=response.as_dict()
+    if data.get("response_type")!="action_done":
+        return response
+    speech=data.get("speech",{})
+    if not isinstance(speech,dict) or set(speech)!={"plain"}:
+        return response
+    plain=speech["plain"]
+    if not isinstance(plain,dict) or set(plain)!={"speech"}:
+        return response
+    value=plain["speech"]
+    if isinstance(value,str) and value.strip():
+        cleaned=normalize_speech(key,value)
+        if cleaned!=value:
+            response.async_set_speech(cleaned)
+    return response
 
 def compose(plan,run,label):
     if run.superseded:
