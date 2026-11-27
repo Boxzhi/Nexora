@@ -1,0 +1,32 @@
+name: Package Nexora v0.4.1 acceptance scripts
+on:
+  push:
+    branches: [release/v0.4.1-preview]
+    paths: [.github/workflows/package-v041-probes.yml]
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ff70b7fef3fffb2ff2d18ff81fabf0999b117313
+          persist-credentials: false
+      - name: Verify and stage scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object scripts/v041_probe.js)" = 60295779bb25297ea63540d3b9b85eb35e535ef2
+          test "$(git hash-object scripts/full_probe.js)" = ea86ad0f833f7100f91467a13e0fcbab64db401c
+          node --check scripts/v041_probe.js
+          node --check scripts/full_probe.js
+          mkdir acceptance
+          cp scripts/v041_probe.js scripts/full_probe.js acceptance/
+          printf '%s\n' 'Nexora v0.4.1-preview' 'Source: ff70b7fef3fffb2ff2d18ff81fabf0999b117313' '升级并重启 HA 后，在浏览器控制台先运行 v041_probe.js，专项通过后运行 full_probe.js。' '无需复制至 HA 配置目录。将控制台日志发回核实。' > acceptance/README.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Nexora-v0.4.1-preview-acceptance
+          path: acceptance/
+          retention-days: 90
+          if-no-files-found: error
