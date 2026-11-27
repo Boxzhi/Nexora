@@ -1,0 +1,53 @@
+name: Publish Nexora v0.5.3-preview
+on:
+  push:
+    branches:
+      - release/v0.5.3-preview
+    paths:
+      - .github/workflows/publish-v053-preview.yml
+permissions:
+  contents: write
+concurrency:
+  group: nexora-v053-preview-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: github.repository == 'Boxzhi/Nexora' && github.ref == 'refs/heads/release/v0.5.3-preview'
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Boxzhi/Nexora
+      RELEASE_TAG: v0.5.3-preview
+      RELEASE_SHA: 3e07362c54634fd95aac6b6dd5095e8a2e342500
+    steps:
+      - name: Verify fixed candidate and publish prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GH_REPO/commits/$RELEASE_SHA" --jq .sha | grep -Fx "$RELEASE_SHA"
+          if gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "Release already exists; refusing overwrite."
+            exit 1
+          fi
+          if gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag already exists; refusing reuse."
+            exit 1
+          fi
+          cat > release-notes.md <<'EOF'
+          ## 场景菜单重构
+          - 默认 help 场景入口由443精简至150（-66.1%）：水电气65、灯光37、家电24、全屋状态24。
+          - detail 保留443项原始注册能力及完整菜单；自然语言单项查询、原有只读边界不变。
+          - 合并相关查询，共享日期参数；支持同一会话重复查询、受支持的账期及账户范围切换，保留部分数据及状态限制。
+          - 原四套能力目录 Git Blob SHA 完全一致，bindings.yaml 仍可选。
+          ## 验证
+          - 固定候选 3e07362：306项自动化测试通过；150项场景路径、443项完整菜单路径、374项场景成员模拟执行通过。
+          - 此前实机23项隐藏配置模拟：新版149项可见，完整菜单420项可见；实际数量须实机确认。
+          - Push/PR CI 测试及 Hassfest 通过；HACS 8/10（Topics、Brands 未通过），不绕过。真实 HA 和微信验收待执行。
+          ## 升级及回滚
+          - 仅升级 Nexora，保留现有配置、原8个 YAML、CN IM Hub、AI Hub、SGCC Add-on。
+          - HACS 安装预览版并重启 Core；异常恢复 v0.5.2-preview。新旧数字路径不同，先发送 help 或 detail。
+          - 独立验收 ZIP 单独交付，不上传 Release；不作为正式稳定版。
+          EOF
+          gh release create "$RELEASE_TAG" --repo "$GH_REPO" --target "$RELEASE_SHA" --title "Nexora v0.5.3-preview" --prerelease --latest=false --notes-file release-notes.md
+          gh release view "$RELEASE_TAG" --repo "$GH_REPO" --json url,tagName,isPrerelease,isDraft
