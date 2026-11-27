@@ -335,14 +335,13 @@ class QueryParser:
         value=value.lstrip()
         matches=self.subjects.prefixes(value)
         correction=()
-        if not matches:
-            for typo,word in sorted(CORRECTIONS.items(),key=lambda x:-len(x[0])):
-                if value.startswith(typo):
-                    corrected=word+value[len(typo):]
-                    candidate=self.subjects.prefixes(corrected)
-                    if candidate and candidate[0][0]>=len(word):
-                        value,matches,correction=corrected,candidate,(typo,word)
-                    break
+        for typo,word in sorted(CORRECTIONS.items(),key=lambda x:-len(x[0])):
+            if value.startswith(typo) and (not matches or matches[0][0]<len(typo)):
+                corrected=word+value[len(typo):]
+                candidate=self.subjects.prefixes(corrected)
+                if candidate and candidate[0][0]>=len(word):
+                    value,matches,correction=corrected,candidate,(typo,word)
+                break
         result=set()
         # Prefer longest known subject. Do not reinterpret a failed specific
         # target as a shorter one, e.g. "燃气热水器" -> "燃气".
