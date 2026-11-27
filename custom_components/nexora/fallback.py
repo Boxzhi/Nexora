@@ -8,7 +8,7 @@ from time import monotonic
 import re
 
 from .semantic_lexicon import ROOMS as ROOM_ALIASES, DEVICES, UTILITIES, describe
-from .natural_language import CORRECTIONS, aggregate_fragment
+from .natural_language import CORRECTIONS, aggregate_fragment, AGGREGATE_SCOPE_ALIASES
 
 # These are recognition hints for unmatched queries, not an authorization layer.
 HOUSEHOLD = {
@@ -34,7 +34,7 @@ ENTITY = re.compile(r"(?:switch|light|sensor|binary_sensor|climate|cover|lock|ca
 MISSING_CONTEXT = {"还剩多少","剩多少","还有多少钱","余额呢","多少钱","多少度","几度","调的几度","设了几度","现在屋里几度","还有多久","还要多久","设定温度","实际温度","检测温度","环境光照度","关闭状态","上锁状态","反锁状态","第一阶梯","第二阶梯","用量呢","费用呢"}
 # Bare financial follow-ups require local context, not AI inference.
 # Full-match only: do not block general questions about arrears or payments.
-BARE_UTILITY=re.compile(r"(?:余额|账户余额|欠费情况|数据更新时间|(?:有没有|有无|是否|是不是|有)?欠费(?:了)?(?:的|账户|的账户|吗|没|没有)?|(?:还)?(?:要|需要|该)(?:充值|缴费|交费|交钱)(?:了)?(?:吗|没|没有|的)?|(?:有没有|有无|哪些)(?:账户)?(?:需要|要|该)充值(?:的|账户|的账户)?|(?:所有|全部)(?:水电气)?账户|主住所)(?:呢|啊|呀)?")
+BARE_UTILITY=re.compile(r"(?:余额|账户余额|欠费情况|(?:数据)?更新时间|(?:有没有|有无|是否|是不是|有)?欠费(?:了)?(?:的|账户|的账户|吗|没|没有)?|(?:还)?(?:要|需要|该)(?:充值|缴费|交费|交钱)(?:了)?(?:吗|没|没有|的)?|(?:有没有|有无|哪些)(?:账户)?(?:需要|要|该)充值(?:的|账户|的账户)?|(?:所有|全部)(?:水电气)?账户|主住所)(?:呢|啊|呀)?")
 def _missing_context(text):
     return (text in MISSING_CONTEXT or text.removesuffix("呢") in MISSING_CONTEXT
             or BARE_UTILITY.fullmatch(text) is not None
@@ -53,7 +53,7 @@ class BoundaryDecision:
 
 class FallbackGuard:
     def __init__(self, menu):
-        terms=set(HOUSEHOLD)|ROOMS|set(CORRECTIONS)
+        terms=set(HOUSEHOLD)|ROOMS|set(CORRECTIONS)|set(AGGREGATE_SCOPE_ALIASES)
         terms.update(alias for aliases in ROOM_ALIASES.values() for alias in aliases)
         terms.update(alias for aliases in DEVICES.values() for alias in aliases)
         terms.update(alias for aliases in UTILITIES.values() for alias in aliases)

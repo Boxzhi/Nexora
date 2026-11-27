@@ -43,8 +43,10 @@ class V052ConversationCorpus(unittest.IsolatedAsyncioTestCase):
         for i,q in enumerate(DATA["negative"]):
             with self.subTest(q=q):
                 self.calls.clear()
+                before=self.conv.async_converse.await_count
                 speech=await self.ask(q,"v052:negative:"+str(i))
                 self.assertTrue(speech)
                 self.assertFalse(self.calls)
+                self.assertEqual(self.conv.async_converse.await_count,before,q)
         self.conv.async_converse.assert_not_awaited()
         print("V052_NEGATIVE="+str(len(DATA["negative"])))

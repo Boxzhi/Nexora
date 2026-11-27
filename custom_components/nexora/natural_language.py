@@ -135,6 +135,7 @@ UTILITY_RULES=(
     (r"(?:账单)?(?:费用|金额|花了|花了多少|花了多少钱|花了多少元|多少钱|多少块钱|多少元|多少|是多少)(?:多少)?","cost",""),
     (r"(?:余额|数据)?(?:更新|刷新)(?:时间|了没|了吗|了没有|于何时|是什么时候|什么时候)","update",""),
 )
+AGGREGATE_SCOPE_ALIASES=("全部账户","所有账户","全部水电气账户","所有水电气账户","全部水电气","所有水电气")
 # Aggregate-only distributed phrasing; a list of account values is not a sum.
 AGGREGATE_RULES=(
     (re.compile(r"(?:账户)?(?:余额|剩余金额)(?:各自|分别)(?:还有多少|还剩多少|是多少|多少|有多少)"),"balance",""),
@@ -245,7 +246,7 @@ class QueryParser:
                     self.aliases[w].add(sub)
         for t,words in UTILITIES.items():
             add("utility",t,"utility",words)
-        add("utility","all","utility_all",("全部账户","所有账户","全部水电气账户","所有水电气账户","全部水电气","所有水电气"))
+        add("utility","all","utility_all",AGGREGATE_SCOPE_ALIASES)
         add("utility","all","utility",("主住所水电气","主住所的水电气"))
         for t,words in DEVICES.items():
             d={"w":"washer","p":"purifier"}.get(t,"appliance")
