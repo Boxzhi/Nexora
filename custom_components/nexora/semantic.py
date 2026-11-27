@@ -6,8 +6,9 @@ Only fixed capabilities of the four known intent families are indexed.
 from dataclasses import dataclass
 import re
 from .menu import Reply, TRANSLATE
+from .semantic_lexicon import FAMILIES, describe, patterns
 
-INTENTS = {"LuxeHomeQuery", "LuxeLightQuery", "LuxeApplianceQuery", "LuxeUtilityQuery"}
+INTENTS = frozenset(FAMILIES)
 METRIC = re.compile(r"(?:余额|光照度|温度|湿度|亮度|色温|风速|水温|转速|档位|读数|电量|用电量|用水量|用气量|费用|电费|水费|燃气费|气价|寿命|tds|位置|限位)$")
 SUFFIX = re.compile(r"(?:是多少|有多少|多少)$")
 
@@ -15,8 +16,14 @@ def normalize(text):
     if not isinstance(text, str) or len(text) > 256:
         return ""
     value = text.strip().casefold().translate(TRANSLATE).rstrip("？?。！!").strip()
-    if value.startswith("请问"):
-        value = value[2:].lstrip("，,：: ")
+    # Only remove one explicit inquiry wrapper and one sentence-final filler.
+    # Never remove a device, account, date, unit, negation or action word.
+    for prefix in ("麻烦帮我查一下","请帮我查一下","帮我查一下","麻烦查一下","查一下","请问"):
+        if value.startswith(prefix):
+            value=value[len(prefix):].lstrip("，,：: ")
+            break
+    if value.endswith(("啊","呀","呢")):
+        value=value[:-1].rstrip()
     return value
 
 @dataclass(frozen=True)
@@ -30,10 +37,15 @@ class SemanticIndex:
         self.exact = {}
         self.aliases = {}
         self.clarifications = {}
+        self.profiles = {}
         settings = getattr(menu, "settings", {})
         items = getattr(menu, "items", {})
         for cap in menu.capabilities.values():
-            if cap.get("intent") not in INTENTS or cap.get("parameter") or not cap.get("sentence"):
+            profile=describe(cap)
+            if profile is None or not cap.get("sentence"):
+                continue
+            self.profiles[cap["id"]]=profile
+            if profile.parameter:
                 continue
             sentence = cap["sentence"]
             if "{secondary}" in sentence and not settings.get("secondary"):
@@ -84,8 +96,11 @@ class SemanticIndex:
             if cid in {"utility.electric.j.basic.balance","utility.water.balance","utility.gas.basic.balance"}:
                 subject={"utility.electric.j.basic.balance":"电费","utility.water.balance":"水费","utility.gas.basic.balance":"燃气费"}[cid]
                 variants.update({subject+"还剩多少钱",subject+"还有多少钱",subject+"账户余额"})
+            # Shared templates are expanded only for this existing profile.
+            # They never generate a capability or alter its original Slots.
+            variants.update(patterns(cap,menu))
             for variant in variants:
-                self._add(self.aliases,variant,cid)
+                self._add(self.aliases,normalize(variant),cid)
 
     @staticmethod
     def _add(index, phrase, cid):
@@ -96,11 +111,11 @@ class SemanticIndex:
         key=normalize(text)
         if not key:
             return None
-        choices=self.exact.get(key)
-        if choices is None:
-            if key in self.clarifications:
-                return Match(clarification=self.clarifications[key])
-            choices=self.aliases.get(key)
+        # A configured label or extension may introduce a cross-index collision.
+        # Do not silently choose an exact phrase over another registered meaning.
+        choices=self.exact.get(key,set()) | self.aliases.get(key,set())
+        if key in self.clarifications:
+            return Match(clarification=self.clarifications[key])
         if not choices:
             return None
         if len(choices)!=1:
