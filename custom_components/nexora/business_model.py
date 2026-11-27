@@ -193,8 +193,7 @@ def policies(registry):
             same("utility",target,"remaining_unspecified",("balance",),a=account,
                  reason="无实物单位时，账户剩余默认金额；回复明确账户及元。")
             same("utility",target,"payment_needed",("debt","balance"),a=account,
-                 note="余额不足不等于欠费；充值建议须依据已配置阈值。",
-                 reason="同时提供欠费及余额，不推断不存在的付款记录。")
+                 reason="同时提供欠费及余额；充值建议须依据实际阈值，不推断不存在的付款记录。")
     same("utility","g","remaining_physical",("tier1_remaining","tier2_remaining"),a="j",
          note="无法查询实际剩余燃气量；以下仅为阶梯剩余额度。",
          reason="明确量纲后给出可用相关数据，不返回金额或表读数。")
