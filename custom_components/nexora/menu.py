@@ -10,8 +10,13 @@ from .followup import Followups
 HELP = {"help", "帮助", "使用指南", "你能做什么"}
 EXIT = {"exit", "退出", "关闭菜单"}
 BACK = {"0", "back", "返回", "上一级"}
-NEXT = {"9", "next", "下一页"}
-PREV = {"prev", "上一页"}
+PAGE_SIZE = 20
+NEXT = {"99", "next", "下一页"}
+PREV = {"98", "prev", "上一页"}
+# Canonical decimal selection; no leading zeros and no paging commands in paths.
+CHOICE = r"(?:[1-9]|1[0-9]|20)"
+CHOICE_RE = re.compile(CHOICE)
+PATH_RE = re.compile(rf"{CHOICE}(?:\.{CHOICE})*")
 RESERVED = HELP | EXIT | BACK | NEXT | PREV
 FOOTER = "回复数字选择，help 返回主菜单，exit 退出菜单。"
 PARAMETERS = {
@@ -182,8 +187,8 @@ class Menu:
 
     def _render(self, key, node, available, page=0):
         items = [x for x in self.children[node] if self._available(x.id, available)]
-        page = max(0, min(page, max(0, (len(items)-1)//8)))
-        shown = tuple(x.id for x in items[page*8:page*8+8])
+        page = max(0, min(page, max(0, (len(items)-1)//PAGE_SIZE)))
+        shown = tuple(x.id for x in items[page*PAGE_SIZE:(page+1)*PAGE_SIZE])
         if key not in self.sessions and len(self.sessions) >= self.max_sessions:
             self.sessions.pop(min(self.sessions, key=lambda k:self.sessions[k].expires))
         self.sessions[key] = Session(node, page, self.clock()+self.ttl, shown)
@@ -194,10 +199,10 @@ class Menu:
             lines.append(f"{i}. {item.icon} {item.name}" if item.icon else f"{i}. {item.name}")
         if not shown:
             lines.append("当前没有可用的查询能力，请检查意图库。")
-        if (page+1)*8 < len(items):
-            lines.append("9. 下一页")
         if page:
-            lines.append("发送 prev 返回上一页")
+            lines.append("98. 上一页")
+        if (page+1)*PAGE_SIZE < len(items):
+            lines.append("99. 下一页")
         if node != "root":
             lines.append("0. 返回上一级")
         return Reply("\n".join(lines + ["", FOOTER]))
@@ -267,7 +272,7 @@ class Menu:
         if t in NEXT | PREV:
             self.followups.clear(key)
             return self._render(key, s.node, available, s.page + (-1 if t in PREV else 1))
-        if len(t)!=1 or t not in "12345678" or int(t)>len(s.shown):
+        if not CHOICE_RE.fullmatch(t) or int(t)>len(s.shown):
             return Reply("无效选项，请发送当前菜单中的数字，或发送 help。")
         cap_id = s.shown[int(t)-1]
         if not self._available(cap_id, available):
@@ -289,8 +294,8 @@ class Menu:
         session = self.sessions.get(key)
         if session is None:
             return Reply("当前没有有效菜单，请发送 help。")
-        if len(parts) > 10 or any(len(p) != 1 or p not in "12345678" for p in parts):
-            return Reply("无效数字路径，请使用1–8逐级选择。")
+        if len(parts) > 10 or not PATH_RE.fullmatch(text):
+            return Reply("无效数字路径，请使用1–20逐级选择。")
         original = replace(session)
         for i, part in enumerate(parts):
             s = self.sessions[key]

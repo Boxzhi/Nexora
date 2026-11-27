@@ -18,7 +18,7 @@ Extensible local intent and conversation engine for Home Assistant.
 
 Only modules with registered speech-only handlers appear. Secondary electricity account is opt-in. Lights resolve local entity IDs using the installed strict sentence lists; no household-specific entity IDs are bundled. Appliance and Home representatives match the original fixed slots and sentences. Catalogs describe query combinations, not every synonym.
 
-Send help (帮助), exit (退出), 0 / back (返回), 9 / next (下一页), or prev (上一页). English commands are case insensitive. Menu footers display help and exit only. Root icons are catalog metadata.
+Send help (帮助), exit (退出), 0 / back (返回), 99 / next (下一页), or 98 / prev (上一页). Menus display up to 20 visible choices per page; 1–20 select a choice, including each segment of a dot-separated path. English commands are case insensitive. Paging controls appear only when applicable. Root icons are catalog metadata.
 
 ## Installation
 
