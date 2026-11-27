@@ -13,6 +13,7 @@ from .query_planner import QueryPlanner
 from .query_context import QueryContext
 from .plan_executor import run_plan, response_quality
 from .response_composer import compose, format_response
+from .transport_format import format_query_text, format_query_response
 from .menu import Menu, PARAMETERS, parse_parameter
 from .fallback import AIConversations, FallbackGuard, AI_PROMPT
 from .diagnostics import RouteDiagnostics
@@ -51,9 +52,9 @@ class NexoraAgent(conversation.AbstractConversationAgent):
     def supported_languages(self):
         return "*"
 
-    def _reply(self, u, cid, text):
+    def _reply(self, u, cid, text, *, query=False):
         r = intent.IntentResponse(language=u.language)
-        r.async_set_speech(text)
+        r.async_set_speech(format_query_text(cid,text) if query else text)
         return conversation.ConversationResult(response=r, conversation_id=cid)
 
     def _handler(self, name):
@@ -346,7 +347,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 self.query_context.remember(key,plan.focus,today,scene=True,current=current(),
                     menu_scene=plan.menu_scene,params=members[0].params if plan.menu_scene else ())
         self._record("local_menu_scene" if plan.title else "local_planner","completed" if composed.primary_completed else "error",started)
-        return self._reply(u,cid,composed.text)
+        return self._reply(u,cid,composed.text,query=True)
 
     async def async_process(self,u):
         """Standard HA Conversation Agent entry; no transport-specific protocols."""
@@ -512,5 +513,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 semantic_key=QueryKey(p.family,p.target,p.metric,p.period,p.parameter,p.account)
                 self._record("query_quality",response_quality(semantic_key,response),started)
                 response=format_response(semantic_key,response)
+        if ok:
+            response=format_query_response(cid,response)
         self._record(route,"completed" if ok else "error",started)
         return conversation.ConversationResult(response=response, conversation_id=cid)
