@@ -125,6 +125,19 @@ class QueryPlanner:
                 raise ValueError("查询日期无效或超出当前日期，请检查年月日。") from None
         return self._step(QueryKey("utility",target,metric,period,parameter,account),params.items())
 
+    def _aggregate_utility(self,frame,account):
+        # Registered aggregate metrics are distinct from individual meters.
+        # Only explicit current-account meanings may be translated.
+        if frame.time!=TimeSpec():
+            raise ValueError("综合账户查询不支持指定历史账期。")
+        metric={"balance":"balances","debt":"debts","update":"updates",
+                "balances":"balances","debts":"debts","low":"low","updates":"updates"}.get(frame.metric)
+        if frame.goal:
+            metric={"remaining_unspecified":"balances","payment_needed":"low"}.get(frame.goal)
+        if metric is None:
+            raise KeyError(frame.metric or frame.goal)
+        return Plan((self._step(QueryKey("utility","all",metric,account=account)),),focus=frame)
+
     def frame(self,frame,today):
         s=frame.subject
         account=frame.account
@@ -137,7 +150,9 @@ class QueryPlanner:
         elif frame.explicit_account or frame.time!=TimeSpec():
             return PlanningResult(message=MISSING)
         try:
-            if frame.goal:
+            if s.family=="utility" and s.target=="all" and frame.goal!="account_health":
+                plan=self._aggregate_utility(frame,account)
+            elif frame.goal:
                 if frame.time!=TimeSpec():
                     return PlanningResult(message="该场景没有已注册的历史日期查询。")
                 plan=self._scene(frame,account)

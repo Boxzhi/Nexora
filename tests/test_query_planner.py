@@ -63,3 +63,16 @@ class PlannerTests(unittest.TestCase):
         self.assertIsNone(self.p.plan("燃气余额，顺便关灯",TODAY).plan)
         self.assertIsNone(self.p.plan("空调现在多少度和大门关好了吗",TODAY).plan)
         self.assertIsNone(self.p.plan("燃气余额和火星温度",TODAY).plan)
+
+    def test_aggregate_metrics_resolve_to_registered_primary_scope(self):
+        for q,metric in [
+            ("我家水电气余额还有多少","balances"),
+            ("水电气有没有欠费","debts"),
+            ("水电气还剩多少钱","balances"),
+            ("水电气需要充值吗","low"),
+            ("水电气数据更新时间","updates"),
+        ]:
+            with self.subTest(q=q):
+                self.assertEqual(self.ids(q),("utility.summary.primary."+metric,))
+        for q in ("去年水电气余额","次住所水电气余额","水电气还剩多少立方米","水电气本月费用"):
+            self.assertIsNone(self.p.plan(q,TODAY).plan,q)
