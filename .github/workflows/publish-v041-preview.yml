@@ -1,0 +1,61 @@
+name: Publish Nexora v0.4.1-preview
+on:
+  push:
+    branches:
+      - release/v0.4.1-preview
+    paths:
+      - .github/workflows/publish-v041-preview.yml
+permissions:
+  contents: write
+concurrency:
+  group: nexora-v041-preview-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: github.repository == 'Boxzhi/Nexora' && github.ref == 'refs/heads/release/v0.4.1-preview'
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Boxzhi/Nexora
+      RELEASE_TAG: v0.4.1-preview
+      RELEASE_SHA: ff70b7fef3fffb2ff2d18ff81fabf0999b117313
+    steps:
+      - name: Verify fixed candidate and publish prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GH_REPO/commits/$RELEASE_SHA" --jq .sha | grep -Fx "$RELEASE_SHA"
+          if gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "Release already exists; refusing overwrite."
+            exit 1
+          fi
+          if gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag already exists; refusing reuse."
+            exit 1
+          fi
+          cat > release-notes.md <<'EOF'
+          ## 新增
+          - 四大模块 443 项注册能力语义分类，409 项固定查询支持组合式口语表达，34 项动态日期查询支持中文年月日等受控格式。
+          - 本地歧义澄清、金额与实物用量区分、非法及未来日期保护。
+          - 水电气、灯光、家电、全屋状态的受控上下文追问，支持对象、指标、账户及日期继承。
+          - 未匹配实时查询、缺少上下文、取消查询及识别出的查询与控制混合请求的本地处理。
+          ## 优化与修复
+          - 原生识别与本地语义冲突、重复 Slots、未唯一注册能力及无效 Intent 响应的终止保护。
+          - 口语追问标点处理、同名账户与同名设备指标隔离。
+          - 普通知识问答和明确设备控制仍遵循已配置的备用代理及权限；本地执行仅限经校验的只读查询。
+          ## 兼容性
+          - 仅升级 Nexora；CN IM Hub、AI Hub、四套原始意图库及现有集成配置保持不变。
+          - 保留 custom_sentences/zh-CN 和 intent_scripts 中的八个 YAML 文件；bindings.yaml 仍为可选配置。
+          - HA Core 2026.11.3 接口基线；无跨集成上下文同步，启发式路由保护不等于权限沙箱。
+          ## 验证
+          - 固定候选 ff70b7f：174/174 项自动化测试、443/443 项模拟 HA 查询执行、6225 条组合口语语料、886 条取消及混合请求反例、85 条独立标注语料通过。
+          - Python 编译、JS 语法及 Hassfest 通过。HACS 8/10，Topics 和 Brands 尚未通过。
+          - 真实 HA 数据与微信交互尚待验收。此为预览版，升级前请备份。
+          ## 验收
+          - scripts/v041_probe.js：口语查询、歧义、上下文与日期专项。
+          - scripts/full_probe.js：全量可见菜单及隐藏能力复核。
+          - docs/preview-acceptance.md：安装、验收与回滚说明。
+          EOF
+          gh release create "$RELEASE_TAG" --repo "$GH_REPO" --target "$RELEASE_SHA" --title "Nexora v0.4.1-preview" --prerelease --latest=false --notes-file release-notes.md
+          gh release view "$RELEASE_TAG" --repo "$GH_REPO" --json url,tagName,isPrerelease
