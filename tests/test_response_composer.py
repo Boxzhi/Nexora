@@ -118,7 +118,8 @@ class ResponseComposerTests(unittest.TestCase):
     def test_overview_paragraphs_preserve_every_character(self):
         s="家庭Wi-Fi：2位成员的设备已连接。入户门锁：状态无法确认。15组灯光中，1组开启。已监测家电运行：洗衣机（漂洗）；热水器燃烧状态未统计。3个有效监测区域平均温度：18.3℃。未确认到异常，但部分项目无法核实；数据不可用：入户门锁。"
         v=rc.normalize_speech(bm.QueryKey("home","all","overview"),s)
-        groups=v.split("\n\n")
+        title,*groups=v.split("\n\n")
+        self.assertEqual(title,"全屋概况")
         self.assertEqual([g.split("\n",1)[0] for g in groups],["家庭成员","门锁","灯光","家电","室内环境","安全及异常"])
         self.assertEqual("".join(g.split("\n",1)[1] for g in groups),s)
         self.assertEqual(rc.normalize_speech(bm.QueryKey("home","all","overview"),v),v)

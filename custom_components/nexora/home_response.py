@@ -34,17 +34,20 @@ def format_home(metric,value):
 
 
 def format_overview(value):
-    """Group the known six-part home summary, keeping every source sentence."""
-    if not value.startswith("家庭Wi-Fi："):
+    """Title and group the home summary, keeping every source sentence."""
+    title="全屋概况\n\n"
+    if not value or value=="全屋概况" or value.startswith("全屋概况\n"):
         return value
+    if not value.startswith("家庭Wi-Fi："):
+        return title+value
     # The boundaries are anchored to sentence endings, not arbitrary substrings.
     pattern=r"(?<=。)\s*(?=入户门锁：|\d+组灯光(?:中，|均已)|已监测家电运行：|\d+个有效监测区域平均温度：|未确认到异常，但部分项目无法核实；)"
     parts=re.split(pattern,value)
     checks=("家庭Wi-Fi：","入户门锁：",r"\d+组灯光(?:中，|均已)","已监测家电运行：",r"\d+个有效监测区域平均温度：","未确认到异常，但部分项目无法核实；")
     if len(parts)!=len(checks) or not all(re.match(p,t) for p,t in zip(checks,parts)):
-        return re.sub(pattern,"\n",value)
+        return title+re.sub(pattern,"\n",value)
     labels=("家庭成员","门锁","灯光","家电","室内环境","安全及异常")
-    return "\n\n".join(label+"\n"+part for label,part in zip(labels,parts))
+    return title+"\n\n".join(label+"\n"+part for label,part in zip(labels,parts))
 
 def _room_fields(text,pattern):
     result={}

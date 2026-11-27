@@ -50,7 +50,18 @@ class HomeGroupingTests(unittest.TestCase):
                "3个有效监测区域平均温度：17.9℃。3个有效监测区域平均湿度：61.3%。",
                "未确认到异常，但部分项目无法核实；数据不可用：入户门锁。未监测窗户、实时烟雾和燃气泄漏；洗衣机关机时不判断故障。"]
         r=format_overview("".join(parts))
+        self.assertTrue(r.startswith("全屋概况\n\n家庭成员\n"))
+        self.assertEqual(format_overview(r),r)
         for part in parts:
             self.assertIn(part,r)
         self.assertIn("门锁\n入户门锁",r)
         self.assertIn("安全及异常\n未确认到异常",r)
+
+    def test_overview_partial_and_unknown_shapes_keep_source(self):
+        for raw in ("全屋状态数据不可用。","家庭Wi-Fi：数据不可用。","入户门锁：状态无法确认。"):
+            with self.subTest(raw=raw):
+                result=format_overview(raw)
+                self.assertEqual(result,"全屋概况\n\n"+raw)
+                self.assertEqual(format_overview(result),result)
+        self.assertEqual(format_overview(""),"")
+        self.assertEqual(format_overview("全屋概况"),"全屋概况")
