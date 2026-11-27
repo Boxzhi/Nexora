@@ -182,6 +182,38 @@ def _fixture(plan,rows):
         lines.append("实时"+"、".join(unavailable)+"：灯具已关闭，无法获取。")
     return name,lines
 
+def _all_ac(rows):
+    """Group known two-device replies without discarding state qualifiers."""
+    expected={"status","temp","target","count"}
+    if {s.key.metric for s,_,_ in rows}!=expected or len(rows)!=4:
+        return None
+    rooms={"主卧空调":[],"次卧空调":[]}
+    count=None
+    for step,kind,text in rows:
+        if step.key.target!="ac" or kind not in GOOD:
+            return None
+        if step.key.metric=="count":
+            count=text
+            continue
+        parts=text.splitlines()
+        if len(parts)!=2 or not all(part.startswith(name) for part,name in zip(parts,rooms)):
+            return None
+        for part,name in zip(parts,rooms):
+            rooms[name].append(part[len(name):].lstrip("：:"))
+    lines=[count]
+    for name,values in rooms.items():
+        lines.extend(("",name,*values))
+    return lines
+
+def _filter_health(fields):
+    a=re.fullmatch(r"PPC滤芯剩余(\d+(?:\.\d+)?)%，RO滤芯剩余(\d+(?:\.\d+)?)%。",fields.get("filters",""))
+    b=re.fullmatch(r"设备估计PPC滤芯剩余(\d+)天，RO滤芯剩余(\d+)天。",fields.get("days",""))
+    c=re.fullmatch(r"PPC滤芯([^。；\n]+)；RO滤芯([^。；\n]+)。",fields.get("replace",""))
+    if not (a and b and c):
+        return None
+    return ["PPC滤芯：剩余"+a[1]+"%，设备估计剩余"+b[1]+"天",c[1],"",
+            "RO滤芯：剩余"+a[2]+"%，设备估计剩余"+b[2]+"天",c[2]]
+
 def _device(plan,rows):
     targets={step.key.target for step,_,_ in rows if step.key.family=="appliance"}
     name=DEVICE_NAMES.get(next(iter(targets))) if len(targets)==1 else None
@@ -193,6 +225,10 @@ def _device(plan,rows):
     for step,kind,text in rows:
         if kind in GOOD and text.startswith(name):
             fields[step.key.metric]=text[len(name):].lstrip("：:")
+    if plan.menu_scene=="scene.appliance.purifier.filter_health" and len(fields)==3:
+        grouped=_filter_health(fields)
+        if grouped is not None:
+            return heading,grouped
     same_power=(plan.menu_scene=="scene.appliance.washer.progress" and
                 fields.get("status")==fields.get("power") and
                 fields.get("status") in {"已关机。","已开机。"})
@@ -271,6 +307,10 @@ def compose_menu(plan,run,label,normalize):
         heading,lines=_fixture(plan,rows)
     elif scene.startswith("scene.lights."):
         lines=_scoped_lights(rows)
+    elif scene=="scene.appliance.ac.all":
+        lines=_all_ac(rows)
+        if lines is None:
+            lines=[text for _,_,text in rows]
     elif scene.startswith("scene.appliance."):
         heading,lines=_device(plan,rows)
     elif scene.startswith("scene.home.presence."):

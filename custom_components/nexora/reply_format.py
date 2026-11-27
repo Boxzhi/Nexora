@@ -48,6 +48,10 @@ def format_known(key,value):
     if (key.family,key.target)==("utility","all") and key.metric in {"balances","debts","low","updates"}:
         from .utility_response import format_aggregate
         return format_aggregate(key.metric,value)
+    if (key.family,key.target)==("appliance","ac") and key.metric in {"status","temp","target"}:
+        m=re.fullmatch(r"(主卧空调[^。\n]+。)(次卧空调[^。\n]+。)",value)
+        if m:
+            return "\n".join(m.groups())
     if (key.family,key.target,key.metric)==("home","all","overview"):
         return re.sub(r"(?<=。)(?=(?:入户门锁：|\d+组灯光中，|已监测家电运行：|\d+个有效监测区域平均温度：|未确认到异常，但部分项目无法核实；))","\n",value)
     return value

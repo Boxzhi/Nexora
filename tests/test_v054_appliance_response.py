@@ -31,3 +31,23 @@ class AppliancePresentationTests(unittest.TestCase):
         self.assertIn("照明延时关闭：未启用",r.text)
         self.assertIn("浴霸延时关闭：未启用",r.text)
         self.assertNotIn("取暖延时关闭",r.text)
+
+    def test_ac_grouping_preserves_stale_qualifier(self):
+        r=self.fixture.result("appliance.ac.all",[
+            ("ok","主卧空调已关闭。次卧空调已关闭。"),
+            ("ok","家里已确认开启的空调有0台。"),
+            ("state_limit","主卧空调设备报告室温：19.1℃（空调已关闭，读数可能未实时刷新）。次卧空调设备报告室温：18.8℃（空调已关闭，读数可能未实时刷新）。"),
+            ("state_limit","主卧空调已关闭，无当前运行参数。次卧空调已关闭，无当前运行参数。")])
+        self.assertIn("主卧空调\n已关闭。",r.text)
+        self.assertIn("次卧空调\n已关闭。",r.text)
+        self.assertEqual(r.text.count("读数可能未实时刷新"),2)
+        self.assertIn("0台",r.text)
+
+    def test_filter_health_grouped_without_losing_estimate(self):
+        r=self.fixture.result("appliance.purifier.filter_health",[
+            ("ok","米家净水器PPC滤芯剩余90%，RO滤芯剩余95%。"),
+            ("ok","米家净水器设备估计PPC滤芯剩余654天，RO滤芯剩余2427天。"),
+            ("ok","米家净水器：PPC滤芯当前未达更换提醒阈值；RO滤芯当前未达更换提醒阈值。")])
+        self.assertIn("PPC滤芯：剩余90%，设备估计剩余654天",r.text)
+        self.assertIn("RO滤芯：剩余95%，设备估计剩余2427天",r.text)
+        self.assertEqual(r.text.count("当前未达更换提醒阈值"),2)
