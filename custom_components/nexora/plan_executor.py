@@ -30,7 +30,7 @@ GAP=re.compile(r"数据不可用|数据尚未获取|状态无法确认|状态未
 YEAR_PARTIAL=re.compile(r"^[^。；\n]{1,80}\d{4}年账单累计(?:用电量|电费|用水量|水费|用气量|燃气费)：-?\d+(?:\.\d+)?(?:度|元|吨|立方米)（[1-9]\d*期有效账单；(?:本月暂无账单|缺失或异常月份：[^。；\n]+，仅为已知账单合计)）。$")
 PHYSICAL_STATE_LIMIT=re.compile(r"^(?:[^。；\n]{1,40}当前已关闭，无法获取实时(?:亮度|色温)|(?:主卧|次卧)空调设备报告室温：-?\d+(?:\.\d+)?℃（空调已关闭，读数可能未实时刷新）)[。.]?$")
 CAPABILITY_LIMIT=re.compile(r"未配置：[^。；\n]+|未监测窗户、实时烟雾和燃气泄漏")
-VALID_AGGREGATE=re.compile(r"(?:余额-?\d+(?:\.\d+)?元|余额：-?\d+(?:\.\d+)?元|[：:]-?\d+(?:\.\d+)?元，余额正常|当前无欠费|[1-9]\d*组灯光中，|[1-9]\d*个有效监测区域平均(?:温度|湿度)：|\d+位成员的设备已连接)")
+VALID_AGGREGATE=re.compile(r"(?:余额-?\d+(?:\.\d+)?元|余额：-?\d+(?:\.\d+)?元|[：:]-?\d+(?:\.\d+)?元，余额正常|当前无欠费|(?:数据|余额|账单)抓取时间：\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}|[1-9]\d*组灯光中，|[1-9]\d*个有效监测区域平均(?:温度|湿度)：|\d+位成员的设备已连接)")
 
 def classify_speech(key,speech):
     """Conservative quality annotation for actual registered speech.
@@ -53,6 +53,8 @@ def classify_speech(key,speech):
         if key.target=="w" and text.rstrip("。.")=="海尔洗衣机已关机，无法确认当前数据":
             return "state_limit"
         if key.target=="ac" and text=="主卧空调已关闭，无当前运行参数。次卧空调已关闭，无当前运行参数。":
+            return "state_limit"
+        if key.target=="ac" and key.metric=="temp" and re.fullmatch(r"主卧空调设备报告室温：-?\d+(?:\.\d+)?℃（空调已关闭，读数可能未实时刷新）。次卧空调设备报告室温：-?\d+(?:\.\d+)?℃（空调已关闭，读数可能未实时刷新）。",text):
             return "state_limit"
         if key.target=="b" and text in {"米家浴霸暖风档位：未运行。","米家浴霸换气档位：未运行。","米家浴霸吹风档位：未运行。","米家浴霸取暖设定温度：暖风未开启。","米家浴霸杀菌剩余时间：当前未在杀菌。"}:
             return "state_limit"
