@@ -3,7 +3,6 @@
 The classifier is not a permissions boundary for a third-party agent.
 No device IDs, state values or local chat history are forwarded by this layer.
 """
-import asyncio
 from dataclasses import dataclass
 from time import monotonic
 import re
@@ -59,9 +58,13 @@ class AIConversations:
         self.max_active=max_active
         self.sessions={}
         self.active=set()
+        self.rejected_ids={}
 
     def reserve(self,key):
         now=self.clock()
+        for cid,expiry in list(self.rejected_ids.items()):
+            if expiry<=now:
+                self.rejected_ids.pop(cid,None)
         for k,s in list(self.sessions.items()):
             if s.expires<=now and k not in self.active:
                 self.sessions.pop(k,None)
@@ -74,6 +77,16 @@ class AIConversations:
     def complete(self,key,cid):
         if not isinstance(cid,str) or not cid or len(cid)>512:
             self.sessions.pop(key,None)
+            return
+        owners=[other for other,s in self.sessions.items() if other!=key and s.cid==cid]
+        if owners or cid in self.rejected_ids:
+            # Never reuse a conversation returned for different local scopes.
+            for other in owners:
+                self.sessions.pop(other,None)
+            self.sessions.pop(key,None)
+            self.rejected_ids[cid]=self.clock()+self.ttl
+            while len(self.rejected_ids)>self.max_sessions:
+                self.rejected_ids.pop(next(iter(self.rejected_ids)))
             return
         self.sessions.pop(key,None)
         while len(self.sessions)>=self.max_sessions:

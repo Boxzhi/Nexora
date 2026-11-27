@@ -370,7 +370,7 @@ class Tests(IsolatedAsyncioTestCase):
     async def test_guard_preserves_registered_exact_parameter_query(self):
         self.menu.route=lambda *a,**kw:None
         self.u.text="2024年3月1日用了多少度电"
-        cap={"id":"water","intent":"LuxeUtilityQuery","parameter":"date",
+        cap={"id":"water","intent":"LuxeUtilityQuery","sentence":"{year}年{month}月{day}日用了多少度电","parameter":"date",
              "parameter_slots":{"year":"y","month":"m","day":"d"},
              "slots":{"utility_kind":"e","utility_metric":"h_day"}}
         self.menu.capabilities={"water":cap}
@@ -381,3 +381,31 @@ class Tests(IsolatedAsyncioTestCase):
         await self.agent.async_process(self.u)
         self.it.async_handle.assert_awaited_once()
         self.conv.async_converse.assert_not_awaited()
+
+    async def test_guard_preserves_native_fixed_slot_synonym(self):
+        self.menu.route=lambda *a,**kw:None
+        self.u.text="想查一下家里的水费余额"
+        cap={"id":"water","intent":"LuxeUtilityQuery","sentence":"水费余额是多少","slots":self.slots}
+        self.menu.capabilities={"water":cap}
+        self.menu._available=lambda cid,visible:visible(cap)
+        self.menu._query=lambda cid,p:SimpleNamespace(capability=cid,sentence=cap["sentence"],slots=self.slots)
+        await self.agent.async_process(self.u)
+        self.it.async_handle.assert_awaited_once()
+        self.conv.async_converse.assert_not_awaited()
+
+    def test_ai_duplicate_backend_session_id_is_not_reused(self):
+        from importlib import import_module
+        AIConversations=import_module("nexora_adapter_test.fallback").AIConversations
+        now=[0]
+        sessions=AIConversations(clock=lambda:now[0],ttl=30,max_sessions=2)
+        sessions.complete("a","same")
+        sessions.complete("b","same")
+        self.assertFalse(sessions.sessions)
+        sessions.complete("c","same")
+        self.assertFalse(sessions.sessions)
+        self.assertEqual(sessions.reserve("a"),(True,None))
+        sessions.release("a")
+        now[0]=31
+        self.assertEqual(sessions.reserve("b"),(True,None))
+        self.assertFalse(sessions.rejected_ids)
+        sessions.release("b")

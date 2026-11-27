@@ -195,16 +195,20 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         finally:
             self.ai_sessions.release(key)
 
-    async def _native_parameter_query(self,u,visible,today):
-        """Preserve exact registered parameterized queries, without executing actions.
+    async def _native_registered_query(self,u,visible,today):
+        """Preserve exact registered native queries, without executing actions.
 
         Native recognition is only attempted for unresolved household input.
         The result must uniquely identify a registered capability, and the
         canonical query is independently validated by the read-only executor.
         """
         from .menu import PARAMETERS, parse_parameter
+        # Fixed-slot native synonyms must not regress when AI fallback is guarded.
+        from .semantic import INTENTS
         candidates=[c for c in self.menu.capabilities.values()
-                    if c.get("parameter") in PARAMETERS and c.get("intent")=="LuxeUtilityQuery"]
+                    if c.get("intent") in INTENTS and c.get("sentence")
+                    and (not c.get("parameter") or
+                         (c.get("parameter") in PARAMETERS and c.get("intent")=="LuxeUtilityQuery"))]
         if not candidates:
             return None
         try:
@@ -217,11 +221,22 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 device_id=u.device_id,satellite_id=u.satellite_id,language=u.language,agent_id="conversation.home_assistant")
             async with asyncio.timeout(3):
                 result=await recognize(probe,strict_intents_only=True)
-            if result is None or result.unmatched_entities or result.intent.name!="LuxeUtilityQuery":
+            if result is None or result.unmatched_entities or result.intent.name not in INTENTS:
                 return None
             slots={item.name:item.value for item in result.entities_list}
             matches=[]
             for cap in candidates:
+                if cap["intent"]!=result.intent.name:
+                    continue
+                if not cap.get("parameter"):
+                    if not _slots_match(slots,cap["slots"],cap.get("native_slots",{})):
+                        continue
+                    if cap.get("native_slots"):
+                        # Match the original recognized entity, not merely its domain.
+                        if self.resolver.targets.get(cap["category"])!=slots.get("luxe_light_id"):
+                            continue
+                    matches.append((cap,{}))
+                    continue
                 fields=PARAMETERS[cap["parameter"]]
                 mapping=cap["parameter_slots"]
                 values=[]
@@ -289,7 +304,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         decision = decide(self.menu, key, u.text, visible, today=dt_util.now().date(),
                           semantic=self.semantic, semantic_match=semantic_match)
         if decision.route is Route.FALLBACK and (guard_only or (not menu_only and self.fallback_guard.blocked(u.text))):
-            native_decision=await self._native_parameter_query(u,visible,dt_util.now().date())
+            native_decision=await self._native_registered_query(u,visible,dt_util.now().date())
             if not self.menu.followups.is_current(key,generation):
                 return self._reply(u,cid,"查询会话已更新，请重新发送。")
             if native_decision is not None:
