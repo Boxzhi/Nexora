@@ -89,7 +89,8 @@ def lights_layout(menu):
     b.group("lights.fixtures","lights","按灯具查询",30,"lights.fixtures")
     for fixture in menu.children["lights.fixtures"]:
         p=fixture.id
-        b.leaf(p,"lights.fixtures",fixture.name,fixture.order,ids(p,"single_state","brightness","temperature"),anchor=p+".single_state",alias=p)
+        name={"lights.fixtures.bath_panel":"卫生间平板灯","lights.fixtures.bath_heater":"浴霸灯"}.get(p,fixture.name)
+        b.leaf(p,"lights.fixtures",name,fixture.order,ids(p,"single_state","brightness","temperature"),anchor=p+".single_state",alias=p)
     b.leaf("lights.abnormal","lights","灯光异常",40,ids("lights.abnormal","offline","abnormal"),anchor="lights.abnormal.abnormal",alias="lights.abnormal")
     return b.rows
 

@@ -10,6 +10,8 @@ EXPLICIT = {
     "scene.utility.summary.primary.overview": ("我家水电气账户概况", "主住所水电气账户概况", "水电气账户概况"),
     "scene.utility.summary.all.overview": ("所有账户概况", "全部账户概况", "所有水电气账户概况", "全部水电气账户概况"),
     "scene.lights.all": ("全屋照明概况", "全屋灯光概况", "家里灯光怎么样"),
+    "scene.lights.fixtures.bath_panel": ("卫生间平板灯概况", "人体存在平板灯概况"),
+    "scene.lights.fixtures.bath_heater": ("浴霸灯概况", "智能浴霸S1灯概况"),
     "scene.home.env.whole": ("全屋环境温湿度", "全屋温湿度概况", "家里温湿度怎么样"),
     "scene.utility.gas.pay.recent": ("燃气缴费查询最近缴费记录", "最近燃气缴费记录", "最近一次燃气缴费记录", "上次燃气缴费情况", "燃气最近缴费记录"),
     "scene.utility.gas.pay.annual": ("燃气缴费查询年度缴费统计", "今年燃气缴费情况", "燃气年度缴费统计", "今年燃气缴费统计"),

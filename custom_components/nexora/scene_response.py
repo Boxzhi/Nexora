@@ -192,6 +192,24 @@ def _scoped_lights(rows):
         lines.append(text)
     return lines
 
+def _light_list_lines(lines):
+    """Wrap long verified fixture lists in source order; keep all names."""
+    result=[]
+    for line in lines:
+        match=re.fullmatch(r"(已开启|已关闭)：(\d+)组（([^()\n（）]+)）",line)
+        names=match[3].split("、") if match else []
+        if not match or len(names)<5 or len(names)!=int(match[2]) or any(not n.strip() for n in names):
+            result.append(line)
+            continue
+        result.extend((match[1]+"："+match[2]+"组","",match[1]+"灯具："))
+        result.extend("、".join(names[i:i+3]) for i in range(0,len(names),3))
+        result.append("")
+    # Remove trailing separators only; the following business group retains
+    # its own blank line when one was inserted.
+    while result and result[-1]=="":
+        result.pop()
+    return result
+
 def _fixture(plan,rows):
     # Match the source's confirmed display name only within the same
     # registered fixture; two known labels differ from menu names.
@@ -362,6 +380,8 @@ def compose_menu(plan,run,label,normalize):
         heading,lines=_fixture(plan,rows)
     elif scene.startswith("scene.lights."):
         lines=_scoped_lights(rows)
+        if scene=="scene.lights.all":
+            lines=_light_list_lines(lines)
     elif scene=="scene.appliance.ac.all":
         lines=_all_ac(rows)
         if lines is None:
