@@ -222,7 +222,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             self.resolver.invalidate()
         from .menu import HELP,BACK,NEXT,PREV,TRANSLATE,PATH_RE
         text=u.text.strip().casefold().translate(TRANSLATE)
-        if text in HELP|BACK|NEXT|PREV or text in self.menu.aliases or PATH_RE.fullmatch(text):
+        if text in HELP|BACK|NEXT|PREV or text in self.menu.aliases or PATH_RE.fullmatch(text) or self.menu.followups.is_followup_message(text):
             await self._prepare_capabilities(u,available)
         get_state=getattr(getattr(self.hass,"states",None),"get",lambda _:None)
         def visible(cap):

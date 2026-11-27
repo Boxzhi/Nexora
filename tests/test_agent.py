@@ -510,3 +510,34 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertIn("参数不一致",r.response.speech)
         self.it.async_handle.assert_not_awaited()
         self.conv.async_converse.assert_not_awaited()
+
+    async def test_real_menu_clarification_and_followup_use_verified_intent(self):
+        import json
+        from importlib import import_module
+        Menu=import_module("nexora_adapter_test.menu").Menu
+        directory=Path(__file__).resolve().parents[1]/"custom_components/nexora/catalogs"
+        menu=Menu([json.loads(p.read_text()) for p in sorted(directory.glob("*.json"))])
+        self.h=Handler("LuxeApplianceQuery")
+        self.agent=self.a.NexoraAgent(object(),"entry",menu,"fallback")
+        self.agent.resolver.replace_targets("zh-CN",{})
+        caps={menu._query(cid,{}).sentence:menu.capabilities[cid] for cid in (
+            "appliance.ac.master.target","appliance.ac.master.temp","appliance.ac.secondary.temp")}
+        async def recognize(u,**kw):
+            cap=caps.get(u.text)
+            if not cap:
+                return None
+            return SimpleNamespace(intent=SimpleNamespace(name=cap["intent"]),unmatched_entities=[],
+                entities_list=[SimpleNamespace(name=k,value=v) for k,v in cap["slots"].items()])
+        self.native.async_recognize_intent=AsyncMock(side_effect=recognize)
+        self.u.text="主卧空调多少度"
+        r=await self.agent.async_process(self.u)
+        self.assertIn("设定温度",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        for query,device,metric in (("设定温度","m","target"),("现在屋里几度","m","temp"),("次卧呢","s","temp")):
+            self.u.text=query
+            await self.agent.async_process(self.u)
+            slots=self.it.async_handle.call_args.args[3]
+            self.assertEqual(slots["luxe_appliance_device"]["value"],device)
+            self.assertEqual(slots["luxe_appliance_query"]["value"],metric)
+        self.assertEqual(self.it.async_handle.await_count,3)
+        self.conv.async_converse.assert_not_awaited()

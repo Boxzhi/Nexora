@@ -93,3 +93,18 @@ class ContextTests(unittest.TestCase):
         self.f.remember_clarification("a",self.f.begin("a"),match.options)
         self.assertIsNone(self.route("讲个故事"))
         self.assertFalse(self.f.clarifications)
+
+    def test_temperature_meanings_are_not_interchangeable(self):
+        for source,question in (("appliance.washer.status","室温呢"),
+                                ("appliance.purifier.status","检测温度呢"),
+                                ("appliance.ac.master.status","水温呢"),
+                                ("appliance.washer.status","出水温度呢")):
+            with self.subTest(source=source,question=question):
+                self.remember(source)
+                r=self.route(question)
+                self.assertIsNone(r.capability)
+                self.assertIn("此含义",r.text)
+        self.remember("appliance.fan.status")
+        self.assertEqual(self.route("风速呢").capability,"appliance.fan.speed")
+        self.remember("appliance.ac.master.temp")
+        self.assertEqual(self.route("开关状态呢").capability,"appliance.ac.master.status")

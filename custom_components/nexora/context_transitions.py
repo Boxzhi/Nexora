@@ -38,6 +38,11 @@ METRICS={
               "滤芯寿命":"filters","ppc滤芯":"ppc","ro滤芯":"ro","滤芯剩余天数":"days","滤芯更换提醒":"replace",
               "tds":"tds","出水温度":"temp","制水量":"volume","制水耗时":"duration","用水量":"water","用电量":"energy"},
 }
+APPLIANCE_METRIC_TARGETS={
+ "水温":{"w","p"},"出水温度":{"p"},"室温":{"m","s"},"室内温度":{"m","s"},
+ "现在屋里几度":{"m","s"},"检测温度":{"m","s","b"},"实际温度":{"m","s","b"},
+ "设定温度":{"m","s","b","ac"},"调的几度":{"m","s","b"},"设了几度":{"m","s","b"},
+ "用水量":{"w"},"用电量":{"w"},"风扇档位":{"f"}}
 REPEAT={"再查一次","再查一下","重新查询","再查一遍","现在呢","现在怎么样"}
 AC_ROOMS={"主卧":"m","主卧室":"m","次卧":"s","次卧室":"s"}
 
@@ -96,6 +101,14 @@ class Transitions:
             return self.select(p,target,p.metric)
         metric=METRICS.get(p.family,{}).get(t)
         if metric is not None:
+            if p.family=="appliance":
+                permitted=APPLIANCE_METRIC_TARGETS.get(t)
+                if permitted is not None and p.target not in permitted:
+                    return "该设备没有此含义的查询指标，请明确查询对象。"
+                if t=="风速" and p.target=="f":
+                    metric="speed"
+                if t=="开关状态" and p.target in {"m","s","b","f","a","p"}:
+                    metric="status"
             if not any(p.metric in g and metric in g for g in GROUPS.get(p.family,())):
                 return "当前查询无法直接切换到该指标，请明确查询对象。"
             return self.select(p,p.target,metric)
