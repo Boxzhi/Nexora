@@ -366,3 +366,18 @@ class Tests(IsolatedAsyncioTestCase):
         self.menu.followups.begin.assert_not_called()
         self.menu.followups.clear.assert_not_called()
         self.menu.route.assert_not_called()
+
+    async def test_guard_preserves_registered_exact_parameter_query(self):
+        self.menu.route=lambda *a,**kw:None
+        self.u.text="2024年3月1日用了多少度电"
+        cap={"id":"water","intent":"LuxeUtilityQuery","parameter":"date",
+             "parameter_slots":{"year":"y","month":"m","day":"d"},
+             "slots":{"utility_kind":"e","utility_metric":"h_day"}}
+        self.menu.capabilities={"water":cap}
+        self.slots={**cap["slots"],"y":2024,"m":3,"d":1}
+        self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in self.slots.items()]
+        self.menu._available=lambda cid,visible:visible(cap)
+        self.menu._query=lambda cid,p:SimpleNamespace(capability=cid,sentence=self.u.text,slots=self.slots)
+        await self.agent.async_process(self.u)
+        self.it.async_handle.assert_awaited_once()
+        self.conv.async_converse.assert_not_awaited()

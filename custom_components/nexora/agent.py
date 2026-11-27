@@ -6,7 +6,7 @@ from uuid import uuid4
 from .capability import Resolver
 from .binding_extractor import BindingExtractor
 from .executor import _slot_equal, _slots_match, execute_readonly
-from .router import Route, decide, is_menu_message
+from .router import Route, RouteDecision, decide, is_menu_message
 from .semantic import SemanticIndex
 from .fallback import AIConversations, FallbackGuard, GUARD_REPLY, AI_PROMPT
 from .diagnostics import RouteDiagnostics
@@ -195,6 +195,64 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         finally:
             self.ai_sessions.release(key)
 
+    async def _native_parameter_query(self,u,visible,today):
+        """Preserve exact registered parameterized queries, without executing actions.
+
+        Native recognition is only attempted for unresolved household input.
+        The result must uniquely identify a registered capability, and the
+        canonical query is independently validated by the read-only executor.
+        """
+        from .menu import PARAMETERS, parse_parameter
+        candidates=[c for c in self.menu.capabilities.values()
+                    if c.get("parameter") in PARAMETERS and c.get("intent")=="LuxeUtilityQuery"]
+        if not candidates:
+            return None
+        try:
+            native=conversation.async_get_agent(self.hass,"conversation.home_assistant")
+            recognize=getattr(native,"async_recognize_intent",None)
+            triggers=getattr(native,"_trigger_intents_config",None)
+            if not callable(recognize) or not isinstance(triggers,dict) or triggers.get("intents"):
+                return None
+            probe=conversation.ConversationInput(text=u.text,context=u.context,conversation_id=None,
+                device_id=u.device_id,satellite_id=u.satellite_id,language=u.language,agent_id="conversation.home_assistant")
+            async with asyncio.timeout(3):
+                result=await recognize(probe,strict_intents_only=True)
+            if result is None or result.unmatched_entities or result.intent.name!="LuxeUtilityQuery":
+                return None
+            slots={item.name:item.value for item in result.entities_list}
+            matches=[]
+            for cap in candidates:
+                fields=PARAMETERS[cap["parameter"]]
+                mapping=cap["parameter_slots"]
+                values=[]
+                for field in fields:
+                    value=slots.get(mapping[field])
+                    if type(value) is int:
+                        values.append(str(value))
+                    elif type(value) is str and value.isascii() and value.isdigit():
+                        values.append(value)
+                    else:
+                        break
+                if len(values)!=len(fields):
+                    continue
+                try:
+                    params=parse_parameter(cap["parameter"],"-".join(values),today,
+                        base_year=today.year-1 if cap.get("parameter_year_offset")==-1 else today.year)
+                except ValueError:
+                    continue
+                expected={**cap["slots"],**{mapping[k]:v for k,v in params.items()}}
+                if _slots_match(slots,expected,cap.get("native_slots",{})):
+                    matches.append((cap,params))
+            if len(matches)!=1:
+                return None
+            cap,params=matches[0]
+            if not self.menu._available(cap["id"],visible):
+                from .menu import Reply
+                return RouteDecision(Route.LOCAL_REPLY,Reply("该查询当前不可用，请发送 help。"),"local_native")
+            return RouteDecision(Route.LOCAL_QUERY,self.menu._query(cap["id"],params),"local_native")
+        except Exception:
+            return None
+
     async def _async_process(self, u, *, menu_only=False, guard_only=False):
         started=self.route_diagnostics.clock()
         cid = u.conversation_id or uuid4().hex
@@ -230,6 +288,12 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             return self._reply(u,cid,"查询会话已更新，请重新发送。")
         decision = decide(self.menu, key, u.text, visible, today=dt_util.now().date(),
                           semantic=self.semantic, semantic_match=semantic_match)
+        if decision.route is Route.FALLBACK and (guard_only or (not menu_only and self.fallback_guard.blocked(u.text))):
+            native_decision=await self._native_parameter_query(u,visible,dt_util.now().date())
+            if not self.menu.followups.is_current(key,generation):
+                return self._reply(u,cid,"查询会话已更新，请重新发送。")
+            if native_decision is not None:
+                decision=native_decision
         if decision.route is Route.FALLBACK:
             if menu_only:
                 self._record("guard" if guard_only else "local_menu","blocked",started)
