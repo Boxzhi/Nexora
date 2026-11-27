@@ -17,6 +17,7 @@ jobs:
       - run: python -m compileall -q custom_components
       - run: python -m unittest discover -s tests -v
       - run: node --check scripts/probe.js && node --check scripts/full_probe.js
+      - run: node --test scripts/probe_classification.test.js
   hassfest:
     runs-on: ubuntu-latest
     steps:

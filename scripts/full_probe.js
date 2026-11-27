@@ -1,10 +1,10 @@
-// Nexora v0.5.5-preview — independent read-only scene traversal.
+// Nexora v0.5.6-preview — independent read-only scene traversal.
 (async()=>{
  const hass=document.querySelector('home-assistant')?.hass;
  if(!hass)throw Error('找不到 HA 前端');
- if(window.__nexora055Running)throw Error('验收已经运行');
- window.__nexora055Running=true;window.__nexora055Stop=false;
- const report=window.__nexora055Report={version_expected:'0.5.5',requests:0,rows:[],errors:[],skipped_custom_roots:[],complete:false,execution_passed:false,visibility_review_required:true,manual_value_review_required:true};
+ if(window.__nexora056Running)throw Error('验收已经运行');
+ window.__nexora056Running=true;window.__nexora056Stop=false;
+ const report=window.__nexora056Report={version_expected:'0.5.6',requests:0,rows:[],errors:[],skipped_custom_roots:[],complete:false,execution_passed:false,visibility_review_required:true,manual_value_review_required:true};
  const modules=['水电气','灯光','家电','全屋状态'],baseline=[65,37,24,24];
  const footer='回复数字选择，help 返回主菜单，exit 退出菜单。';
  const menu=s=>s.trimEnd().endsWith(footer);
@@ -14,6 +14,9 @@
  function classify(r){
   const s=r.speech;
   if(!s||r.type==='error'||menu(s)||parameter(s)||/^(?:输入无效|无效选项|无效数字路径|当前没有有效菜单|该查询(?:已|当前)?不可用|该查询目标已变化|该问句与已安装意图库不匹配|查询参数与已安装意图库不一致|本地严格识别不可用|只读查询配置不可用|本地查询暂时失败|备用对话代理配置错误|会话已更新|该分类暂无已配置)/.test(s)||/对话暂时不可用|AI.{0,12}(?:不可用|失败|超时)|查询未完成|部分查询失败|部分失败|执行失败|查询失败|查询超时/.test(s))return 'error';
+  // A verified washer-off limitation is not a supplier/sensor data gap.
+  // Restrict this exception to the whole reply; mixed gaps keep priority.
+  if(/^(?:海尔洗衣机 · [^\n]+\n\n)?(?:海尔洗衣机)?已关机，无法确认当前数据。$/.test(s.trim()))return 'state_limit';
   if(/数据不可用|数据尚未获取|数据不足|暂无.{0,8}(账单|数据)|缺失|超出.{0,12}(范围|覆盖)|状态未知|状态无法确认|未提供|无法确认/.test(s))return 'data_gap';
   if(/不支持|未配置/.test(s))return 'capability_limit';
   if(/(?:关机|已关闭).*(?:无法|不判断|无当前运行参数|可能未实时刷新)/s.test(s))return 'state_limit';
@@ -23,7 +26,7 @@
  }
  let agent,cid;
  async function call(text,cleanup=false){
-  if(!cleanup&&window.__nexora055Stop)throw Error('用户停止');
+  if(!cleanup&&window.__nexora056Stop)throw Error('用户停止');
   if(!cleanup&&++report.requests>3000)throw Error('超过请求上限');
   const start=performance.now(),r=await hass.callWS({type:'conversation/process',text,conversation_id:cid,agent_id:agent.id,language:'zh-CN'});
   if(r.conversation_id!==cid)throw Error('会话 ID 不一致');
@@ -33,7 +36,7 @@
  try{
   const list=await hass.callWS({type:'conversation/agent/list'}),agents=(list.agents||[]).filter(a=>a.name==='Nexora');
   if(agents.length!==1)throw Error('未找到唯一 Nexora Agent');
-  agent=agents[0];cid='nexora-v055:'+crypto.randomUUID();
+  agent=agents[0];cid='nexora-v056:'+crypto.randomUUID();
   const root=requireMenu(await call('help'),'主菜单');
   if(root.includes('发送 detail 查看完整菜单'))throw Error('仍为旧版双菜单，请核实安装版本');
   report.menu_preflight_passed=true;
@@ -79,7 +82,7 @@
   report.status_counts=Object.fromEntries([...new Set(report.rows.map(r=>r.status))].map(s=>[s,report.rows.filter(r=>r.status===s).length]));
   report.execution_passed=report.complete&&report.menu_preflight_passed&&!report.errors.length&&report.visible>0&&report.unique_paths===report.visible&&!report.status_counts.error&&Object.values(report.modules).every(m=>m.visible<=m.baseline);
   report.visibility_review_required=Object.values(report.modules).some(m=>m.visible!==m.baseline)||report.skipped_custom_roots.length>0;
-  window.__nexora055Running=false;
-  console.log('========== Nexora v0.5.5-preview 全量场景只读验收 ==========');console.log(JSON.stringify(report,null,2));
+  window.__nexora056Running=false;
+  console.log('========== Nexora v0.5.6-preview 全量场景只读验收 ==========');console.log(JSON.stringify(report,null,2));
  }
 })();
