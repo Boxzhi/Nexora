@@ -6,14 +6,13 @@ No device IDs, state values or local chat history are forwarded by this layer.
 import asyncio
 from dataclasses import dataclass
 from time import monotonic
-from uuid import uuid4
 import re
 
 # Explicit household vocabulary; not generic isolated words such as 温度.
 HOUSEHOLD = {
     "家里","家中","我家","全屋","家电","智能家居","家庭成员","在家","回家",
     "入户门","门锁","窗帘","马桶盖","水浸","漏水","燃气","电费","水费","电表","水表",
-    "用电","用水","用气","灯具","灯光","吸顶灯","筒灯","射灯","灯带","空调","洗衣机",
+    "用电","用水","用气","度电","吨水","多少气","多少水","多少电","爸爸","妈妈","爷爷","奶奶","灯具","灯光","吸顶灯","筒灯","射灯","灯带","空调","洗衣机",
     "浴霸","晾衣机","晾衣架","净水器","热水器","摄像头","传感器","路由器","光照度",
     "home assistant","homeassistant","hass","smart home","my house","my home",
     "switch.","light.","sensor.","binary_sensor.","climate.","cover.","lock.","camera.",
