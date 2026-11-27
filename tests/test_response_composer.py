@@ -102,7 +102,7 @@ class ResponseComposerTests(unittest.TestCase):
         self.assertIn("phase：超时",rc.compose(p,missing,label).text)
         p,r=build("appliance","p","overview",[("appliance","p",m) for m in ("status","filters","replace")],
             ["米家净水器：待机中。","米家净水器PPC滤芯剩余90.0%，RO滤芯剩余95.0%。","米家净水器：PPC滤芯当前未达更换提醒阈值；RO滤芯当前未达更换提醒阈值。"])
-        self.assertIn("均未达到更换提醒阈值",rc.compose(p,r,label).text)
+        self.assertEqual(rc.compose(p,r,label).text,"米家净水器待机中。\nPPC滤芯剩余90%，RO滤芯剩余95%，均未达到更换提醒阈值。")
         changed=pe.PlanRun(r.outcomes[:2]+(pe.Outcome(p.primary[2],"ok","PPC滤芯需要更换，RO滤芯当前未达更换提醒阈值。"),))
         self.assertIn("PPC滤芯需要更换",rc.compose(p,changed,label).text)
         p,r=build("appliance","m","temperature_unspecified",[("appliance","m","target"),("appliance","m","temp")],
@@ -120,3 +120,20 @@ class ResponseComposerTests(unittest.TestCase):
         v=rc.normalize_speech(bm.QueryKey("home","all","overview"),s)
         self.assertEqual(v.replace("\n",""),s)
         self.assertEqual(len(v.splitlines()),6)
+
+    def test_numeric_formatting_is_lossless_and_does_not_touch_money(self):
+        for family,target,metric,before,after in [
+            ("appliance","w","temp","海尔洗衣机设定洗涤水温：30.0℃。","海尔洗衣机设定洗涤水温：30℃。"),
+            ("appliance","w","spin","海尔洗衣机设定脱水转速：800.0转/分钟。","海尔洗衣机设定脱水转速：800转/分钟。"),
+            ("appliance","w","cycles","海尔洗衣机设备报告累计洗涤周期：644.0次。","海尔洗衣机设备报告累计洗涤周期：644次。"),
+            ("appliance","w","energy","海尔洗衣机设备报告累计用电：106.95度。","海尔洗衣机设备报告累计用电：106.95度。"),
+            ("appliance","p","filters","米家净水器PPC滤芯剩余90.0%，RO滤芯剩余95.0%。","米家净水器PPC滤芯剩余90%，RO滤芯剩余95%。"),
+            ("utility","g","balance","华润燃气燃气账户余额：83.00元。","华润燃气账户余额：83.00元。"),
+            ("utility","e","cost","京华府2026年10月电费：121.20元（月度账单）。","京华府2026年10月电费：121.20元（月度账单）。"),
+            ("appliance","b","heatremain","米家浴霸浴霸延时关闭：未启用。","米家浴霸延时关闭：未启用。"),
+            ("home","主卧","temp","主卧温度：-3.0℃，设备版本1.0.0。","主卧温度：-3℃，设备版本1.0.0。"),
+        ]:
+            with self.subTest(before=before):
+                key=bm.QueryKey(family,target,metric)
+                self.assertEqual(rc.normalize_speech(key,before),after)
+                self.assertEqual(rc.normalize_speech(key,after),after)

@@ -7,6 +7,14 @@ class Composed:
     text: str
     primary_completed: bool
 
+_INTEGRAL_QUANTITY = re.compile(r"(?<![\d.])(-?\d+)\.0+(?=(?:℃|转/分钟|毫升|立方米|勒克斯|升|吨|度|次|分钟|秒|天|小时|%)(?![\d.]))")
+
+def _format_quantities(value):
+    # Only remove mathematically redundant fractional zeros from physical
+    # quantities with explicit units. Currency, dates and identifiers are
+    # intentionally untouched; no rounding or conversion.
+    return _INTEGRAL_QUANTITY.sub(r"\1",value)
+
 def normalize_speech(k, speech):
     """Shared formatter for registered read-only speech, not menus or AI."""
     value=speech.strip()
@@ -14,11 +22,13 @@ def normalize_speech(k, speech):
     # Do not rewrite arbitrary text, numeric values or units.
     if (k.family,k.target,k.metric)==("utility","g","balance"):
         value=value.replace("燃气燃气账户余额","燃气账户余额",1)
+    if (k.family,k.target,k.metric)==("appliance","b","heatremain"):
+        value=value.replace("米家浴霸浴霸延时关闭：","米家浴霸延时关闭：",1)
     if (k.family,k.target,k.metric)==("home","all","overview"):
         # Keep every original sentence and qualification, only add paragraph
         # boundaries at known section starts.
         value=re.sub(r"(?<=。)(?=(?:入户门锁：|\d+组灯光中，|已监测家电运行：|\d+个有效监测区域平均温度：|未确认到异常，但部分项目无法核实；))","\n",value)
-    return value
+    return _format_quantities(value)
 
 def _clean(outcome):
     return normalize_speech(outcome.step.key,outcome.speech)
@@ -94,7 +104,7 @@ def compose(plan,run,label):
         return Composed("查询会话已更新，请重新发送。",False)
     fused=_scene_text(plan,run)
     if fused is not None:
-        return Composed(fused,True)
+        return Composed(_format_quantities(fused),True)
     by_step={o.step:o for o in run.outcomes}
     lines=[]
     # Duplicate responses across different subjects, dates or accounts
