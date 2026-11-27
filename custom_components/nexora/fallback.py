@@ -32,6 +32,13 @@ CONTROL = re.compile(r"^(?:(?:请|帮我|麻烦|能不能|可以|给我|你能|�
 OBJECT_CONTROL = re.compile(r"^(?:(?:请|麻烦|帮我|先|再)\s*)*(?:把|将).+(?:打开|关闭|开启|关掉|关上|关了|开了|启动|停止|暂停|恢复|设置|调到|调节|调整|调高|调低|解锁|上锁|反锁)(?:.*)?$")
 ENTITY = re.compile(r"(?:switch|light|sensor|binary_sensor|climate|cover|lock|camera)\.[a-z0-9_]+",re.I)
 MISSING_CONTEXT = {"还剩多少","剩多少","还有多少钱","余额呢","多少钱","多少度","几度","调的几度","设了几度","现在屋里几度","还有多久","还要多久","设定温度","实际温度","检测温度","环境光照度","关闭状态","上锁状态","反锁状态","第一阶梯","第二阶梯","用量呢","费用呢"}
+# Bare financial follow-ups require local context, not AI inference.
+# Full-match only: do not block general questions about arrears or payments.
+BARE_UTILITY=re.compile(r"(?:余额|账户余额|欠费情况|数据更新时间|(?:有没有|有无|是否|是不是|有)?欠费(?:了)?(?:的|账户|的账户|吗|没|没有)?|(?:还)?(?:要|需要|该)(?:充值|缴费|交费|交钱)(?:了)?(?:吗|没|没有|的)?|(?:有没有|有无|哪些)(?:账户)?(?:需要|要|该)充值(?:的|账户|的账户)?|(?:所有|全部)(?:水电气)?账户|主住所)(?:呢|啊|呀)?")
+def _missing_context(text):
+    return (text in MISSING_CONTEXT or text.removesuffix("呢") in MISSING_CONTEXT
+            or BARE_UTILITY.fullmatch(text) is not None)
+
 # Explicit query+action composition is not an implicit authorization to run either.
 SEPARATOR = re.compile(r"然后|接着|随后|接下来|同时|顺便|并且|以及|另外|和|并(?=查询|查|看|问|关|开|调|设|启|停|锁|解|把|将)|再(?:帮我)?(?=查|看|问|关|开|调|设|启|停|锁|解|把|将)|[，,；;]")
 GUARD_REPLY = "这条家庭实时查询尚未匹配已注册的查询能力，无法确认实际数据。请明确设备、账户和查询项目，或发送 help。"
@@ -85,7 +92,7 @@ class FallbackGuard:
         return bool(CONTROL.search(value) or OBJECT_CONTROL.search(value))
 
     def _query(self,value):
-        return self._household(value) and (LIVE.search(value) is not None or INQUIRY.search(value) is not None or QUESTION.search(value) is not None or re.search(r"怎么样|哪了|够不够|够用|几天",value) is not None)
+        return _missing_context(value) or self._household(value) and (LIVE.search(value) is not None or INQUIRY.search(value) is not None or QUESTION.search(value) is not None or re.search(r"怎么样|哪了|够不够|够用|几天",value) is not None)
 
     def classify(self,text,known_query=None):
         value=text.strip().casefold() if isinstance(text,str) else ""
@@ -99,7 +106,7 @@ class FallbackGuard:
         if len(parts)>1 and any(self._command(p) for p in parts) and any(
                 (self._query(p) or (known_query is not None and known_query(p))) and not self._command(p) for p in parts):
             return BoundaryDecision("compound","检测到查询与设备控制混合在同一条消息中，请分别发送查询和控制指令。")
-        if compact in MISSING_CONTEXT or compact.removesuffix("呢") in MISSING_CONTEXT:
+        if _missing_context(compact):
             return BoundaryDecision("missing_context","请补充查询对象或账期，当前没有足够的本地查询上下文。")
         if self._command(value) or self._command(compact):
             return BoundaryDecision("control")

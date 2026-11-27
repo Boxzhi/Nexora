@@ -55,3 +55,11 @@ class BoundaryTests(unittest.TestCase):
             self.assertEqual(self.guard.classify(q).kind,"compound",q)
         for q in ("洗衣机怎么清洁","如何把灯具接入 Home Assistant","打开阳台灯"):
             self.assertFalse(self.guard.blocked(q),q)
+
+    def test_v052_bare_utility_queries_never_delegate_without_context(self):
+        for q in ("有没有欠费的","有欠费吗","欠费情况呢","需要充值吗","有没有需要充值的账户","余额","账户余额呢","数据更新时间","所有账户呢","主住所呢"):
+            self.assertEqual(self.guard.classify(q).kind,"missing_context",q)
+        for q in ("如何查询欠费","什么是欠费","有没有欠费的企业案例","如何充值","写一段缴费通知","欠费会产生什么法律后果"):
+            self.assertFalse(self.guard.blocked(q),q)
+        for q in ("关灯然后有没有欠费的","需要充值吗，顺便打开空调","欠费情况和关闭客厅灯"):
+            self.assertEqual(self.guard.classify(q).kind,"compound",q)
