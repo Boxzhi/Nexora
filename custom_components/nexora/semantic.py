@@ -1,12 +1,14 @@
 """Conservative catalog-based Chinese read-only query matching.
 
 No substring/fuzzy matching, external NLP, or generated entity identifiers.
-Only fixed capabilities of the four known intent families are indexed.
+Fixed queries and bounded registered Utility date parameters only.
 """
 from dataclasses import dataclass
+from datetime import date
 import re
 from .menu import Reply, TRANSLATE
 from .semantic_lexicon import FAMILIES, describe, patterns
+from .semantic_parameters import ParameterIndex
 
 INTENTS = frozenset(FAMILIES)
 METRIC = re.compile(r"(?:余额|光照度|温度|湿度|亮度|色温|风速|水温|转速|档位|读数|电量|用电量|用水量|用气量|费用|电费|水费|燃气费|气价|寿命|tds|位置|限位)$")
@@ -30,6 +32,7 @@ def normalize(text):
 class Match:
     capability: str | None = None
     clarification: str | None = None
+    params: tuple = ()
 
 class SemanticIndex:
     def __init__(self, menu):
@@ -38,6 +41,7 @@ class SemanticIndex:
         self.aliases = {}
         self.clarifications = {}
         self.profiles = {}
+        self.parameter_index=ParameterIndex(menu,normalize)
         settings = getattr(menu, "settings", {})
         items = getattr(menu, "items", {})
         for cap in menu.capabilities.values():
@@ -102,12 +106,30 @@ class SemanticIndex:
             for variant in variants:
                 self._add(self.aliases,normalize(variant),cid)
 
+        # Curated ambiguities: no device/unit/account is guessed from availability.
+        for subject in ("主卧空调","主卧室空调","次卧空调","次卧室空调","浴霸","空调"):
+            for suffix in ("多少度","几度","现在多少度","现在几度","温度多少","温度是多少","的温度多少"):
+                self.clarifications[subject+suffix]="请确认要查询"+subject+"的设定温度，还是实际检测温度？"
+        for phrase in ("大门好了吗","大门好了没","大门安全吗","入户门好了吗","门好了吗"):
+            self.clarifications[phrase]="请确认要查询入户门关闭状态、上锁状态，还是反锁状态？"
+        for subject in ("燃气","天然气","燃气费"):
+            for prefix in ("剩","还剩","还有","剩余"):
+                for unit in ("方","立方米","m3","m³","度"):
+                    for amount in ("多少","几"):
+                        self.clarifications[subject+prefix+amount+unit]="燃气账户余额以元计，当前没有燃气表剩余气量查询。若要查询阶梯剩余额度，请明确第一或第二阶梯。"
+        for phrase in ("水费还剩多少吨","水费剩多少吨","水还剩多少吨","电费还剩多少度","电费剩多少度","电还剩多少度"):
+            self.clarifications[phrase]="账户余额与剩余实物用量不是同一指标。目前支持账户金额和已用量查询，请明确要查询的项目。"
+        for phrase in ("上个月花了多少","上月花了多少","这个月花了多少","本月花了多少","这个月用了多少","上个月用了多少"):
+            self.clarifications[phrase]="请明确要查询电费、水费还是燃气费，或相应的用量。"
+        for phrase in ("水费要交了吗","电费要交了吗","燃气费要交了吗"):
+            self.clarifications[phrase]="请确认要查询是否欠费，还是账户余额是否需要充值？"
+
     @staticmethod
     def _add(index, phrase, cid):
         if phrase:
             index.setdefault(phrase,set()).add(cid)
 
-    def match(self,text):
+    def match(self,text,today=None):
         key=normalize(text)
         if not key:
             return None
@@ -117,6 +139,20 @@ class SemanticIndex:
         if key in self.clarifications:
             return Match(clarification=self.clarifications[key])
         if not choices:
+            parsed=self.parameter_index.match(key,today or date.today())
+            if parsed.invalid:
+                return Match(clarification="查询日期无效或超出当前日期，请检查年月日后重试。")
+            if len(parsed.choices)==1:
+                cid,params=parsed.choices[0]
+                return Match(capability=cid,params=params)
+            if len(parsed.choices)>1:
+                return Match(clarification="该问句对应多个查询，请明确账户和指标。")
+            # Recognize unsupported whole date/range expressions without inventing
+            # aggregate queries or treating a bill amount as consumption.
+            if re.fullmatch(r"(?:最近|过去|近)(?:[0-9]{1,3}|[一二两三四五六七八九十]+)(?:天|个?月|年)(?:电费|水费|燃气费|用电量|用水量|用气量)(?:多少|是多少|花了多少)?",key):
+                return Match(clarification="目前未注册该连续时间范围的汇总查询，请指定单日、月份或年度账期。")
+            if re.fullmatch(r"(?:[0-9]{4}|[零〇一二三四五六七八九]{4})年(?:[0-9]{1,2}|[一二两三四五六七八九十]{1,3})月份?(?:水费(?:是多少|多少|花了多少(?:钱)?)|用了(?:多少|几)吨水|用水量多少)",key):
+                return Match(clarification="指定年份的月度水费目前仅支持今年或去年，请使用“今年3月水费”或“去年3月水费”。")
             return None
         if len(choices)!=1:
             return Match(clarification="该问句对应多个查询，请明确设备、账户或指标，或发送 help。")
@@ -127,4 +163,4 @@ class SemanticIndex:
             return Reply(match.clarification)
         if not self.menu._available(match.capability,visible):
             return Reply("该查询当前不可用，请发送 help 查看可用能力。")
-        return self.menu._query(match.capability,{})
+        return self.menu._query(match.capability,dict(match.params))

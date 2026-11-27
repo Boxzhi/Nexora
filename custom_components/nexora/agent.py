@@ -235,14 +235,18 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         today=dt_util.now().date()
         decision=decide(self.menu,key,u.text,visible,today=today)
         if decision.route is Route.FALLBACK:
-            native=await self._native_registered_query(u,visible,today,available)
-            if not self.menu.followups.is_current(key,generation):
-                return self._reply(u,cid,"查询会话已更新，请重新发送。")
-            if native is not None:
-                decision=native
+            match=self.semantic.match(u.text,today=today)
+            # Explicit ambiguity / invalid date is a local terminal reply even
+            # if the native recognizer would otherwise pick an interpretation.
+            if match is not None and match.clarification is not None:
+                decision=from_reply(self.semantic.reply(match,visible),"local_semantic")
             else:
-                match=self.semantic.match(u.text)
-                if match is not None:
+                native=await self._native_registered_query(u,visible,today,available)
+                if not self.menu.followups.is_current(key,generation):
+                    return self._reply(u,cid,"查询会话已更新，请重新发送。")
+                if native is not None:
+                    decision=native
+                elif match is not None:
                     if match.capability and self.menu.capabilities[match.capability].get("native_slots"):
                         await self._prepare_capabilities(u,available)
                     if not self.menu.followups.is_current(key,generation):
