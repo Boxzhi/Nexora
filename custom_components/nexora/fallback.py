@@ -8,7 +8,6 @@ from time import monotonic
 import re
 
 from .semantic_lexicon import ROOMS as ROOM_ALIASES, DEVICES, UTILITIES, describe
-from .context_transitions import METRICS
 
 # These are recognition hints for unmatched queries, not an authorization layer.
 HOUSEHOLD = {
@@ -98,13 +97,13 @@ class FallbackGuard:
         parts=[p for p in SEPARATOR.split(compact) if p]
         if len(parts)>1 and any(self._command(p) for p in parts) and any(self._query(p) and not self._command(p) for p in parts):
             return BoundaryDecision("compound","检测到查询与设备控制混合在同一条消息中，请分别发送查询和控制指令。")
+        if compact in MISSING_CONTEXT or compact.removesuffix("呢") in MISSING_CONTEXT:
+            return BoundaryDecision("missing_context","请补充查询对象或账期，当前没有足够的本地查询上下文。")
         if self._command(value) or self._command(compact):
             return BoundaryDecision("control")
         # General educational or writing requests retain the configured Agent.
         if (EDUCATION.search(compact) or HOWTO.search(compact)) and not re.search(r"当前|实时|刚才|现在(?:是|有|多少|几|没|不)|今天(?:用了|还有|剩|交了)|为什么.*(?:没开|没关|报错|故障)",compact):
             return BoundaryDecision("delegate")
-        if compact in MISSING_CONTEXT or compact.removesuffix("呢") in MISSING_CONTEXT:
-            return BoundaryDecision("missing_context","请补充查询对象或账期，当前没有足够的本地查询上下文。")
         if ENTITY.fullmatch(value) or self._query(compact):
             return BoundaryDecision("live",GUARD_REPLY)
         return BoundaryDecision("delegate")
