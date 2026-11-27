@@ -4,7 +4,7 @@ Extensible local intent and conversation engine for Home Assistant.
 
 [中文说明](README.zh-CN.md) · [Catalog protocol](docs/catalog.md)
 
-**v0.5.6-preview** — pre-release for independent HA testing, not a stable release. Requires the corresponding existing read-only intent libraries; Nexora does not provide supplier data or control devices.
+**v0.5.7-preview** — pre-release for independent HA testing, not a stable release. Requires the corresponding existing read-only intent libraries; Nexora does not provide supplier data or control devices.
 
 ## Built-in catalogs
 
@@ -20,13 +20,19 @@ Only modules with registered speech-only handlers appear. Secondary electricity 
 
 Send help (帮助), exit (退出), 0 / back (返回), 99 / next (下一页), or 98 / prev (上一页). Menus display up to 20 visible choices per page; 1–20 select a choice, including each segment of a dot-separated path. English commands are case insensitive. Paging controls appear only when applicable. Root icons are catalog metadata.
 
-## Scene menus (v0.5.6-preview)
+## Scene menus (v0.5.7-preview)
 
 The single public help menu retains all 150 built-in scene choices (utility 65, lights 37, appliances 24, home 24), before dynamic visibility filtering. All 443 original registered read-only capabilities remain unchanged, including their precise individual natural-language queries; original numeric paths are tested internally and are not publicly exposed. After upgrading, send help before selecting a path. Registered, explicitly scoped natural-language scene requests execute the same bounded menu plan as their numeric counterparts, rather than depending on the AI fallback. Unsupported or ambiguous wording is not inferred. Each menu scene is limited to 12 registered reads (two concurrent, 12-second execution budget); ordinary structured plans remain limited to four. Date input is shared, partial results retain qualifications, and existing supported scene repeats and explicit billing-period or account-scope follow-ups remain available.
 
-## v0.5.6-preview changes
+## v0.5.7-preview changes
 
-- Expand the scoped scene vocabulary, including gas payment history and yearly payment statistics. Single-metric queries remain independent. The 736 registered unambiguous phrases are tested with HA doubles, not an unrestricted language coverage claim.
+- Audit all 150 actual scene-menu labels independently of the phrase index. In the complete built-in test registry, 41 scene labels resolve directly and 109 require explicit scope; 776 unambiguous registered phrases execute the intended plans in tests. Counts can vary with configured labels and custom catalogs. Existing precise metrics and navigation are preserved; missing or ambiguous scope is not guessed.
+- Add the 全屋概况 heading without discarding source details; unify registered illuminance outputs to lx, retaining tied areas, valid-region qualifications and missing readings.
+- The independent acceptance scripts now distinguish a shutdown with complete lifetime washer counters (partial_state_limit) from independent missing data. They also check direct scene names and scope clarification.
+
+### Retained v0.5.6-preview behavior
+
+- Expand the scoped scene vocabulary, including gas payment history and yearly payment statistics. Single-metric queries remain independent. Registered unambiguous phrases are tested with HA doubles, not an unrestricted language coverage claim.
 - For local read-only query speech only, a conversation ID beginning with `wechat:` selects Unicode U+2028 for single line breaks. Paragraph breaks, menu prompts, non-WeChat replies and delegated AI responses remain unchanged. No CN IM Hub modification is required.
 - Consolidate verified current bill months, long fixture lists, closed AC limitations and home presence/light/environment summaries. Preserve conflicting or incomplete source data and valid-region qualifiers. The two bathroom fixture display labels are updated without changing capability IDs.
 - The exact phrase 全屋照明概况 was observed to bypass Nexora in the real WeChat path despite successful direct agent queries. Its external interception point is not confirmed or fixed by this release. A query that bypasses Nexora also bypasses its output formatting.
@@ -41,7 +47,7 @@ Canonical sentences and registered dynamic queries retain the original fast path
 
 ## Limits and safety
 
-The HA strict-recognition internals are targeted at Core 2026.11.3. Execute only speech-only Intent Scripts after native sentence/slot validation; no LLM fallback on failed menu query. Nexora runs as an independent HA Conversation Agent; no CN IM Hub or AI Hub upgrade or private protocol is required. Menu/parameter/follow-up handling precedes deterministic ambiguity checks and strict native recognition. Registered native and semantic matches must agree; otherwise Nexora responds locally. Unmatched likely real-time queries, contextless follow-ups, cancelled reads and recognized mixed query/control requests are handled locally; ordinary questions and explicit device commands retain the configured fallback Agent and its permissions. Nexora itself executes only validated speech-only queries. The household guard is heuristic, not a security boundary. AI sessions and local menu sessions are separate; fallback timeout is 60 seconds. Live validation of v0.5.6-preview is pending.
+The HA strict-recognition internals are targeted at Core 2026.11.3. Execute only speech-only Intent Scripts after native sentence/slot validation; no LLM fallback on failed menu query. Nexora runs as an independent HA Conversation Agent; no CN IM Hub or AI Hub upgrade or private protocol is required. Menu/parameter/follow-up handling precedes deterministic ambiguity checks and strict native recognition. Registered native and semantic matches must agree; otherwise Nexora responds locally. Unmatched likely real-time queries, contextless follow-ups, cancelled reads and recognized mixed query/control requests are handled locally; ordinary questions and explicit device commands retain the configured fallback Agent and its permissions. Nexora itself executes only validated speech-only queries. The household guard is heuristic, not a security boundary. AI sessions and local menu sessions are separate; fallback timeout is 60 seconds. Live validation of v0.5.7-preview is pending.
 
 Acceptance scripts are run independently of the integration (`scripts/probe.js` and `scripts/full_probe.js`); the latter traverses only the help scene menu. See [query planner design](docs/query-planner-v050.md) and [acceptance](docs/preview-acceptance.md).
 
@@ -63,6 +69,6 @@ Dot-separated paths (e.g. 1.2.1) start at the current menu and cannot cross a qu
 
 Static adapters accept only the verified AST structure, excluding the literal binding dictionary. When an intent script is reloaded, the next conversation request observes the new source without polling or a Nexora reload. The known Home windows stub is hidden independently of the toilet-lid contact sensor; changed or unknown business logic is retained conservatively. Utility accounts and historical data are unchanged. No source, entity IDs or private bindings are logged or bundled.
 
-## v0.5.6-preview acceptance
+## v0.5.7-preview acceptance
 
 See [integration acceptance and rollback](docs/preview-acceptance.md). The 443 registered / 420 visible / 23 hidden reference is from the previously validated household, not a universal device count. Do not enable a tool-capable AI fallback merely to run the probes.
