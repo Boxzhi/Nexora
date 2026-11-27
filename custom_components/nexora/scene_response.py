@@ -89,7 +89,34 @@ def _tier(rows):
     return lines
 
 def _scoped_lights(rows):
+    # Zero counts are only inferred from an explicit all-on/all-off reply
+    # corroborated by the same room's total and opposite list.
+    evidence={}
+    for step,kind,text in rows:
+        name=LIGHT_NAMES.get(step.key.target)
+        if kind!="ok" or not name or step.key.family!="lights":
+            continue
+        metric=step.key.metric
+        if metric=="total":
+            m=re.fullmatch(re.escape(name)+r"共有(\d+)组灯具。",text)
+        elif metric in {"list_on","list_off"}:
+            verb="开启" if metric=="list_on" else "关闭"
+            m=re.fullmatch(re.escape(name)+r"当前有(\d+)组灯具"+verb+r"：([^。\n]+)。",text)
+        else:
+            m=None
+        if m:
+            evidence[(step.key.target,metric)]=int(m[1])
     lines=[]
+    normal_offline=set()
+    normal_abnormal=set()
+    for step,kind,text in rows:
+        name=LIGHT_NAMES.get(step.key.target)
+        if kind=="ok" and name and step.key.family=="lights":
+            if step.key.metric=="offline" and text==name+"暂未检测到不可用灯具。":
+                normal_offline.add(step.key.target)
+            if step.key.metric=="abnormal" and text==name+"所有灯具状态正常。":
+                normal_abnormal.add(step.key.target)
+    combined=normal_offline & normal_abnormal
     for step,kind,text in rows:
         name=LIGHT_NAMES.get(step.key.target)
         metric=step.key.metric
@@ -100,26 +127,41 @@ def _scoped_lights(rows):
                     text="灯具总数："+x[1]+"组"
             elif metric in {"list_on","list_off"}:
                 verb="开启" if metric=="list_on" else "关闭"
+                opposite="关闭" if metric=="list_on" else "开启"
+                other="list_off" if metric=="list_on" else "list_on"
                 x=re.fullmatch(re.escape(name)+r"当前有(\d+)组灯具"+verb+r"：([^。\n]+)。",text)
                 if x:
                     text="已"+verb+"："+x[1]+"组（"+x[2]+"）"
+                else:
+                    x=re.fullmatch(re.escape(name)+r"(\d+)组灯具均已"+opposite+r"。",text)
+                    if x and int(x[1])>0 and int(x[1])==evidence.get((step.key.target,"total"))==evidence.get((step.key.target,other)):
+                        text="已"+verb+"：0组"
             elif metric=="offline" and text==name+"暂未检测到不可用灯具。":
-                text="离线检查：暂未检测到不可用灯具。"
+                text=("灯光异常：暂未检测到不可用灯具，所有灯具状态正常。" if step.key.target in combined else "离线检查：暂未检测到不可用灯具。")
+            elif metric=="abnormal" and step.key.target in combined and text==name+"所有灯具状态正常。":
+                continue
         lines.append(text)
     return lines
 
 def _fixture(plan,rows):
-    # Only an exact state reply establishes the display name; other fields
-    # must match that same target and prefix before any label is removed.
+    # Match the source's confirmed display name only within the same
+    # registered fixture; two known labels differ from menu names.
     name=None
+    state=None
+    targets={s.key.target for s,_,_ in rows}
+    if len(targets)!=1:
+        return plan.title,[text for _,_,text in rows]
+    target=next(iter(targets))
     for step,kind,text in rows:
         if step.key.metric=="single_state" and kind=="ok":
             x=re.fullmatch(r"([^：:。；\n]{1,60})当前(已开启|已关闭)。",text)
             if x:
-                name=x[1]
-    if not name or name!=plan.title.rsplit(" · ",1)[-1]:
-        return [text for _,_,text in rows]
-    target=rows[0][0].key.target
+                name,state=x[1],x[2]
+    label=plan.title.rsplit(" · ",1)[-1]
+    aliases={"lights.fixtures.bath_panel":("人体存在平板灯","卫生间平板灯"),
+             "lights.fixtures.bath_heater":("智能浴霸S1灯","浴霸灯")}
+    if not name or (name!=label and aliases.get(target)!=(label,name)):
+        return plan.title,[text for _,_,text in rows]
     lines=[]
     unavailable=[]
     for step,kind,text in rows:
@@ -128,15 +170,17 @@ def _fixture(plan,rows):
                 text="状态："+text[len(name+"当前"):]
             elif step.key.metric in {"brightness","temperature"}:
                 attr="亮度" if step.key.metric=="brightness" else "色温"
-                if text==name+"当前已关闭，无法获取实时"+attr+"。" and kind=="state_limit":
+                if state=="已关闭" and text==name+"当前已关闭，无法获取实时"+attr+"。" and kind=="state_limit":
                     unavailable.append(attr)
                     continue
-                if text.startswith(name+"当前"+attr+"："):
+                if text==name+"不支持"+attr+"调节。":
+                    text=attr+"调节：不支持。"
+                elif text.startswith(name+"当前"+attr+"："):
                     text=text[len(name+"当前"):]
         lines.append(text)
     if unavailable:
         lines.append("实时"+"、".join(unavailable)+"：灯具已关闭，无法获取。")
-    return lines
+    return name,lines
 
 def _device(plan,rows):
     targets={step.key.target for step,_,_ in rows if step.key.family=="appliance"}
@@ -200,7 +244,7 @@ def compose_menu(plan,run,label,normalize):
         heading="华润燃气 · 阶梯详情"
         lines=_tier(rows)
     elif scene.startswith("scene.lights.fixtures."):
-        lines=_fixture(plan,rows)
+        heading,lines=_fixture(plan,rows)
     elif scene.startswith("scene.lights."):
         lines=_scoped_lights(rows)
     elif scene.startswith("scene.appliance."):
