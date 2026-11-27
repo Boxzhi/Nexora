@@ -113,3 +113,41 @@ class MenuLabelDispatchAudit(unittest.IsolatedAsyncioTestCase):
         await self.ask("全屋感应概况")
         self.assertEqual(set(self.calls),set(self.menu.scenes["scene.home.presence.whole"].members))
         self.conv.async_converse.assert_not_awaited()
+
+
+class RegistryCollisionTests(unittest.TestCase):
+    def test_extension_collision_requires_scope(self):
+        custom={"schema_version":1,"module":{"id":"extra","name":"扩展模块","order":500},
+                "categories":[{"id":"extra.info","name":"扩展信息","order":10}],
+                "capabilities":[{"id":"extra.info.read","category":"extra.info","name":"全屋感应概况","sentence":"查询扩展信息","intent":"ExtraQuery","slots":{},"read_only":True,"order":10}]}
+        m=regression.mod.Menu(regression.CATS+[custom],settings=regression.SET)
+        m.install_scene_layout(regression.build_layout(m))
+        idx=m.scene_language
+        sid="scene.home.presence.whole"
+        self.assertIsNone(idx.match("全屋感应概况"))
+        self.assertEqual(idx.match(idx.paths[sid]),sid)
+        self.assertEqual(idx.bare_status[sid],"scope_required")
+
+    def test_existing_exact_metric_is_not_overridden_by_new_label(self):
+        import copy
+        cats=copy.deepcopy(regression.CATS)
+        cap=next(c for cat in cats for c in cat["capabilities"] if c["id"]=="home.access.door.lock_all")
+        cap["sentence"]="全屋感应概况"
+        m=regression.mod.Menu(cats,settings=regression.SET)
+        m.install_scene_layout(regression.build_layout(m))
+        idx=m.scene_language
+        self.assertIsNone(idx.match("全屋感应概况"))
+        self.assertEqual(idx.bare_status["scene.home.presence.whole"],"existing_route")
+        self.assertEqual(SemanticIndex(m).match("全屋感应概况").capability,cap["id"])
+
+    def test_hidden_scene_does_not_disambiguate_or_execute(self):
+        m=regression.mod.Menu(regression.CATS,settings=regression.SET)
+        m.install_scene_layout(regression.build_layout(m))
+        idx=m.scene_language
+        sid="scene.home.access.windows"
+        self.assertEqual(idx.match("窗户状态"),sid)
+        hidden=set(m.scenes[sid].members)
+        result=m.select_scene("test",sid,lambda c:c["id"] not in hidden)
+        self.assertIsNone(result.scene)
+        self.assertIn("不可用",result.text)
+        self.assertIsNone(idx.match("账户余额"))
