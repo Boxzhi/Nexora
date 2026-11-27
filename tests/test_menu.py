@@ -291,4 +291,37 @@ class V03Tests(unittest.TestCase):
         self.m.followups.remember("a","utility.water.balance")
         self.assertIsNone(self.route("上个月用了多少度"))
 
+    def test_fast_context_generation_and_metric_switch(self):
+        f=self.m.followups
+        cap=next(c for c in self.m.capabilities.values()
+                 if c["slots"]=={"utility_kind":"e","utility_metric":"h_month_usage",
+                                  "luxe_utility_property":"j","utility_period":"current"})
+        old=f.begin("a")
+        newer=f.begin("a")
+        self.assertFalse(f.complete("a",old,cap["id"]))
+        self.assertTrue(f.complete("a",newer,cap["id"]))
+        q=self.route("上个月呢")
+        self.assertEqual(q.slots["utility_period"],"previous")
+        f.remember("a",q.capability)
+        q=self.route("费用呢")
+        self.assertEqual(q.slots["utility_metric"],"h_month_cost")
+        self.assertEqual(q.slots["utility_period"],"previous")
+        f.remember("a",q.capability)
+        q=self.route("另一个账户呢")
+        self.assertEqual(q.slots["luxe_utility_property"],"l")
+        self.assertEqual(q.slots["utility_period"],"previous")
+        self.assertEqual(q.slots["utility_metric"],"h_month_cost")
+
+    def test_context_clarification_accepts_specific_bare_metric(self):
+        f=self.m.followups
+        f.remember("a","utility.water.balance")
+        self.assertIn("用量还是费用",self.route("上个月呢").text)
+        self.assertTrue(f.is_followup_message("用水量"))
+        q=self.route("用水量")
+        self.assertEqual(q.slots["utility_metric"],"history_usage")
+        self.assertEqual(q.slots["utility_period"],"previous")
+        f.remember("a",q.capability)
+        self.assertTrue(f.is_followup_message("费用"))
+        self.assertEqual(self.route("费用").slots["utility_metric"],"history_cost")
+
 if __name__=="__main__":unittest.main()
