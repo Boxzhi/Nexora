@@ -41,7 +41,7 @@ def unpack(step,result):
         speech=speech.strip()
     except (AttributeError,TypeError,KeyError):
         return Outcome(step,"error",error="本地查询未返回有效回复。")
-    if STATE_LIMIT.fullmatch(speech):
+    if STATE_LIMIT.fullmatch(speech) or (step.key.family=="appliance" and step.key.target=="w" and speech.rstrip("。.")=="海尔洗衣机已关机，无法确认当前数据"):
         return Outcome(step,"state_limit",speech)
     if GAP.search(speech):
         return Outcome(step,"data_gap",speech)
@@ -64,6 +64,8 @@ def stop_supplements(plan,outcomes):
             name+"已关闭",name+"：已关闭",name+"已关机",name+"：已关机",
             name+"已关闭，无当前运行参数",name+"已关机，无当前运行参数",
         }:
+            return True
+        if "device_off" in plan.stop_on and k.target=="w" and s in {"海尔洗衣机已关机","海尔洗衣机：已关机"}:
             return True
         if "cycle_not_running" in plan.stop_on and k.target=="w" and s in {
             "洗衣机当前未运行","洗衣机：未运行","洗衣机未在洗衣",

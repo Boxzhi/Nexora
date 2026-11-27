@@ -113,3 +113,16 @@ class PlanExecutorTests(unittest.IsolatedAsyncioTestCase):
             return answer("餐厅当前有0组灯具开启。")
         r=await pe.run_plan(p,dispatch,lambda:True)
         self.assertEqual([o.kind for o in r.outcomes],["ok","ok"])
+
+    async def test_actual_ha_washer_off_text_stops_only_optional_work(self):
+        a,b,c=step("status","appliance","w"),step("phase","appliance","w"),step("remaining","appliance","w")
+        p=qp.Plan((a,),(b,c),("device_off","cycle_not_running"))
+        calls=[]
+        async def dispatch(s):
+            calls.append(s)
+            return answer("海尔洗衣机已关机。")
+        r=await pe.run_plan(p,dispatch,lambda:True)
+        self.assertEqual(calls,[a])
+        self.assertEqual([o.kind for o in r.outcomes],["ok","skipped","skipped"])
+        self.assertEqual(pe.unpack(b,answer("海尔洗衣机已关机，无法确认当前数据。")).kind,"state_limit")
+        self.assertNotEqual(pe.unpack(step("temp"),answer("海尔洗衣机已关机，无法确认当前数据。")).kind,"state_limit")
