@@ -138,5 +138,48 @@ def appliance_layout():
     b.leaf(p+".fault",p,"故障状态",50,ids(p,"fault"),anchor=p+".fault")
     return b.rows
 
+def home_layout():
+    b=Layout()
+    b.group("home","","全屋状态",400,"home")
+    p="home.overview"
+    b.leaf(p,"home","全屋概况",10,ids(p,"overview_all"),anchor=p+".overview_all",alias=p)
+    p="home.family"
+    b.leaf(p,"home","家庭成员",20,ids(p,"family_all"),anchor=p+".family_all",alias=p)
+    p="home.env"
+    b.group(p,"home","环境温湿度",30,p)
+    b.leaf(p+".whole",p,"全屋环境",10,ids(p,"env_all","temp_max_all","temp_min_all","hum_max_all","hum_min_all"),anchor=p+".env_all")
+    for i,(key,name) in enumerate((("master","主卧"),("secondary","次卧"),("living_dining","客餐厅"),("bathroom","卫生间")),2):
+        q=p+"."+key
+        members=ids(q,("temp_" if key=="bathroom" else "room_env_")+key)
+        b.leaf(q,p,name,i*10,members,anchor=members[0],alias=q)
+    p="home.presence"
+    b.group(p,"home","人体感应及光照",40,p)
+    b.leaf(p+".whole",p,"全屋感应概况",10,ids(p,"presence_all_all","lux_all_all","lux_max_all","lux_min_all"),anchor=p+".presence_all_all")
+    for i,(key,name,duration) in enumerate((("entry","玄关",True),("living","客厅",False),("balcony","阳台",True),("kitchen","厨房",False),("bathroom","卫生间",True)),2):
+        q=p+"."+key
+        members=ids(q,"presence_"+key,"lux_"+key)+ (ids(q,"duration_"+key) if duration else ())
+        b.leaf(q,p,name,i*10,members,anchor=members[0],alias=q)
+    p="home.access"
+    b.group(p,"home","门锁及窗帘",50,p)
+    q=p+".door"
+    b.leaf(q,p,"入户门状态",10,ids(q,"door_all","lock_all","deadbolt_all","childlock_all"),anchor=q+".door_all",alias=q)
+    q=p+".curtains"
+    b.leaf(q,p,"全屋窗帘",20,ids(q,"curtain_pos_master","curtain_pos_secondary","curtain_pos_living_dining"),alias=q)
+    b.leaf(p+".windows",p,"窗户状态",30,ids(p+".door","windows_all"),anchor=p+".door.windows_all")
+    p="home.safety"
+    b.group(p,"home","安全及异常",60,p)
+    for i,(metric,name) in enumerate((("alerts_all","家庭异常概况"),("water_all_all","水浸检测"),("safety_all","安全报警"),("faults_all","设备故障")),1):
+        cid=p+"."+metric
+        b.leaf(cid,p,name,i*10,(cid,),anchor=cid)
+    p="home.battery"
+    b.group(p,"home","电池及维护",70,p)
+    b.leaf(p+".low",p,"低电量设备",10,ids(p,"battery_low_all"),anchor=p+".battery_low_all")
+    b.leaf(p+".all",p,"全部设备电量",20,ids(p,"batteries_all"),anchor=p+".batteries_all")
+    p="home.devices"
+    b.group(p,"home","其他设备",80,p)
+    b.leaf(p+".lid",p,"马桶盖状态",10,ids(p,"lid_all"),anchor=p+".lid_all")
+    b.leaf(p+".heater",p,"燃气热水器状态",20,ids(p,"heater_all"),anchor=p+".heater_all")
+    return b.rows
+
 def build_layout(menu):
-    return utility_layout()+lights_layout(menu)+appliance_layout()
+    return utility_layout()+lights_layout(menu)+appliance_layout()+home_layout()
