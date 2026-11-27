@@ -30,12 +30,13 @@ def number(text,year=False):
     raise ValueError("invalid number")
 
 def _field(name):
-    return "(?P<"+name+">"+(YEAR if name=="year" else SMALL)+")"
+    return "(?P<"+name+">"+(YEAR if name in {"year","calendar_year"} else SMALL)+")"
 
 def _date_patterns(kind,period):
     y,m,d=(_field(n) for n in ("year","month","day"))
     if kind=="date":
-        return (y+"年"+m+"月"+d+"(?:日|号)",y+"-"+m+"-"+d)
+        return (y+"年"+m+"月"+d+"(?:日|号)",y+"-"+m+"-"+d",
+                "(?P<relative_year>去年|上一年|前年)"+m+"月"+d+"(?:日|号)")
     if kind=="month_day":
         return ("(?:今年|本年)?"+m+"月"+d+"(?:日|号)",)
     if kind=="year_month":
@@ -92,7 +93,13 @@ class ParameterIndex:
             if p.metric=="h_month_cost" or p.metric=="history_cost":
                 cost={"e":"电费","w":"水费","g":"燃气费"}[p.target]
                 suffixes.update({cost+"花了多少钱",cost+"花了多少元"})
-            for prefix, date_pattern, suffix in product(_account_prefixes(p,settings),_date_patterns(p.parameter,p.period),suffixes):
+            date_patterns=_date_patterns(p.parameter,p.period)
+            # Water has only relative-year monthly capabilities. An explicit
+            # calendar year may select one of these, never an invented query.
+            if p.target=="w" and p.parameter=="month":
+                date_patterns+=(_field("calendar_year")+"年"+_field("month")+"月(?:份)?",
+                                _field("calendar_year")+"-"+_field("month"))
+            for prefix, date_pattern, suffix in product(_account_prefixes(p,settings),date_patterns,suffixes):
                 expr=re.escape(normalize(prefix))+date_pattern+re.escape(normalize(suffix))
                 self.rules.append((re.compile(expr),cap))
 
@@ -105,7 +112,19 @@ class ParameterIndex:
                 continue
             try:
                 fields=PARAMETERS[cap["parameter"]]
-                values=[str(number(match.group(f),year=f=="year")) for f in fields]
+                groups=match.groupdict()
+                if groups.get("calendar_year"):
+                    year=number(groups["calendar_year"],year=True)
+                    expected=today.year-1 if cap.get("parameter_year_offset")==-1 else today.year
+                    if year!=expected:
+                        # This is not the relative-year capability for that date.
+                        continue
+                values=[]
+                for field in fields:
+                    if field=="year" and groups.get("relative_year"):
+                        values.append(str(today.year-(2 if groups["relative_year"]=="前年" else 1)))
+                    else:
+                        values.append(str(number(groups[field],year=field=="year")))
                 params=parse_parameter(cap["parameter"],"-".join(values),today,
                     base_year=today.year-1 if cap.get("parameter_year_offset")==-1 else today.year)
             except (ValueError,KeyError):

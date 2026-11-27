@@ -245,7 +245,15 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 if not self.menu.followups.is_current(key,generation):
                     return self._reply(u,cid,"查询会话已更新，请重新发送。")
                 if native is not None:
-                    decision=native
+                    if (match is not None and match.params and native.route is Route.LOCAL_QUERY
+                            and (native.reply.capability!=match.capability or
+                                 native.reply.slots!=self.menu._query(match.capability,dict(match.params)).slots)):
+                        # An explicitly parsed date/account must not silently
+                        # execute a different native interpretation.
+                        from .menu import Reply
+                        decision=from_reply(Reply("原生识别与日期或账户参数不一致，请明确查询对象和日期。"),"local_semantic")
+                    else:
+                        decision=native
                 elif match is not None:
                     if match.capability and self.menu.capabilities[match.capability].get("native_slots"):
                         await self._prepare_capabilities(u,available)

@@ -100,3 +100,21 @@ class ParameterTests(unittest.TestCase):
         self.index=self.semantic.SemanticIndex(self.menu)
         self.assertIsNone(self.match("共同账户去年三月电费多少").clarification)
         self.assertIsNone(self.match("第二账户去年三月电费多少"))
+
+    def test_equivalent_calendar_year_and_relative_day(self):
+        for q,cid,params in (
+            ("2026年3月水费是多少","utility.water.history.history_cost.history_cost_year",{"month":3}),
+            ("二零二五年三月份水费花了多少钱","utility.water.history.history_cost.history_cost_last_year",{"month":3}),
+            ("2025-03用水量多少","utility.water.history.history_usage.history_usage_last_year",{"month":3}),
+            ("去年三月九号用了几度电","utility.electric.j.history.day.h_day_explicit",{"year":2025,"month":3,"day":9}),
+            ("灵山何家前年二月二十九号用了几度电","utility.electric.l.history.day.h_day_explicit",{"year":2024,"month":2,"day":29}),
+        ):
+            with self.subTest(q=q):
+                m=self.match(q)
+                self.assertEqual(m.capability,cid)
+                self.assertEqual(dict(m.params),params)
+        for q in ("2026年12月水费多少","2025年2月29日用了几度电","去年二月二十九号用了几度电"):
+            self.assertIn("日期",self.match(q).clarification)
+        for q in ("2024年3月水费多少","2024-03水费多少","三月份电费多少"):
+            self.assertIsNone(self.match(q).capability)
+            self.assertTrue(self.match(q).clarification)
