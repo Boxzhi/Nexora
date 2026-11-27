@@ -264,7 +264,7 @@ class Menu:
             lines.append("99. 下一页")
         if node not in {"root","scene"}:
             lines.append("0. 返回上一级")
-         return Reply("\n".join(lines + ["", FOOTER]))
+        return Reply("\n".join(lines + ["", FOOTER]))
 
     def _query(self, cap_id, params):
         cap = self.capabilities[cap_id]
