@@ -152,3 +152,33 @@ class Tests(IsolatedAsyncioTestCase):
         self.it.async_handle.assert_not_awaited()
         await self.agent._prepare_capabilities(self.u,{"LuxeLightQuery"})
         self.native.async_recognize_intent.assert_awaited_once()
+
+    async def test_local_reply_does_not_execute_or_fallback(self):
+        self.menu.route=lambda *a,**kw:SimpleNamespace(capability=None,text="菜单")
+        r=await self.agent.async_process(self.u)
+        self.assertEqual(r.response.speech,"菜单")
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_local_execution_exception_never_falls_back(self):
+        self.it.async_handle.side_effect=RuntimeError("test")
+        r=await self.agent.async_process(self.u)
+        self.assertIn("本地查询暂时失败",r.response.speech)
+        self.it.async_handle.assert_awaited_once()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_fallback_only_on_unmatched_route(self):
+        self.menu.route=lambda *a,**kw:None
+        self.conv.async_converse=AsyncMock(return_value="fallback")
+        self.assertEqual(await self.agent.async_process(self.u),"fallback")
+        self.conv.async_converse.assert_awaited_once()
+        self.it.async_handle.assert_not_awaited()
+
+    async def test_native_data_gap_is_terminal(self):
+        response=Response("zh-CN")
+        response.async_set_speech("数据不可用")
+        self.it.async_handle.return_value=response
+        r=await self.agent.async_process(self.u)
+        self.assertEqual(r.response.speech,"数据不可用")
+        self.it.async_handle.assert_awaited_once()
+        self.conv.async_converse.assert_not_awaited()
