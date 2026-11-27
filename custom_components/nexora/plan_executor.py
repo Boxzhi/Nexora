@@ -62,7 +62,10 @@ def classify_speech(key,speech):
 
 def response_quality(key,response):
     """Use the same classification for the single-query route."""
-    speech=response.as_dict().get("speech",{}).get("plain",{}).get("speech")
+    try:
+        speech=response.as_dict().get("speech",{}).get("plain",{}).get("speech")
+    except (AttributeError,TypeError):
+        return "unclassified"
     return classify_speech(key,speech) if isinstance(speech,str) and speech.strip() else "unclassified"
 
 def unpack(step,result):

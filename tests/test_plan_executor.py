@@ -148,3 +148,9 @@ class PlanExecutorTests(unittest.IsolatedAsyncioTestCase):
         for f,t,m,s,k in cases:
             with self.subTest(s=s):
                 self.assertEqual(pe.unpack(step(m,f,t),answer(s)).kind,k)
+
+    def test_quality_annotation_cannot_break_nonstandard_response(self):
+        from types import SimpleNamespace
+        key=step("balance","utility","g").key
+        for data in ({},{"speech":None},{"speech":{"plain":[]}},{"speech":{"plain":{"speech":42}}}):
+            self.assertEqual(pe.response_quality(key,SimpleNamespace(as_dict=lambda:data)),"unclassified")
