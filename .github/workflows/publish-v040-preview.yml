@@ -1,0 +1,57 @@
+name: Publish Nexora v0.4.0-preview
+on:
+  push:
+    branches:
+      - release/v0.4.0-preview
+    paths:
+      - .github/workflows/publish-v040-preview.yml
+permissions:
+  contents: write
+concurrency:
+  group: nexora-v040-preview-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: github.repository == 'Boxzhi/Nexora' && github.ref == 'refs/heads/release/v0.4.0-preview'
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Boxzhi/Nexora
+      RELEASE_TAG: v0.4.0-preview
+      RELEASE_SHA: 07a1657510648cbafb6a1d2a5044709e5e6e2fd1
+    steps:
+      - name: Verify fixed candidate and publish prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GH_REPO/commits/$RELEASE_SHA" --jq .sha | grep -Fx "$RELEASE_SHA"
+          if gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "Release already exists; refusing overwrite."
+            exit 1
+          fi
+          if gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag already exists; refusing reuse."
+            exit 1
+          fi
+          cat > release-notes.md <<'EOF'
+          ## 新增
+          - 本地自然语言语义匹配及歧义澄清。
+          - 原生 Intent 严格识别及统一只读查询执行层。
+          - 水电气账期、用量、费用及账户切换追问（仅限 Nexora 自身查询）。
+          - 备用代理会话隔离、60 秒超时及路由耗时诊断。
+          ## 优化
+          - 每页菜单容量由 8 项增加至 20 项；支持多位数字及组合路径，98/99 双向翻页。
+          - 优化首次灯具目标映射及动态能力检测，清理旧参数输入状态。
+          ## 兼容性
+          - 443 项注册查询能力保留；仅升级 Nexora，无需升级 CN IM Hub 或 AI Hub。
+          - 原有配置、业务意图库及可选 bindings.yaml 保持不变。
+          - HA Core 2026.11.3；未匹配的家庭实时查询保护为启发式规则，非权限沙箱。
+          - 不提供跨集成上下文同步或独立微信菜单队列。
+          ## 验证
+          - 固定候选 07a1657：124 项自动化回归、Python 编译和 Hassfest 通过。
+          - HACS 8/10，Topics、Brands 尚未通过。
+          - 真实 HA 环境验收待完成。本版本为预览版，安装前请备份。
+          EOF
+          gh release create "$RELEASE_TAG" --repo "$GH_REPO" --target "$RELEASE_SHA" --title "Nexora v0.4.0-preview" --prerelease --latest=false --notes-file release-notes.md
+          gh release view "$RELEASE_TAG" --repo "$GH_REPO" --json url,tagName,isPrerelease
