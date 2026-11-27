@@ -102,6 +102,10 @@ def _scene_text(plan,run):
 def compose(plan,run,label):
     if run.superseded:
         return Composed("查询会话已更新，请重新发送。",False)
+    if getattr(plan,"menu_scene",""):
+        from .scene_response import compose_menu
+        result,completed=compose_menu(plan,run,label,normalize_speech)
+        return Composed(result,completed)
     fused=_scene_text(plan,run)
     if fused is not None:
         return Composed(_format_quantities(fused),True)

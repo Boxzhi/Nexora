@@ -20,6 +20,7 @@ class Plan:
     caveat: str = ""
     focus: Frame | None = None
     title: str = ""
+    menu_scene: str = ""
 
 @dataclass(frozen=True)
 class PlanningResult:
@@ -56,7 +57,16 @@ class QueryPlanner:
         focus=None
         if context and spec.anchor in {s.capability for s in primary}:
             focus=context.from_registered(spec.anchor,params,today)
-        return Plan(tuple(primary),tuple(extra),spec.stop_on,"",focus,self.menu.items[scene_id].name)
+        item=self.menu.items[scene_id]
+        parent=self.menu.items[item.parent]
+        # Account/room/device is part of the displayed heading. A period
+        # submenu also retains its account label rather than just "本月".
+        names=[item.name]
+        if parent.id!="scene":
+            names.insert(0,parent.name)
+            if parent.id.endswith((".monthly",".annual",".day")):
+                names.insert(0,self.menu.items[parent.parent].name)
+        return Plan(tuple(primary),tuple(extra),spec.stop_on,"",focus," · ".join(names),scene_id)
 
     def _step(self,key,params=()):
         item=self.registry.require(key)
