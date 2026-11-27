@@ -8,6 +8,7 @@ from time import monotonic
 import re
 
 from .semantic_lexicon import ROOMS as ROOM_ALIASES, DEVICES, UTILITIES, describe
+from .natural_language import CORRECTIONS
 
 # These are recognition hints for unmatched queries, not an authorization layer.
 HOUSEHOLD = {
@@ -19,7 +20,7 @@ HOUSEHOLD = {
     "home assistant","homeassistant","hass","smart home","my house","my home",
 }
 ROOMS={"客厅","餐厅","主卧","次卧","阳台","厨房","玄关","卫生间","儿童房","过道","客餐厅"}
-LIVE = re.compile(r"现在|当前|实时|今天|昨天|前天|刚才|本月|上月|这个月|上个月|今年|去年|前年|余额|欠费|剩余|(?:还)?剩(?:下)?(?:多少|几|钱)|还有多少|多少钱|多少度|几度|几档|几组|几盏|多少方|多少吨|用量|费用|耗电|光照(?:度|强度)?|亮度|温度|湿度|电量|状态|多久|在家|有人|没人|开着|关着|亮着|关了|开了|锁了|坏了|故障|报错|可用|在线|离线|掉线|是不是|是否|有没有|有多亮|洗好|洗完|洗到|该换|要换|还在|工作吗|运行吗|有没有|多少|(?:吗|没|没有|不|呢)[？?。！!]*$")
+LIVE = re.compile(r"现在|当前|实时|今天|昨天|前天|刚才|本月|上月|这个月|上个月|今年|去年|前年|余额|欠费|剩余|(?:还)?剩(?:下)?(?:多少|几|钱)|还有多少|多少钱|多少度|几度|几档|几组|几盏|多少方|多少吨|用量|费用|耗电|光照(?:度|强度)?|亮度|温度|湿度|电量|状态|多久|在家|有人|没人|开着|关着|亮着|关了|开了|锁了|坏了|故障|报错|可用|在线|离线|掉线|是不是|是否|有没有|有多亮|洗好|洗完|洗到|该换|要换|还在|工作吗|运行吗|工作情况|运行情况|快没电|电量不足|有没有|多少|(?:吗|没|没有|不|呢)[？?。！!]*$")
 QUESTION = re.compile(r"多少|几(?:度|档|组|盏|个|台|人|次|天|方|吨|元|块|钱)|多久|什么时候|为何|为什么|怎么|如何|是不是|是否|有没有|(?:吗|没|没有|不|呢)[？?。！!]*$")
 INQUIRY = re.compile(r"^(?:请|麻烦|帮我|请帮我)?(?:查查|查询|查一下|查一查|查看|看看|看一下|告诉我|请问)")
 NEGATED_READ = re.compile(r"^(?:请|麻烦|帮我|请帮我)?(?:不要|不用|别|不必|无需|停止)(?:再)?(?:查询|查|查看|看一下|读取)")
@@ -44,7 +45,7 @@ class BoundaryDecision:
 
 class FallbackGuard:
     def __init__(self, menu):
-        terms=set(HOUSEHOLD)|ROOMS
+        terms=set(HOUSEHOLD)|ROOMS|set(CORRECTIONS)
         terms.update(alias for aliases in ROOM_ALIASES.values() for alias in aliases)
         terms.update(alias for aliases in DEVICES.values() for alias in aliases)
         terms.update(alias for aliases in UTILITIES.values() for alias in aliases)
