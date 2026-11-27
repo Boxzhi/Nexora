@@ -36,7 +36,7 @@ def _bill_pair(plan,rows):
     x,y=pattern.fullmatch(a[2]),pattern.fullmatch(b[2])
     if not x or not y or any(x[k]!=y[k] for k in ("owner","period","qual")):
         return None
-    if (x["metric"],y["metric"]) not in {("用电量","电费"),("用水量","水费"),("用气量","燃气费")}:
+    if ka.family!="utility" or (x["metric"],y["metric"])!={"e":("用电量","电费"),"w":("用水量","水费"),"g":("用气量","燃气费")}.get(ka.target):
         return None
     if not x["value"].endswith({"用电量":"度","用水量":"吨","用气量":"立方米"}[x["metric"]]) or not y["value"].endswith("元"):
         return None
@@ -106,7 +106,7 @@ def _scoped_lights(rows):
         lines.append(text)
     return lines
 
-def _fixture(rows):
+def _fixture(plan,rows):
     # Only an exact state reply establishes the display name; other fields
     # must match that same target and prefix before any label is removed.
     name=None
@@ -115,7 +115,7 @@ def _fixture(rows):
             x=re.fullmatch(r"([^：:。；\n]{1,60})当前(已开启|已关闭)。",text)
             if x:
                 name=x[1]
-    if not name:
+    if not name or name!=plan.title.rsplit(" · ",1)[-1]:
         return [text for _,_,text in rows]
     target=rows[0][0].key.target
     lines=[]
@@ -194,7 +194,7 @@ def compose_menu(plan,run,label,normalize):
         heading="华润燃气 · 阶梯详情"
         lines=_tier(rows)
     elif scene.startswith("scene.lights.fixtures."):
-        lines=_fixture(rows)
+        lines=_fixture(plan,rows)
     elif scene.startswith("scene.lights."):
         lines=_scoped_lights(rows)
     elif scene.startswith("scene.appliance."):

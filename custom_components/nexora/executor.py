@@ -34,7 +34,7 @@ class ExecutionResult:
 
 
 async def execute_readonly(*, hass, conversation_api, intent_api, handler_for,
-                           resolver, cap, reply, u, get_state, logger):
+                           resolver, cap, reply, u, get_state, logger, current=lambda:True):
     """Validate the installed handler and slots immediately before dispatch."""
     handler = handler_for(cap["intent"])
     if handler is None:
@@ -64,6 +64,8 @@ async def execute_readonly(*, hass, conversation_api, intent_api, handler_for,
                     return ExecutionResult(error="该查询目标已变化，请发送 help 刷新菜单。")
             if resolver.status(cap,get_state)=="hidden":
                 return ExecutionResult(error="该查询已不可用，请发送 help 刷新菜单。")
+            if not current():
+                return ExecutionResult(error="查询会话已更新。")
             # No await between handler identity validation and dispatch.
             response = await intent_api.async_handle(hass, "conversation", cap["intent"], {k:{"value":v,"text":str(v)} for k,v in recognized.items()}, reply.sentence, u.context, u.language, assistant="conversation", conversation_agent_id="conversation.home_assistant")
     except Exception:

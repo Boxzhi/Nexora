@@ -20,6 +20,10 @@ Only modules with registered speech-only handlers appear. Secondary electricity 
 
 Send help (帮助), exit (退出), 0 / back (返回), 99 / next (下一页), or 98 / prev (上一页). Menus display up to 20 visible choices per page; 1–20 select a choice, including each segment of a dot-separated path. English commands are case insensitive. Paging controls appear only when applicable. Root icons are catalog metadata.
 
+## Scene menu development (v0.5.3 candidate, not published)
+
+The default help menu presents 150 built-in scene choices (utility 65, lights 37, appliances 24, home 24), before dynamic visibility filtering. Send detail (完整菜单) for the original 443 registered choices and legacy numeric paths. The natural-language catalog and individual read-only dispatch remain unchanged. Old numeric paths are valid only after entering detail; use help to navigate the new menu. Multi-field queries share date input, use registered IDs directly, preserve partial results, and retain source qualifiers. A menu scene is limited to 12 registered reads (two concurrent, 12-second execution budget); the natural-language plan remains limited to four. A completed scene can be repeated or switched to an explicitly supported billing period/scope in the same session. Unknown or hidden fields are not guessed. The original full probe uses detail. Real HA and IM acceptance and a versioned release are pending.
+
 ## Installation
 
 Add this repository in HACS as an Integration custom repository when available, or copy custom_components/nexora from a fixed commit. Restart Core once. Existing Nexora config entries remain valid. Keep the corresponding original intent libraries installed. Test the agent before switching your IM provider. Additional JSON/YAML catalogs under /config/nexora/catalogs/ are loaded at entry setup/reload.

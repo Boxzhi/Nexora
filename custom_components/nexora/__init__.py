@@ -48,6 +48,13 @@ async def async_setup_entry(hass, entry):
     try:
         catalogs = await hass.async_add_executor_job(load_catalogs, hass.config.path("nexora", "catalogs"))
         menu = Menu(catalogs, settings=entry.data)
+        from .scene_layout import build_layout
+        try:
+            menu.install_scene_layout(build_layout(menu))
+        except (ValueError, KeyError, TypeError):
+            # A conflicting custom catalog must not remove the existing
+            # individual query menu or prevent the integration from loading.
+            _LOGGER.warning("Nexora scene layout unavailable; retaining detailed menu",exc_info=True)
         bindings = await hass.async_add_executor_job(load_bindings, hass.config.path('nexora','bindings.yaml'))
     except (ValueError, TypeError, KeyError, OSError) as err:
         _LOGGER.error("Nexora catalog initialization failed: %s", type(err).__name__)

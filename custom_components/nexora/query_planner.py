@@ -4,7 +4,7 @@ import re
 
 from .business_model import BusinessRegistry, PolicyRegistry, QueryKey, PolicyKey, MAX_SCENE_QUERIES
 from .natural_language import QueryParser, Frame, TimeSpec, surface
-from .menu import parse_parameter
+from .menu import parse_parameter, PARAMETERS
 
 @dataclass(frozen=True)
 class Step:
@@ -41,6 +41,14 @@ class QueryPlanner:
 
     def menu_plan(self, scene_id, params, visible, context, today):
         spec=self.menu.scenes[scene_id]
+        reference=self.menu.capabilities[spec.members[0]]
+        kind=reference.get("parameter")
+        fields=PARAMETERS.get(kind,())
+        if set(params)!=set(fields) or any(type(v) is not int for v in params.values()):
+            raise ValueError("invalid shared parameter")
+        if fields and parse_parameter(kind,"-".join(str(params[k]) for k in fields),today,
+                base_year=today.year+reference.get("parameter_year_offset",0))!=params:
+            raise ValueError("invalid shared date")
         primary=[]
         extra=[]
         for cid in spec.members:

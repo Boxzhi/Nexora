@@ -50,6 +50,7 @@ class Session:
     expires: float
     shown: tuple
     pending: str | None = None
+    view: str = "detail"
 
 @dataclass(frozen=True)
 class Reply:
@@ -182,7 +183,7 @@ class Menu:
         install(self, rows)
 
     def navigation_alias(self, text, session=None):
-        if self.scenes and (session is None or session.node.startswith("scene")):
+        if self.scenes and (session is None or session.view=="scene"):
             return self.scene_aliases.get(text,self.aliases.get(text))
         return self.aliases.get(text)
 
@@ -219,7 +220,11 @@ class Menu:
         shown = tuple(x.id for x in items[page*PAGE_SIZE:(page+1)*PAGE_SIZE])
         if key not in self.sessions and len(self.sessions) >= self.max_sessions:
             self.sessions.pop(min(self.sessions, key=lambda k:self.sessions[k].expires))
-        self.sessions[key] = Session(node, page, self.clock()+self.ttl, shown)
+        prior=self.sessions.get(key)
+        view="scene" if node=="scene" else "detail" if node=="root" else prior.view if prior else "detail"
+        if node.startswith("scene."):
+            view="scene"
+        self.sessions[key] = Session(node, page, self.clock()+self.ttl, shown, view=view)
         current = self.items[node]
         lines = [f"{current.icon} {current.name}" if current.icon else current.name, ""]
         for i, item_id in enumerate(shown, 1):
@@ -233,6 +238,8 @@ class Menu:
             lines.append("99. 下一页")
         if node not in {"root","scene"}:
             lines.append("0. 返回上一级")
+        if node=="scene":
+            lines.extend(["","发送 detail 查看完整菜单。"])
         return Reply("\n".join(lines + ["", FOOTER]))
 
     def _query(self, cap_id, params):
@@ -316,7 +323,10 @@ class Menu:
             return Reply("当前没有有效菜单，请发送 help。")
         if t in BACK:
             self.followups.clear(key)
-            return self._render(key, self.items[s.node].parent or "root", available)
+            parent=self.items[s.node].parent or "root"
+            if parent=="root" and s.view=="scene" and self.scenes:
+                parent="scene"
+            return self._render(key,parent,available)
         if t in NEXT | PREV:
             self.followups.clear(key)
             return self._render(key, s.node, available, s.page + (-1 if t in PREV else 1))

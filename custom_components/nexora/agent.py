@@ -322,7 +322,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             reply=self.menu._query(step.capability,params)
             return await execute_readonly(hass=self.hass,conversation_api=conversation,intent_api=intent,
                 handler_for=self._handler,resolver=self.resolver,cap=cap,reply=reply,u=u,
-                get_state=get_state,logger=_LOGGER)
+                get_state=get_state,logger=_LOGGER,current=current)
         run=await run_plan(plan,dispatch,current)
         def label(step):
             try:
@@ -340,7 +340,8 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             if len(members)==1:
                 self.menu.followups.complete(key,generation,members[0].capability,dict(members[0].params),today)
             if self.query_context:
-                self.query_context.remember(key,plan.focus,today,scene=True,current=current())
+                self.query_context.remember(key,plan.focus,today,scene=True,current=current(),
+                    menu_scene=plan.menu_scene,params=members[0].params if plan.menu_scene else ())
         self._record("local_menu_scene" if plan.title else "local_planner","completed" if composed.primary_completed else "error",started)
         return self._reply(u,cid,composed.text)
 
@@ -380,7 +381,13 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             if not (session and session.pending) and text not in HELP|DETAIL|EXIT|BACK|NEXT|PREV and not text.isdecimal() and not alias and not PATH_RE.fullmatch(text):
                 boundary=self._boundary(u.text,today)
                 if boundary.kind not in {"cancelled","compound","control"}:
-                    inherited=self.query_context.resolve(u.text,prior,today)
+                    if prior.menu_scene:
+                        await self._prepare_capabilities(u,available)
+                        if not self.menu.followups.is_current(key,generation):
+                            return self._reply(u,cid,"查询会话已更新，请重新发送。")
+                    inherited=self.query_context.resolve_menu(u.text,prior,today,visible)
+                    if not inherited.plan and not inherited.message:
+                        inherited=self.query_context.resolve(u.text,prior,today)
                     if inherited.plan:
                         return await self._execute_query_plan(inherited.plan,u,cid,key,generation,today,available,visible,get_state,started)
                     if inherited.message:

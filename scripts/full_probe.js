@@ -75,12 +75,12 @@
  }
  console.log("========== Nexora v0.4.1-preview 全量只读验收 ==========");
  try{
-  const root=menu(await call("help"),"主菜单");
+  const root=menu(await call("detail"),"主菜单");
   report.visible_modules=choices(root).map(x=>x.label);
   if(report.visible_modules.includes("⚡ 水电气")){
    const elec=menu(await call("电费"),"电费");
    report.account_labels=choices(elec).map(x=>x.label);
-   await call("help");
+   await call("detail");
   }
   await walk(root);report.complete=true;
  }catch(e){report.navigation_errors.push(e.message||String(e))}

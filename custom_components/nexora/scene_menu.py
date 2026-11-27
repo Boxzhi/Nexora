@@ -31,6 +31,8 @@ def install(menu,rows):
     aliases={}
     specs={}
     root="scene"
+    if root in items:
+        raise ValueError("reserved scene root conflicts with catalog")
     items[root]=Item(root,items["root"].name,"",0,"menu")
     # Validate the complete projection before updating the existing menu.
     for row in rows:

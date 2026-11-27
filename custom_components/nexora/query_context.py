@@ -10,10 +10,12 @@ from .business_model import QueryKey
 
 @dataclass(frozen=True)
 class Focus:
-    frame: Frame
+    frame: Frame | None
     anchor: object
     expires: float
     scene: bool = False
+    menu_scene: str = ""
+    params: tuple = ()
 
 DEFAULT_GOALS={
     "door":"entry_safety","washer":"progress","purifier":"overview",
@@ -48,13 +50,13 @@ class QueryContext:
                 self.entries.pop(k,None)
         return self.entries.pop(key,None)
 
-    def remember(self,key,frame,today,*,scene=False,current=True):
-        if not current or frame is None:
+    def remember(self,key,frame,today,*,scene=False,current=True,menu_scene="",params=()):
+        if not current or (frame is None and not menu_scene):
             return False
         self.entries.pop(key,None)
         while len(self.entries)>=self.max_sessions:
             self.entries.pop(min(self.entries,key=lambda k:self.entries[k].expires))
-        self.entries[key]=Focus(frame,today,self.clock()+self.ttl,scene)
+        self.entries[key]=Focus(frame,today,self.clock()+self.ttl,scene,menu_scene,tuple(params))
         return True
 
     def from_registered(self,capability,params,today):
@@ -136,8 +138,41 @@ class QueryContext:
         # and an independently registered default, never a borrowed metric.
         return self._default(sub)
 
+    def resolve_menu(self,text,focus,today,visible):
+        """Repeat an actual completed scene or explicitly change its period/scope.
+
+        No arbitrary scene switching: unknown follow-ups go to the existing
+        single-metric context resolver, not an inferred account or device.
+        """
+        if focus is None or not focus.menu_scene:
+            return PlanningResult()
+        value=surface(text)
+        target=focus.menu_scene
+        params=dict(focus.params)
+        tail=value.removesuffix("呢")
+        if value in REPEAT:
+            pass
+        elif value.endswith("呢") and ".monthly." in target and tail in {"本月","这个月","上月","上个月"}:
+            target=target.rsplit(".",1)[0]+(".current" if tail in {"本月","这个月"} else ".previous")
+            params={}
+        elif value.endswith("呢") and ".annual." in target and tail in {"今年","本年","去年","上一年"}:
+            target=target.rsplit(".",1)[0]+(".year" if tail in {"今年","本年"} else ".last_year")
+            params={}
+        elif value.endswith("呢") and target.startswith("scene.utility.summary.") and tail in {"主住所","全部账户","所有账户","全部水电气账户","所有水电气账户"}:
+            parts=target.split(".")
+            parts[3]="primary" if tail=="主住所" else "all"
+            target=".".join(parts)
+        else:
+            return PlanningResult()
+        if focus.anchor!=today:
+            return PlanningResult(message="日期已变化，请重新选择菜单查询。")
+        try:
+            return PlanningResult(plan=self.planner.menu_plan(target,params,visible,self,today))
+        except (KeyError,ValueError):
+            return PlanningResult(message="该组合查询当前不可用，请发送 help。")
+
     def resolve(self,text,focus,today):
-        if focus is None:
+        if focus is None or focus.frame is None:
             return PlanningResult()
         value=surface(text)
         old=focus.frame
