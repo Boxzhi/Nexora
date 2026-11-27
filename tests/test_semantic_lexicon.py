@@ -41,6 +41,10 @@ class VocabularyTests(unittest.TestCase):
         self.assertIn("次住所的电费剩多少",p("utility.electric.l.basic.balance"))
         self.assertNotIn("电费剩多少",p("utility.electric.l.basic.balance"))
         self.assertFalse(p("appliance.ac.master.temp")&p("appliance.ac.master.target"))
+        self.assertIn("晾衣架灯开着没",p("lights.fixtures.airer.single_state"))
+        self.assertNotIn("晾衣架灯开着没",p("appliance.airer.light"))
+        self.assertIn("餐厅风扇灯开着没",p("lights.fixtures.dining_fan.single_state"))
+        self.assertNotIn("餐厅风扇灯开着没",p("appliance.fan.light"))
         self.assertFalse(p("home.access.door.lock_all")&p("home.access.door.door_all"))
         self.assertFalse(p("utility.summary.primary.balances")&p("utility.summary.all.balances_all"))
         self.menu.settings["secondary"]=""
