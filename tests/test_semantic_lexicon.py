@@ -57,3 +57,76 @@ class VocabularyTests(unittest.TestCase):
         collisions={q:sorted(ids) for q,ids in index.items() if len(ids)>1}
         self.assertEqual(collisions,{})
         self.assertGreater(len(index),1000)
+
+class ComposedMatcherTests(VocabularyTests):
+    def setUp(self):
+        super().setUp()
+        self.semantic=importlib.import_module(PKG+".semantic")
+        self.index=self.semantic.SemanticIndex(self.menu)
+    def test_all_expanded_phrases_and_wrappers(self):
+        total=0
+        for c in self.menu.capabilities.values():
+            for phrase in lex.patterns(c,self.menu):
+                for text in (phrase, "请问"+phrase+"？", "帮我查一下"+phrase+"啊"):
+                    with self.subTest(text=text,capability=c["id"]):
+                        result=self.index.match(text)
+                        self.assertIsNotNone(result)
+                        self.assertEqual(result.capability,c["id"])
+                        total+=1
+        print(f"COMPOSED_CORPUS_CASES={total}")
+        self.assertGreater(total,3000)
+    def test_all_canonical_fixed_queries(self):
+        for c in self.menu.capabilities.values():
+            if c.get("parameter"):
+                continue
+            query=self.menu._query(c["id"],{})
+            with self.subTest(capability=c["id"]):
+                self.assertEqual(self.index.match(query.sentence).capability,c["id"])
+    def test_combined_index_collision_audit(self):
+        collisions={q:sorted(ids) for q,ids in self.index.aliases.items() if len(ids|self.index.exact.get(q,set()))>1}
+        self.assertEqual(collisions,{})
+        print(f"COMBINED_UNIQUE_PHRASES={len(set(self.index.aliases)|set(self.index.exact))}")
+    def test_spoken_examples(self):
+        for phrase,cid in {
+            "燃气剩多少":"utility.gas.basic.balance",
+            "燃气还剩多少":"utility.gas.basic.balance",
+            "电费剩多少":"utility.electric.j.basic.balance",
+            "水费还剩多少":"utility.water.balance",
+            "昨天用了几度电":"utility.electric.j.history.day.h_day_yesterday",
+            "上月水费花了多少":"utility.water.history.history_cost.history_cost_previous",
+            "家里哪些灯还亮着":"lights.all.list_on",
+            "哪些灯没关":"lights.all.list_on",
+            "有没有灯掉线了":"lights.abnormal.offline",
+            "主卧吸顶灯亮着没":"lights.fixtures.master_ceiling.single_state",
+            "衣服洗好了吗":"appliance.washer.status",
+            "洗到哪了":"appliance.washer.phase",
+            "还有多久洗好":"appliance.washer.remaining",
+            "主卧空调现在调的几度啊":"appliance.ac.master.target",
+            "主卧空调测到几度":"appliance.ac.master.temp",
+            "家里都有谁":"home.family.family_all",
+            "主卧现在几度":"home.env.master.temp_master",
+            "大门锁好了吗":"home.access.door.lock_all",
+            "大门关严了吗":"home.access.door.door_all",
+        }.items():
+            with self.subTest(phrase=phrase):
+                self.assertEqual(self.index.match(phrase).capability,cid)
+    def test_no_control_unit_or_time_guessing(self):
+        for phrase in ("帮我打开客厅灯","主卧空调调到26度","请问关闭浴霸",
+                       "把洗衣机停一下","燃气还剩多少方","燃气剩多少度","水费还剩多少吨",
+                       "昨天主卧现在几度","不要查燃气剩多少","燃气剩多少然后关灯",
+                       "未知房间现在几度","2024年3月电费是多少"):
+            with self.subTest(phrase=phrase):
+                self.assertIsNone(self.index.match(phrase))
+    def test_account_alias_collision_is_local_clarification(self):
+        self.menu.settings["primary_label"]="共同账户"
+        self.menu.settings["secondary_label"]="共同账户"
+        index=self.semantic.SemanticIndex(self.menu)
+        match=index.match("共同账户电费剩多少")
+        self.assertIsNotNone(match)
+        self.assertIsNone(match.capability)
+        self.assertIn("多个查询",match.clarification)
+    def test_no_secondary_query_when_not_configured(self):
+        self.menu.settings["secondary"]=""
+        index=self.semantic.SemanticIndex(self.menu)
+        self.assertIsNone(index.match("第二账户电费剩多少"))
+        self.assertEqual(index.match("电费剩多少").capability,"utility.electric.j.basic.balance")

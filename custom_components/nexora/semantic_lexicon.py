@@ -92,7 +92,7 @@ LIGHT = {
 # AC indoor temperature vs purifier water temperature).
 COMMON_APPLIANCE = {"status":STATUS,"power":POWER,"fault":FAULT,
  "light":("灯开着没","照明开着吗","照明灯状态"),
- "mode":("当前是什么模式","现在什么模式"),"target":("调的几度","设了几度","设置的温度多少")}
+ "mode":("当前是什么模式","现在什么模式"),"target":("调的几度","现在调的几度","设了几度","设置的温度多少")}
 APPLIANCE = {
  "w":{"program":("选的什么程序","现在洗什么程序"),"phase":("洗到哪了","洗到哪一步"),
       "remaining":("还要多久洗好","还剩多久","多久能洗完"),
@@ -218,6 +218,8 @@ def patterns(cap,menu):
     elif p.family=="lights":
         subjects=WHOLE if p.target=="all" else ROOMS.get(name,(name,))
         templates=LIGHT.get(p.metric,())
+        if p.target=="all":
+            templates+= {"list_on":("哪些灯没关","哪些灯还亮着"),"offline":("有没有灯掉线了",)}.get(p.metric,())
     elif p.family=="appliance":
         subjects=DEVICES.get(p.target,())
         specific=APPLIANCE.get(p.target,{})

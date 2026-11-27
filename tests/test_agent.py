@@ -414,3 +414,44 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertIsNone(menu.sessions[key].pending)
         self.conv.async_converse.assert_awaited_once()
         self.it.async_handle.assert_not_awaited()
+
+    async def test_colloquial_gas_balance_routes_through_strict_executor(self):
+        from importlib import import_module
+        SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
+        cid="utility.gas.basic.balance"
+        slots={"utility_kind":"g","utility_metric":"balance","luxe_utility_property":"j"}
+        cap={"id":cid,"intent":"LuxeUtilityQuery","sentence":"燃气费余额","slots":slots}
+        self.menu.capabilities={cid:cap}
+        self.menu._available=lambda c,visible:visible(cap)
+        self.menu._query=lambda c,p:SimpleNamespace(capability=c,sentence=cap["sentence"],slots=slots)
+        self.menu.route=lambda *a,**kw:None
+        self.agent.semantic=SemanticIndex(self.menu)
+        self.u.text="燃气剩多少"
+        self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in slots.items()]
+        async def recognize(u,**kw):
+            return self.result if u.text==cap["sentence"] else None
+        self.native.async_recognize_intent=AsyncMock(side_effect=recognize)
+        await self.agent.async_process(self.u)
+        self.it.async_handle.assert_awaited_once()
+        self.assertEqual(self.it.async_handle.call_args.args[3]["utility_metric"]["value"],"balance")
+        self.conv.async_converse.assert_not_awaited()
+        self.assertEqual(self.agent.diagnostics_snapshot()["local_semantic:completed"]["count"],1)
+
+    async def test_composed_query_invalid_native_slots_never_falls_back(self):
+        from importlib import import_module
+        SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
+        cid="utility.gas.basic.balance"
+        cap={"id":cid,"intent":"LuxeUtilityQuery","sentence":"燃气费余额","slots":{"utility_kind":"g","utility_metric":"balance","luxe_utility_property":"j"}}
+        self.menu.capabilities={cid:cap}
+        self.menu._available=lambda c,visible:visible(cap)
+        self.menu._query=lambda c,p:SimpleNamespace(capability=c,sentence=cap["sentence"],slots=cap["slots"])
+        self.menu.route=lambda *a,**kw:None
+        self.agent.semantic=SemanticIndex(self.menu)
+        self.u.text="燃气剩多少"
+        async def recognize(u,**kw):
+            return self.result if u.text==cap["sentence"] else None
+        self.native.async_recognize_intent=AsyncMock(side_effect=recognize)
+        r=await self.agent.async_process(self.u)
+        self.assertIn("不一致",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
