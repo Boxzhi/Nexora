@@ -40,7 +40,7 @@ class Followups:
         if self.menu.settings["secondary"]:
             labels.extend([self.menu.settings["secondary_label"],self.menu.settings["secondary"]])
         return (text in PERIODS or text in USAGE_PHRASES or text in METRIC_SWITCH
-                or text in OTHER_ACCOUNT or text in {"用量","费用"}
+                or text in OTHER_ACCOUNT or text in USAGE | COST
                 or any(label and text==label.casefold()+"呢" for label in labels))
     def clear(self,key):
         self.contexts.pop(key,None)
@@ -94,7 +94,9 @@ class Followups:
                 return "当前没有可切换的电费账户，请发送 help。"
             slots["luxe_utility_property"]="l" if slots["luxe_utility_property"]=="j" else "j"
             return self._find(slots,available)
-        if text in METRIC_SWITCH:
+        metric_switch_text=text if text in METRIC_SWITCH else text+"呢"
+        if metric_switch_text in METRIC_SWITCH:
+            text=metric_switch_text
             if kind not in MONTHLY:
                 return "请补充需要查询的具体项目，或发送 help。"
             if text not in {"费用呢","用量呢"} and text not in {"w":{"用水量呢","水费呢"},"e":{"用电量呢","电费呢"},"g":{"用气量呢","燃气费呢"}}[kind]:

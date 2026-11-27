@@ -312,4 +312,16 @@ class V03Tests(unittest.TestCase):
         self.assertEqual(q.slots["utility_period"],"previous")
         self.assertEqual(q.slots["utility_metric"],"h_month_cost")
 
+    def test_context_clarification_accepts_specific_bare_metric(self):
+        f=self.m.followups
+        f.remember("a","utility.water.balance")
+        self.assertIn("用量还是费用",self.route("上个月呢").text)
+        self.assertTrue(f.is_followup_message("用水量"))
+        q=self.route("用水量")
+        self.assertEqual(q.slots["utility_metric"],"history_usage")
+        self.assertEqual(q.slots["utility_period"],"previous")
+        f.remember("a",q.capability)
+        self.assertTrue(f.is_followup_message("费用"))
+        self.assertEqual(self.route("费用").slots["utility_metric"],"history_cost")
+
 if __name__=="__main__":unittest.main()
