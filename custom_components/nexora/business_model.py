@@ -7,7 +7,7 @@ the sole authority for executable capabilities.
 from dataclasses import dataclass
 from types import MappingProxyType
 
-from .semantic_lexicon import describe
+from .semantic_lexicon import FAMILIES, describe
 
 # Value dimensions are semantic categories, not assertions about the exact
 # unit/shape returned by external intent_scripts. Different meanings with the
@@ -37,13 +37,16 @@ LIGHT_DIMENSIONS = {
 }
 APPLIANCE_DIMENSIONS = {
     "status": "status power door lock child fault detergent softener swing heat vent blow light sterilize holiday replace",
-    "mode": "program phase mode action preset natural",
+    "mode": "program mode preset natural",
+    "cycle_phase": "phase",
+    "operating_action": "action",
     "duration": "remaining steriletime lightremain heatremain duration days",
     "setpoint_temperature": "target",
     "temperature": "temp",
     "rotation_speed": "spin",
     "count": "rinse cycles",
-    "water_consumption": "water totalwater volume",
+    "water_consumption": "water totalwater",
+    "water_production": "volume",
     "electric_consumption": "energy totalenergy",
     "speed_setting": "fan speed heatlevel ventlevel blowlevel",
     "position": "position limits",
@@ -118,7 +121,9 @@ class BusinessRegistry:
         for cap in capabilities.values():
             p = describe(cap)
             if p is None:
-                # Other intent families are not in the registered read-only domain.
+                # A malformed member of a known family is a schema error.
+                if cap.get("intent") in FAMILIES:
+                    raise ValueError("Incomplete registered capability: " + str(cap.get("id")))
                 continue
             key = QueryKey(p.family, p.target, p.metric, p.period, p.parameter, p.account)
             item = Capability(key, p.capability, _dimension(p), cap["intent"],
@@ -147,7 +152,8 @@ class Scene:
     """Bounded ordered capabilities, not an execution plan.
 
     Primary answers the question; supplements add useful context. Stop rules
-    are descriptive contracts for the later executor, not implemented here.
+    may suppress supplements only; never suppress an explicit primary query.
+    These are contracts for the later executor, not implemented here.
     """
     primary: tuple
     supplements: tuple = ()
@@ -199,13 +205,13 @@ def policies(registry):
     # fixture targets never inherit room counting metrics.
     scopes=sorted({k.target for k in registry.by_key if k.family=="lights" and k.metric=="count_on"})
     for target in scopes:
-        same("lights",target,"overview",("count_on","list_on"),
+        same("lights",target,"overview",("count_on",),("list_on",),
              stop=("no_lights_on",),reason="先给开启灯组数量，仅有开启灯组时补充清单。")
         same("lights",target,"any_lights_on",("list_on",),
              reason="查询开启灯组；不将查询解释为关闭操作。")
     for target, room in (("m","主卧"),("s","次卧")):
         same("appliance",target,"temperature_unspecified",("target","temp"),
-             stop=("no_running_parameters",),reason="设定与检测温度均来自空调，不替换为房间传感器。")
+             reason="设定与检测温度均来自空调，不替换为房间传感器。")
         same("appliance",target,"overview",("status",),("target","temp"),
              stop=("device_off",),reason="关机不继续查询运行参数。")
         result.append(_policy("appliance",target,"temperature_when_off",
@@ -241,7 +247,15 @@ def policies(registry):
          rationale="同时回答环境亮度与照明状态，不冒充灯具亮度百分比。"))
     return tuple(result)
 
+# Cross-domain links are explicit, narrowly scoped and labeled. No fallback
+# from one account/device to another is authorized by these relationships.
+CROSS_SCOPE = MappingProxyType({
+    PolicyKey("appliance","m","temperature_when_off"): frozenset({("home","主卧")}),
+    PolicyKey("appliance","s","temperature_when_off"): frozenset({("home","次卧")}),
+    PolicyKey("home","阳台","brightness_unspecified"): frozenset({("lights","yang_tai")}),
+})
 MAX_SCENE_QUERIES = 4
+STOP_CONDITIONS = frozenset({"no_lights_on","device_off","all_devices_off","cycle_not_running"})
 
 class PolicyRegistry:
     """Validate all references at construction; no execution or side effects."""
@@ -251,14 +265,19 @@ class PolicyRegistry:
             scene = rule.scene
             members = scene.primary + scene.supplements
             if (rule.key in index or not scene.primary or not rule.rationale
-                    or len(members) > MAX_SCENE_QUERIES or len(set(members)) != len(members)):
+                    or len(members) > MAX_SCENE_QUERIES or len(set(members)) != len(members)
+                    or (scene.stop_on and not scene.supplements)
+                    or not set(scene.stop_on) <= STOP_CONDITIONS):
                 raise ValueError("Invalid default policy: " + repr(rule.key))
             for member in members:
                 registry.require(member)
                 if member.parameter:
                     raise ValueError("Default scene cannot invent a dynamic date")
-                if rule.key.account and member.account != rule.key.account:
+                if member.account != rule.key.account:
                     raise ValueError("Default scene cannot change account")
+                if (member.family,member.target)!=(rule.key.family,rule.key.target):
+                    if not scene.caveat or (member.family,member.target) not in CROSS_SCOPE.get(rule.key,()):
+                        raise ValueError("Unapproved cross-scope scene")
                 if rule.key.period != member.period:
                     raise ValueError("Default scene cannot change period")
             index[rule.key] = rule

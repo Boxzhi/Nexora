@@ -115,3 +115,21 @@ class BusinessModelTests(unittest.TestCase):
             bm.PolicyRegistry(self.registry,[replace(rule,scene=missing)])
         with self.assertRaises(TypeError):
             self.registry.by_id["fake"]=None
+
+    def test_scene_stop_conditions_never_skip_primary_and_cross_scope_is_explicit(self):
+        rule=self.policies.get(bm.PolicyKey("lights","all","overview"))
+        self.assertEqual(tuple(k.metric for k in rule.scene.primary),("count_on",))
+        self.assertEqual(tuple(k.metric for k in rule.scene.supplements),("list_on",))
+        with self.assertRaises(ValueError):
+            bm.PolicyRegistry(self.registry,[replace(rule,scene=replace(rule.scene,supplements=()))])
+        rule=self.policies.get(bm.PolicyKey("appliance","m","temperature_when_off"))
+        wrong=replace(rule.scene,primary=(rule.scene.primary[0],bm.QueryKey("home","次卧","temp")))
+        with self.assertRaises(ValueError):
+            bm.PolicyRegistry(self.registry,[replace(rule,scene=wrong)])
+        with self.assertRaises(ValueError):
+            bm.PolicyRegistry(self.registry,[replace(rule,scene=replace(rule.scene,caveat=""))])
+
+    def test_malformed_known_family_is_not_silently_discarded(self):
+        cap=dict(self.menu.capabilities["utility.gas.basic.balance"],slots={})
+        with self.assertRaises(ValueError):
+            bm.BusinessRegistry({"bad":cap})
