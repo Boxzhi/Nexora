@@ -262,6 +262,9 @@ class NexoraAgent(conversation.AbstractConversationAgent):
 
     def _boundary(self,text,today):
         def known(q):
+            index=getattr(self.menu,"scene_language",None)
+            if index and index.match(q):
+                return True
             if self.semantic.match(q,today=today) is not None:
                 return True
             return bool(self.planner and self.planner.plan(q,today).plan)
@@ -364,7 +367,9 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         from .menu import HELP,DETAIL,BACK,NEXT,PREV,TRANSLATE,PATH_RE
         text=u.text.strip().casefold().translate(TRANSLATE)
         alias=text in self.menu.aliases or text in getattr(self.menu,"scene_aliases",{})
-        if text in HELP|DETAIL|BACK|NEXT|PREV or alias or PATH_RE.fullmatch(text) or self.menu.followups.is_followup_message(text.rstrip("？?。！!").strip()):
+        index=getattr(self.menu,"scene_language",None)
+        scene_id=index.match(u.text) if index else None
+        if text in HELP|DETAIL|BACK|NEXT|PREV or alias or scene_id or PATH_RE.fullmatch(text) or self.menu.followups.is_followup_message(text.rstrip("？?。！!").strip()):
             await self._prepare_capabilities(u,available)
         get_state=getattr(getattr(self.hass,"states",None),"get",lambda _:None)
         def visible(cap):
@@ -378,7 +383,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         if prior and self.query_context:
             session=self.menu.sessions.get(key)
             from .menu import EXIT
-            if not (session and session.pending) and text not in HELP|DETAIL|EXIT|BACK|NEXT|PREV and not text.isdecimal() and not alias and not PATH_RE.fullmatch(text):
+            if not (session and session.pending) and text not in HELP|DETAIL|EXIT|BACK|NEXT|PREV and not text.isdecimal() and not alias and not scene_id and not PATH_RE.fullmatch(text):
                 boundary=self._boundary(u.text,today)
                 if boundary.kind not in {"cancelled","compound","control"}:
                     if prior.menu_scene:
@@ -394,7 +399,12 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                         self.menu.followups.clear(key)
                         self._record("local_planner","reply",started)
                         return self._reply(u,cid,inherited.message)
-        decision=decide(self.menu,key,u.text,visible,today=today)
+        # Only an exact, registered, fully scoped scene can override a
+        # legacy single-metric match. All other input retains the old path.
+        if scene_id and self._boundary(u.text,today).kind not in {"cancelled","compound","control"}:
+            decision=from_reply(self.menu.select_scene(key,scene_id,visible),"local_scene_language")
+        else:
+            decision=decide(self.menu,key,u.text,visible,today=today)
         if decision.route is Route.LOCAL_SCENE:
             if self.planner is None:
                 return self._reply(u,cid,"组合查询暂不可用，请发送 detail 使用完整菜单。")

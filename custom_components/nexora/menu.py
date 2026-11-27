@@ -197,6 +197,24 @@ class Menu:
             return Reply(scene=item_id,params=tuple(sorted(params.items())))
         return self._query(item_id,params)
 
+    def select_scene(self,key,scene_id,available):
+        """Explicit natural language uses the same registered menu leaf."""
+        self._prune()
+        self.followups.clear(key)
+        session=self.sessions.get(key)
+        if session:
+            session.pending=None
+        if scene_id not in self.scenes or not self._available(scene_id,available):
+            return Reply("该查询当前不可用，请发送 help。")
+        param=self._parameter_cap(scene_id).get("parameter")
+        if param:
+            parent=self.items[scene_id].parent
+            choices=[x.id for x in self.children[parent] if self._available(x.id,available)]
+            self._render(key,parent,available,choices.index(scene_id)//PAGE_SIZE)
+            self.sessions[key].pending=scene_id
+            return Reply("请输入"+PROMPTS[param]+"，或发送0返回。")
+        return self._selected(scene_id,{})
+
     def _prune(self):
         now = self.clock()
         for key, session in list(self.sessions.items()):
