@@ -53,6 +53,6 @@ class HomeSceneTests(unittest.TestCase):
         self.assertEqual(sum(cid.startswith("scene.home.") for cid in self.m.scenes),24)
         self.assertEqual(len(self.m.scenes),150)
         self.assertEqual(len(self.m.capabilities),443)
-        self.ask("detail")
+        self.m._render("a","root",lambda c:True)
         self.assertIn("家庭成员",self.ask("4").text)
         self.assertIn("在家人数",self.ask("1").text)

@@ -407,7 +407,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             decision=decide(self.menu,key,u.text,visible,today=today)
         if decision.route is Route.LOCAL_SCENE:
             if self.planner is None:
-                return self._reply(u,cid,"组合查询暂不可用，请发送 detail 使用完整菜单。")
+                return self._reply(u,cid,"组合查询暂不可用，请发送 help 或直接查询具体指标。")
             try:
                 plan=self.planner.menu_plan(decision.reply.scene,dict(decision.reply.params),visible,
                     self.query_context,today)

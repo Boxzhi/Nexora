@@ -40,7 +40,11 @@ class CompleteMenuTests(unittest.TestCase):
         for root,command,items in [("scene","help",self.menu.scenes),("root","detail",self.menu.capabilities)]:
             for cid in items:
                 with self.subTest(cid=cid):
-                    self.menu.route("s",command,today=TODAY)
+                    if root=="scene":
+                        self.menu.route("s",command,today=TODAY)
+                    else:
+                        # Internal regression only: never expose legacy menu via HA.
+                        self.menu._render("s","root",lambda c:True)
                     result=self.menu.route("s",path_for(self.menu,cid,root),today=TODAY)
                     cap=self.menu._parameter_cap(cid)
                     if cap.get("parameter"):
@@ -83,12 +87,15 @@ class CompleteMenuTests(unittest.TestCase):
         self.assertIn("额外信息",menu.route("a","1").text)
         self.assertEqual(menu.route("a","1").capability,"extra.info.read")
         self.assertIn("额外模块",menu.route("a","0").text)
-        self.assertIn("发送 detail",menu.route("a","0").text)
-        menu.route("a","detail")
-        self.assertIn("第三阶梯",menu.route("a","燃气阶梯").text)
+        root=menu.route("a","0").text
+        self.assertNotIn("发送 detail",root)
+        self.assertEqual(menu.route("a","detail").text,root)
+        self.assertIn("各阶梯详细数据",menu.route("a","燃气阶梯").text)
+        self.assertIsNone(menu.navigation_alias("单个设备电量",menu.sessions["a"]))
+        menu._render("internal","root",lambda c:True)
+        self.assertIn("第三阶梯",menu.route("internal","燃气阶梯").text)
         menu.route("b","help")
         self.assertIn("各阶梯详细数据",menu.route("b","燃气阶梯").text)
-        self.assertIn("第三阶梯",menu.route("a","燃气阶梯").text)
     def test_invalid_params_and_cancel(self):
         with self.assertRaises(ValueError):
             self.p.menu_plan("scene.utility.electric.j.monthly.explicit",{"year":2027,"month":1},lambda c:True,None,TODAY)
@@ -168,7 +175,8 @@ class CompleteSceneAgentTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.calls)
         self.conv.async_converse.assert_not_awaited()
     async def test_detail_and_independent_natural_language(self):
-        await self.ask("detail")
+        self.assertEqual(await self.ask("detail"),await self.ask("help"))
+        self.menu._render(("u",None,None,"a"),"root",lambda c:True)
         self.calls.clear()
         await self.ask(path_for(self.menu,"utility.gas.basic.balance","root"))
         self.assertEqual(self.calls,["utility.gas.basic.balance"])

@@ -36,7 +36,9 @@ class LightsSceneTests(unittest.TestCase):
     def test_alias_and_original(self):
         r=self.ask("客厅吸顶灯")
         self.assertEqual(r.scene,"scene.lights.fixtures.living_ceiling")
-        self.ask("detail")
+        self.assertEqual(self.ask("detail").text,self.ask("help").text)
+        self.assertEqual(self.ask("客厅吸顶灯").scene,"scene.lights.fixtures.living_ceiling")
+        self.m._render("a","root",lambda c:True)
         self.assertIn("开关状态",self.ask("客厅吸顶灯").text)
     def test_count_and_scope(self):
         self.assertEqual(len(self.m.scenes),37)

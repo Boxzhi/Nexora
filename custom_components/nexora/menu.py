@@ -184,7 +184,15 @@ class Menu:
 
     def navigation_alias(self, text, session=None):
         if self.scenes and (session is None or session.view=="scene"):
-            return self.scene_aliases.get(text,self.aliases.get(text))
+            projected=self.scene_aliases.get(text)
+            if projected:
+                return projected
+            original=self.aliases.get(text)
+            if original:
+                module=original.split(".",1)[0]
+                if "scene."+module not in self.items:
+                    return original
+            return None
         return self.aliases.get(text)
 
     def _parameter_cap(self, item_id):
@@ -239,7 +247,7 @@ class Menu:
         if key not in self.sessions and len(self.sessions) >= self.max_sessions:
             self.sessions.pop(min(self.sessions, key=lambda k:self.sessions[k].expires))
         prior=self.sessions.get(key)
-        view="scene" if node=="scene" else "detail" if node=="root" else prior.view if prior else "detail"
+        view="scene" if node=="scene" else "detail" if node=="root" else prior.view if prior else "scene" if self.scenes else "detail"
         if node.startswith("scene."):
             view="scene"
         self.sessions[key] = Session(node, page, self.clock()+self.ttl, shown, view=view)
@@ -256,9 +264,7 @@ class Menu:
             lines.append("99. 下一页")
         if node not in {"root","scene"}:
             lines.append("0. 返回上一级")
-        if node=="scene":
-            lines.extend(["","发送 detail 查看完整菜单。"])
-        return Reply("\n".join(lines + ["", FOOTER]))
+         return Reply("\n".join(lines + ["", FOOTER]))
 
     def _query(self, cap_id, params):
         cap = self.capabilities[cap_id]
@@ -274,7 +280,7 @@ class Menu:
         spoken=t.rstrip("？?。！!").strip()
         if t in HELP | DETAIL:
             self.followups.clear(key)
-            return self._render(key, "scene" if self.scenes and t in HELP else "root", available)
+            return self._render(key, "scene" if self.scenes else "root", available)
         if t in EXIT:
             self.sessions.pop(key, None)
             self.followups.clear(key)
