@@ -205,7 +205,7 @@ class Menu:
     def _available(self, item_id, available):
         item = self.items[item_id]
         if item.kind == "scene":
-            return any(self._available(cid,available) for cid in self.scenes[item_id].members)
+            return any(self._available(cid,available) for cid in self.scenes[item_id].members if cid not in self.scenes[item_id].supplements)
         if item.kind == "query":
             cap = self.capabilities[item_id]
             if "{secondary}" in cap["sentence"] and not self.settings["secondary"]:
@@ -265,6 +265,14 @@ class Menu:
             self.followups.clear(key)
             if not self._available(node, available):
                 return Reply("该分类暂无已配置的查询能力，请发送 help。")
+            if node in self.scenes:
+                # A direct category shortcut is equivalent to selecting its
+                # projected leaf; preserve a valid parent menu for 0/repeat.
+                self._render(key,self.items[node].parent,available)
+                session=self.sessions[key]
+                if node not in session.shown:
+                    return Reply("该查询当前不可用，请发送 help。")
+                return self.route(key,str(session.shown.index(node)+1),available,today)
             return self._render(key, node, available)
         if s and s.pending:
             if re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", t):

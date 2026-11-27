@@ -36,14 +36,14 @@ def install(menu,rows):
     for row in rows:
         if not ID.fullmatch(row.id) or not row.id.startswith("scene.") or row.id in items or row.parent not in items or not row.parent.startswith("scene") or items[row.parent].kind!="menu":
             raise ValueError("invalid scene node")
-        if not row.name or not isinstance(row.order,int):
+        if not isinstance(row.name,str) or not row.name.strip() or len(row.name)>150 or not isinstance(row.order,int):
             raise ValueError("invalid scene label")
         if row.members:
             members=tuple(row.members)
             if len(members)>MAX_MENU_QUERIES or len(set(members))!=len(members) or any(cid not in registry.by_id for cid in members):
                 raise ValueError("invalid scene members")
             signatures={(menu.capabilities[cid].get("parameter"),menu.capabilities[cid].get("parameter_year_offset",0),tuple(sorted(menu.capabilities[cid].get("parameter_slots",{})))) for cid in members}
-            if len(signatures)!=1 or not set(row.supplements)<set(members) or not set(row.stop_on)<=STOP_CONDITIONS or (row.anchor and row.anchor not in set(members)-set(row.supplements)):
+            if len(signatures)!=1 or len(set(row.supplements))!=len(row.supplements) or not set(row.supplements)<set(members) or not set(row.stop_on)<=STOP_CONDITIONS or (row.anchor and row.anchor not in set(members)-set(row.supplements)):
                 raise ValueError("incompatible scene")
             specs[row.id]=SceneSpec(members,row.anchor,row.supplements,row.stop_on)
         elif row.anchor or row.supplements or row.stop_on:

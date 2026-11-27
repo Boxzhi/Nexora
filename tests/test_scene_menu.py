@@ -1,19 +1,20 @@
 import unittest
 from datetime import date
-from test_menu import mod, CAT, SET
+from test_menu import mod, CAT, SET, BASE
+import json
 from nexora_menu_test.scene_menu import Node
 from nexora_menu_test.query_planner import QueryPlanner
 
 class SceneFoundationTests(unittest.TestCase):
     def setUp(self):
-        self.m=mod.Menu([CAT],settings=SET)
+        self.m=mod.Menu([json.loads(p.read_text()) for p in sorted((BASE/"catalogs").glob("*.json"))],settings=SET)
         self.rows=[Node("scene.utility","scene","水电气",100,alias_of="utility"),
             Node("scene.utility.water","scene.utility","水费",10,alias_of="utility.water"),
             Node("scene.utility.water.balance","scene.utility.water","账户概况",10,
                 ("utility.water.balance","utility.water.debt"),anchor="utility.water.balance")]
     def test_overlay_and_original(self):
         self.m.install_scene_layout(self.rows)
-        self.assertEqual(len(self.m.capabilities),136)
+        self.assertEqual(len(self.m.capabilities),443)
         self.assertIn("水电气",self.m.route("a","help").text)
         self.assertIn("账户概况",self.m.route("a","1.1").text)
         q=self.m.route("a","1")
