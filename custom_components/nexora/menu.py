@@ -6,6 +6,7 @@ from string import Formatter
 from time import monotonic
 from .capability import validate_requirements
 from .followup import Followups
+from .context_transitions import Selection
 
 HELP = {"help", "帮助", "使用指南", "你能做什么"}
 EXIT = {"exit", "退出", "关闭菜单"}
@@ -218,6 +219,7 @@ class Menu:
         self._prune()
         t = text.strip().casefold().translate(TRANSLATE)
         s = self.sessions.get(key)
+        spoken=t.rstrip("？?。！!").strip()
         if t in HELP:
             self.followups.clear(key)
             return self._render(key, "root", available)
@@ -225,6 +227,12 @@ class Menu:
             self.sessions.pop(key, None)
             self.followups.clear(key)
             return Reply("已退出查询菜单。")
+        if self.followups.has_clarification_choice(key,spoken):
+            result=self.followups.route(key,spoken,available,today)
+            if isinstance(result,Selection):
+                if not self._available(result.capability,available):
+                    return Reply("该查询当前不可用，请发送 help。")
+                return self._query(result.capability,dict(result.params))
         if t in self.aliases:
             self.followups.clear(key)
             node = self.aliases[t]
@@ -257,7 +265,12 @@ class Menu:
         if re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", t):
             return self._path(key, t, available, today)
         if t not in BACK | NEXT | PREV and not (t.isascii() and t.isdigit()):
-            result = self.followups.route(key, t, available)
+            result = self.followups.route(key, spoken, available,today)
+            if isinstance(result,Selection):
+                if not self._available(result.capability,available):
+                    self.followups.clear(key)
+                    return Reply("该查询当前不可用，请发送 help。")
+                return self._query(result.capability,dict(result.params))
             if result in self.capabilities:
                 return self._query(result, {})
             if isinstance(result, str):

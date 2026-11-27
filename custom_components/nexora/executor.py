@@ -52,6 +52,8 @@ async def execute_readonly(*, hass, conversation_api, intent_api, handler_for,
             if result is None or result.unmatched_entities or result.intent.name != cap["intent"]:
                 return ExecutionResult(error="该问句与已安装意图库不匹配，请检查版本。")
             recognized = {item.name: item.value for item in result.entities_list}
+            if len(recognized)!=len(result.entities_list):
+                return ExecutionResult(error="查询参数重复，请检查已安装意图库。")
             expected = reply.slots
             if not _slots_match(recognized, expected, cap.get("native_slots", {})) or handler_for(cap["intent"]) is not handler:
                 return ExecutionResult(error="查询参数与已安装意图库不一致，请检查版本。")
@@ -67,4 +69,9 @@ async def execute_readonly(*, hass, conversation_api, intent_api, handler_for,
     except Exception:
         logger.debug("Nexora local query failed", exc_info=True)
         return ExecutionResult(error="本地查询暂时失败，请稍后重试。")
+    try:
+        if not isinstance(response.as_dict(),dict):
+            return ExecutionResult(error="本地查询未返回有效回复，请稍后重试。")
+    except Exception:
+        return ExecutionResult(error="本地查询未返回有效回复，请稍后重试。")
     return ExecutionResult(response=response)

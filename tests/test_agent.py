@@ -61,7 +61,7 @@ class Tests(IsolatedAsyncioTestCase):
         self.fallback=object()
         self.conv.async_get_agent=lambda hass,aid:self.native if aid=="conversation.home_assistant" else self.fallback
         self.menu=SimpleNamespace(aliases={},followups=SimpleNamespace(clear=lambda *a:None,remember=lambda *a:None,begin=lambda *a:object(),is_current=lambda *a:True,is_followup_message=lambda text:False),capabilities={"water":{"id":"water","intent":"LuxeUtilityQuery"}},route=lambda *a,**kw:SimpleNamespace(capability="water",sentence="水费余额是多少",slots=self.slots,text=""))
-        self.menu.followups.complete=lambda key,token,cap: self.menu.followups.remember(key,cap)
+        self.menu.followups.complete=lambda key,token,cap,*args: self.menu.followups.remember(key,cap)
         self.agent=self.a.NexoraAgent(object(),"entry",self.menu,"fallback")
         self.u=SimpleNamespace(text="1",conversation_id="test",context=SimpleNamespace(user_id="u"),device_id=None,satellite_id=None,language="zh-CN",extra_system_prompt="p")
         self.agent.resolver.replace_targets("zh-CN",{})
@@ -350,7 +350,7 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertEqual(self.conv.async_converse.await_count,7)
         self.it.async_handle.assert_not_awaited()
 
-    async def test_native_priority_over_semantic_alias(self):
+    async def test_native_semantic_conflict_is_terminal(self):
         from importlib import import_module
         SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
         self.menu.route=lambda *a,**kw:None
@@ -363,9 +363,13 @@ class Tests(IsolatedAsyncioTestCase):
         self.agent.semantic=SemanticIndex(self.menu)
         self.u.text="水费余额"
         self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in other.items()]
-        await self.agent.async_process(self.u)
-        self.assertEqual(self.it.async_handle.call_args.args[3]["utility_kind"]["value"],"g")
+        r=await self.agent.async_process(self.u)
+        self.assertIn("参数不一致",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
         self.conv.async_converse.assert_not_awaited()
+        self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in self.slots.items()]
+        await self.agent.async_process(self.u)
+        self.it.async_handle.assert_awaited_once()
         self.assertEqual(self.agent.diagnostics_snapshot()["local_native:completed"]["count"],1)
 
     async def test_native_non_household_synonym_is_not_sent_to_ai(self):
@@ -414,3 +418,178 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertIsNone(menu.sessions[key].pending)
         self.conv.async_converse.assert_awaited_once()
         self.it.async_handle.assert_not_awaited()
+
+    async def test_colloquial_gas_balance_routes_through_strict_executor(self):
+        from importlib import import_module
+        SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
+        cid="utility.gas.basic.balance"
+        slots={"utility_kind":"g","utility_metric":"balance","luxe_utility_property":"j"}
+        cap={"id":cid,"intent":"LuxeUtilityQuery","sentence":"燃气费余额","slots":slots}
+        self.menu.capabilities={cid:cap}
+        self.menu._available=lambda c,visible:visible(cap)
+        self.menu._query=lambda c,p:SimpleNamespace(capability=c,sentence=cap["sentence"],slots=slots)
+        self.menu.route=lambda *a,**kw:None
+        self.agent.semantic=SemanticIndex(self.menu)
+        self.u.text="燃气剩多少"
+        self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in slots.items()]
+        async def recognize(u,**kw):
+            return self.result if u.text==cap["sentence"] else None
+        self.native.async_recognize_intent=AsyncMock(side_effect=recognize)
+        await self.agent.async_process(self.u)
+        self.it.async_handle.assert_awaited_once()
+        self.assertEqual(self.it.async_handle.call_args.args[3]["utility_metric"]["value"],"balance")
+        self.conv.async_converse.assert_not_awaited()
+        self.assertEqual(self.agent.diagnostics_snapshot()["local_semantic:completed"]["count"],1)
+
+    async def test_composed_query_invalid_native_slots_never_falls_back(self):
+        from importlib import import_module
+        SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
+        cid="utility.gas.basic.balance"
+        cap={"id":cid,"intent":"LuxeUtilityQuery","sentence":"燃气费余额","slots":{"utility_kind":"g","utility_metric":"balance","luxe_utility_property":"j"}}
+        self.menu.capabilities={cid:cap}
+        self.menu._available=lambda c,visible:visible(cap)
+        self.menu._query=lambda c,p:SimpleNamespace(capability=c,sentence=cap["sentence"],slots=cap["slots"])
+        self.menu.route=lambda *a,**kw:None
+        self.agent.semantic=SemanticIndex(self.menu)
+        self.u.text="燃气剩多少"
+        async def recognize(u,**kw):
+            return self.result if u.text==cap["sentence"] else None
+        self.native.async_recognize_intent=AsyncMock(side_effect=recognize)
+        r=await self.agent.async_process(self.u)
+        self.assertIn("不一致",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_dynamic_spoken_date_strict_dispatch(self):
+        from importlib import import_module
+        SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
+        cid="utility.electric.j.history.h_month_cost.h_month_cost_last_year"
+        cap={"id":cid,"intent":"LuxeUtilityQuery","sentence":"去年{month}月电费是多少",
+             "slots":{"utility_kind":"e","utility_metric":"h_month_cost","luxe_utility_property":"j","utility_period":"last_year"},
+             "parameter":"month","parameter_slots":{"month":"luxe_utility_month"},"parameter_year_offset":-1}
+        self.menu.capabilities={cid:cap}
+        self.menu._available=lambda c,visible:visible(cap)
+        self.menu._query=lambda c,p:SimpleNamespace(capability=c,sentence=cap["sentence"].format(**p),
+                slots={**cap["slots"],"luxe_utility_month":p["month"]})
+        self.menu.route=lambda *a,**kw:None
+        self.agent.semantic=SemanticIndex(self.menu)
+        self.u.text="去年三月份电费花了多少钱"
+        slots={**cap["slots"],"luxe_utility_month":3}
+        self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in slots.items()]
+        async def recognize(u,**kw):
+            return self.result if u.text=="去年3月电费是多少" else None
+        self.native.async_recognize_intent=AsyncMock(side_effect=recognize)
+        await self.agent.async_process(self.u)
+        self.it.async_handle.assert_awaited_once()
+        self.assertEqual(self.it.async_handle.call_args.args[3]["luxe_utility_month"]["value"],3)
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_explicit_ambiguity_is_terminal_before_native(self):
+        self.menu.route=lambda *a,**kw:None
+        for q in ("主卧空调多少度","燃气还剩多少方","大门好了吗","最近7天电费多少"):
+            self.u.text=q
+            r=await self.agent.async_process(self.u)
+            self.assertTrue(r.response.speech)
+        self.native.async_recognize_intent.assert_not_awaited()
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_native_date_disagreement_never_executes(self):
+        from importlib import import_module
+        SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
+        cid="utility.electric.j.history.h_month_cost.h_month_cost_last_year"
+        cap={"id":cid,"intent":"LuxeUtilityQuery","sentence":"去年{month}月电费是多少",
+             "slots":{"utility_kind":"e","utility_metric":"h_month_cost","luxe_utility_property":"j","utility_period":"last_year"},
+             "parameter":"month","parameter_slots":{"month":"luxe_utility_month"},"parameter_year_offset":-1}
+        self.menu.capabilities={cid:cap}
+        self.menu._available=lambda c,visible:visible(cap)
+        self.menu._query=lambda c,p:SimpleNamespace(capability=c,sentence=cap["sentence"].format(**p),
+            slots={**cap["slots"],"luxe_utility_month":p["month"]})
+        self.menu.route=lambda *a,**kw:None
+        self.agent.semantic=SemanticIndex(self.menu)
+        self.u.text="去年三月份电费花了多少钱"
+        slots={**cap["slots"],"luxe_utility_month":4}
+        self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in slots.items()]
+        r=await self.agent.async_process(self.u)
+        self.assertIn("参数不一致",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_real_menu_clarification_and_followup_use_verified_intent(self):
+        import json
+        from importlib import import_module
+        Menu=import_module("nexora_adapter_test.menu").Menu
+        directory=Path(__file__).resolve().parents[1]/"custom_components/nexora/catalogs"
+        menu=Menu([json.loads(p.read_text()) for p in sorted(directory.glob("*.json"))])
+        self.h=Handler("LuxeApplianceQuery")
+        self.agent=self.a.NexoraAgent(object(),"entry",menu,"fallback")
+        self.agent.resolver.replace_targets("zh-CN",{})
+        caps={menu._query(cid,{}).sentence:menu.capabilities[cid] for cid in (
+            "appliance.ac.master.target","appliance.ac.master.temp","appliance.ac.secondary.temp")}
+        async def recognize(u,**kw):
+            cap=caps.get(u.text)
+            if not cap:
+                return None
+            return SimpleNamespace(intent=SimpleNamespace(name=cap["intent"]),unmatched_entities=[],
+                entities_list=[SimpleNamespace(name=k,value=v) for k,v in cap["slots"].items()])
+        self.native.async_recognize_intent=AsyncMock(side_effect=recognize)
+        self.u.text="主卧空调多少度"
+        r=await self.agent.async_process(self.u)
+        self.assertIn("设定温度",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        for query,device,metric in (("设定温度","m","target"),("现在屋里几度","m","temp"),("次卧呢","s","temp")):
+            self.u.text=query
+            await self.agent.async_process(self.u)
+            slots=self.it.async_handle.call_args.args[3]
+            self.assertEqual(slots["luxe_appliance_device"]["value"],device)
+            self.assertEqual(slots["luxe_appliance_query"]["value"],metric)
+        self.assertEqual(self.it.async_handle.await_count,3)
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_cancelled_mixed_and_unmatched_read_never_reach_fallback(self):
+        self.menu.route=lambda *a,**kw:None
+        self.native.async_recognize_intent.return_value=None
+        for text,expected in (("不要查燃气剩多少","已取消"),("燃气余额多少然后关灯","分别发送"),
+                              ("关掉客厅灯再查燃气余额","分别发送"),("空调还剩多少","无法确认"),
+                              ("灯亮着没","无法确认"),("滤芯还能撑几天","无法确认"),
+                              ("调的几度","补充查询对象")):
+            with self.subTest(text=text):
+                self.u.text=text
+                r=await self.agent.async_process(self.u)
+                self.assertIn(expected,r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_explicit_control_uses_original_fallback_text(self):
+        self.menu.route=lambda *a,**kw:None
+        self.conv.async_converse=AsyncMock(return_value=SimpleNamespace(response=Response("zh-CN"),conversation_id="ai"))
+        for text in ("关闭客厅灯","把主卧空调调到26度","打开阳台灯"):
+            self.u.text=text
+            await self.agent.async_process(self.u)
+            self.assertEqual(self.conv.async_converse.call_args.kwargs["text"],text)
+        self.assertEqual(self.conv.async_converse.await_count,3)
+        self.native.async_recognize_intent.assert_not_awaited()
+        self.it.async_handle.assert_not_awaited()
+
+    async def test_native_recognized_unregistered_slots_never_fall_back(self):
+        self.menu.route=lambda *a,**kw:None
+        self.u.text="未登记的同义词"
+        self.menu.capabilities={"water":{"id":"water","intent":"LuxeUtilityQuery","sentence":"水费余额是多少","slots":self.slots}}
+        self.result.entities_list=[SimpleNamespace(name="unknown",value="x")]
+        r=await self.agent.async_process(self.u)
+        self.assertIn("未唯一注册",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_duplicate_native_slots_rejected(self):
+        self.result.entities_list.append(SimpleNamespace(name="utility_kind",value="w"))
+        r=await self.agent.async_process(self.u)
+        self.assertIn("参数重复",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_invalid_local_response_never_crashes_or_falls_back(self):
+        self.it.async_handle.return_value=None
+        r=await self.agent.async_process(self.u)
+        self.assertIn("未返回有效回复",r.response.speech)
+        self.conv.async_converse.assert_not_awaited()

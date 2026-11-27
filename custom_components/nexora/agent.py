@@ -7,7 +7,7 @@ from .binding_extractor import BindingExtractor
 from .executor import _slot_equal, _slots_match, execute_readonly
 from .router import Route, RouteDecision, decide, from_reply
 from .semantic import SemanticIndex
-from .fallback import AIConversations, FallbackGuard, GUARD_REPLY, AI_PROMPT
+from .fallback import AIConversations, FallbackGuard, AI_PROMPT
 from .diagnostics import RouteDiagnostics
 
 from homeassistant.components import conversation
@@ -80,9 +80,10 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         return self.route_diagnostics.snapshot()
 
     async def _async_fallback(self,u,cid,key,started):
-        if self.fallback_guard.blocked(u.text):
+        boundary=self.fallback_guard.classify(u.text)
+        if boundary.reply:
             self._record("guard","blocked",started)
-            return self._reply(u,cid,GUARD_REPLY)
+            return self._reply(u,cid,boundary.reply)
         try:
             agent=conversation.async_get_agent(self.hass,self.fallback)
         except (KeyError,ValueError):
@@ -156,9 +157,16 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 device_id=u.device_id,satellite_id=u.satellite_id,language=u.language,agent_id="conversation.home_assistant")
             async with asyncio.timeout(3):
                 result=await recognize(probe,strict_intents_only=True)
-            if result is None or result.unmatched_entities or result.intent.name not in INTENTS:
+            if result is None or result.intent.name not in INTENTS:
                 return None
+            from .menu import Reply
+            def unresolved():
+                return RouteDecision(Route.LOCAL_REPLY,Reply("已识别为本地查询，但查询参数不一致或未唯一注册，无法确认实际数据。请明确查询对象和指标，或发送 help。"),"local_native")
+            if result.unmatched_entities:
+                return unresolved()
             slots={item.name:item.value for item in result.entities_list}
+            if len(slots)!=len(result.entities_list):
+                return unresolved()
             if result.intent.name=="LuxeLightQuery" and "luxe_light_id" in slots:
                 await self._prepare_capabilities(u,available)
             matches=[]
@@ -196,7 +204,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 if _slots_match(slots,expected,cap.get("native_slots",{})):
                     matches.append((cap,params))
             if len(matches)!=1:
-                return None
+                return unresolved()
             cap,params=matches[0]
             if not self.menu._available(cap["id"],visible):
                 from .menu import Reply
@@ -222,7 +230,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             self.resolver.invalidate()
         from .menu import HELP,BACK,NEXT,PREV,TRANSLATE,PATH_RE
         text=u.text.strip().casefold().translate(TRANSLATE)
-        if text in HELP|BACK|NEXT|PREV or text in self.menu.aliases or PATH_RE.fullmatch(text):
+        if text in HELP|BACK|NEXT|PREV or text in self.menu.aliases or PATH_RE.fullmatch(text) or self.menu.followups.is_followup_message(text.rstrip("？?。！!").strip()):
             await self._prepare_capabilities(u,available)
         get_state=getattr(getattr(self.hass,"states",None),"get",lambda _:None)
         def visible(cap):
@@ -235,14 +243,38 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         today=dt_util.now().date()
         decision=decide(self.menu,key,u.text,visible,today=today)
         if decision.route is Route.FALLBACK:
-            native=await self._native_registered_query(u,visible,today,available)
-            if not self.menu.followups.is_current(key,generation):
-                return self._reply(u,cid,"查询会话已更新，请重新发送。")
-            if native is not None:
-                decision=native
+            boundary=self.fallback_guard.classify(u.text,lambda q:self.semantic.match(q,today=today) is not None)
+            # Do not pass cancelled reads or compound query/control requests to
+            # either native recognition or an action-capable fallback.
+            if boundary.kind in {"cancelled","compound"}:
+                self.menu.followups.clear(key)
+                self._record("guard","blocked",started)
+                return self._reply(u,cid,boundary.reply)
+            match=self.semantic.match(u.text,today=today)
+            if match is None and boundary.kind=="control":
+                self.menu.followups.clear(key)
+                return await self._async_fallback(u,cid,key,started)
+            # Explicit ambiguity / invalid date is a local terminal reply even
+            # if the native recognizer would otherwise pick an interpretation.
+            if match is not None and match.clarification is not None:
+                decision=from_reply(self.semantic.reply(match,visible),"local_semantic")
+                if match.options:
+                    self.menu.followups.remember_clarification(key,generation,match.options)
             else:
-                match=self.semantic.match(u.text)
-                if match is not None:
+                native=await self._native_registered_query(u,visible,today,available)
+                if not self.menu.followups.is_current(key,generation):
+                    return self._reply(u,cid,"查询会话已更新，请重新发送。")
+                if native is not None:
+                    if (match is not None and native.route is Route.LOCAL_QUERY
+                            and (native.reply.capability!=match.capability or
+                                 native.reply.slots!=self.menu._query(match.capability,dict(match.params)).slots)):
+                        # Native still has priority when the registered
+                        # meaning agrees; conflicting meanings never execute.
+                        from .menu import Reply
+                        decision=from_reply(Reply("原生识别与查询对象、指标或日期参数不一致，请明确查询内容。"),"local_semantic")
+                    else:
+                        decision=native
+                elif match is not None:
                     if match.capability and self.menu.capabilities[match.capability].get("native_slots"):
                         await self._prepare_capabilities(u,available)
                     if not self.menu.followups.is_current(key,generation):
@@ -271,6 +303,10 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         response = execution.response
         ok=response.as_dict().get("response_type")=="action_done"
         if ok:
-            self.menu.followups.complete(key,generation,reply.capability)
+            if cap.get("parameter"):
+                params={k:reply.slots[v] for k,v in cap["parameter_slots"].items()}
+                self.menu.followups.complete(key,generation,reply.capability,params,today)
+            else:
+                self.menu.followups.complete(key,generation,reply.capability)
         self._record(route,"completed" if ok else "error",started)
         return conversation.ConversationResult(response=response, conversation_id=cid)

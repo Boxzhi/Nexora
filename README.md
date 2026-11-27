@@ -4,7 +4,7 @@ Extensible local intent and conversation engine for Home Assistant.
 
 [中文说明](README.zh-CN.md) · [Catalog protocol](docs/catalog.md)
 
-**v0.4.0-preview** — standalone test candidate, not a stable release. Requires the corresponding existing read-only intent libraries; Nexora does not provide supplier data or control devices.
+**v0.4.1-preview** — standalone test candidate, not a stable release. Requires the corresponding existing read-only intent libraries; Nexora does not provide supplier data or control devices.
 
 ## Built-in catalogs
 
@@ -26,18 +26,18 @@ Add this repository in HACS as an Integration custom repository when available, 
 
 ## Limits and safety
 
-The HA strict-recognition internals are targeted at Core 2026.11.3. Execute only speech-only Intent Scripts after native sentence/slot validation; no LLM fallback on failed menu query. Nexora runs as an independent HA Conversation Agent; no CN IM Hub or AI Hub upgrade or private protocol is required. Menu/parameter/follow-up handling precedes strict native recognition, then deterministic semantic matching. Only unmatched likely real-time household queries receive a local clarification; ordinary questions and device commands follow the existing configured fallback Agent and its permissions. Nexora itself executes only validated speech-only queries. The household guard is heuristic, not a security boundary. AI sessions and local menu sessions are separate; fallback timeout is 60 seconds. Live validation is pending.
+The HA strict-recognition internals are targeted at Core 2026.11.3. Execute only speech-only Intent Scripts after native sentence/slot validation; no LLM fallback on failed menu query. Nexora runs as an independent HA Conversation Agent; no CN IM Hub or AI Hub upgrade or private protocol is required. Menu/parameter/follow-up handling precedes deterministic ambiguity checks and strict native recognition. Registered native and semantic matches must agree; otherwise Nexora responds locally. Unmatched likely real-time queries, contextless follow-ups, cancelled reads and recognized mixed query/control requests are handled locally; ordinary questions and explicit device commands retain the configured fallback Agent and its permissions. Nexora itself executes only validated speech-only queries. The household guard is heuristic, not a security boundary. AI sessions and local menu sessions are separate; fallback timeout is 60 seconds. Live validation is pending.
 
-Targeted read-only probe: [scripts/probe.js](scripts/probe.js).
+Targeted read-only probes: [v041_probe.js](scripts/v041_probe.js) and [full_probe.js](scripts/full_probe.js). See [semantic design](docs/semantic-v041.md).
 
 ## Dynamic capabilities
 
 443 remains the registered catalog baseline, not a fixed menu count. Light features use strict native alias resolution (cached for five minutes, refreshed lazily) and live supported_color_modes. Unknown and offline targets remain visible; previously confirmed unsupported features remain hidden until valid new metadata appears. Known Home 1.0.1 and Appliance 1.0.0 templates are statically inspected for declared bindings; Lights 1.1.0 retains strict native mapping. No binding file is required. Optional /config/nexora/bindings.yaml is a visibility override only. Unknown template structures and temporarily missing entities retain their menu entries. No supplier refresh, polling or Jinja execution for detection.
 
-Dot-separated paths (e.g. 1.2.1) start at the current menu and cannot cross a query/parameter prompt; invalid paths restore the snapshot. Concise labels omit representative examples. Fixed registered Utility context lasts five minutes, separate from ten-minute menu sessions and 30-minute AI mappings. Context is captured only for fixed Utility queries actually executed by Nexora. An external native fast path can bypass Nexora, so it cannot synchronize or invalidate that context. Ask explicitly for the account/metric when switching paths; no cross-integration context or independent IM menu queue is promised. Full probe reports visible-query execution separately from omission review.
+Dot-separated paths (e.g. 1.2.1) start at the current menu and cannot cross a query/parameter prompt; invalid paths restore the snapshot. Concise labels omit representative examples. Registered Utility, Lights, Appliance and Home query context lasts five minutes, separate from ten-minute menu sessions and 30-minute AI mappings. Only successful Nexora queries establish query context; supported date parameters and curated clarification choices can be inherited within that conversation. An external native fast path can bypass Nexora, so it cannot synchronize or invalidate that context. Ask explicitly for the account/metric when switching paths; no cross-integration context or independent IM menu queue is promised. Full probe reports visible-query execution separately from omission review.
 
 Static adapters accept only the verified AST structure, excluding the literal binding dictionary. When an intent script is reloaded, the next conversation request observes the new source without polling or a Nexora reload. The known Home windows stub is hidden independently of the toilet-lid contact sensor; changed or unknown business logic is retained conservatively. Utility accounts and historical data are unchanged. No source, entity IDs or private bindings are logged or bundled.
 
-## v0.4.0-preview acceptance
+## v0.4.1-preview acceptance
 
 See [integration acceptance and rollback](docs/preview-acceptance.md). The 443 registered / 420 visible / 23 hidden reference is from the previously validated household, not a universal device count. Do not enable a tool-capable AI fallback merely to run the probes.

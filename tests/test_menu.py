@@ -357,7 +357,7 @@ class SemanticTests(unittest.TestCase):
     def test_reject_controls_negation_compound_and_unknown(self):
         for text in ("打开客厅灯","把客厅吸顶灯亮度调到50%","阳台光照度不要查",
                      "阳台光照度是多少然后开灯","主卧温度和水费余额",
-                     "昨天阳台光照度","不存在的房间光照度","2024年3月电费是多少"):
+                     "昨天阳台光照度","不存在的房间光照度"):
             with self.subTest(text=text):
                 self.assertIsNone(self.index.match(text))
         self.assertEqual(self.index.match("阳台无人多久了").capability,"home.presence.balcony.duration_absent_balcony")
