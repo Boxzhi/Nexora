@@ -1,64 +1,62 @@
-// Nexora v0.4.0-preview: targeted live HA checks, no LLM or device control.
+// Nexora v0.5.4-preview — local scene and follow-up smoke test.
 (async()=>{
- const hass=document.querySelector("home-assistant")?.hass;
- if(!hass)throw Error("找不到 HA 前端");
- const list=await hass.callWS({type:"conversation/agent/list"});
- const agent=(list.agents||[]).find(x=>x.name==="Nexora");
- const report={agent:agent?.name,checks:[],passed:false};
- const cid="nexora-test:"+crypto.randomUUID();
- const other="nexora-test:"+crypto.randomUUID();
- const call=async(text,id=cid,aid=agent.id)=>{
-  const start=performance.now();
-  const r=await hass.callWS({type:"conversation/process",text,conversation_id:id,agent_id:aid,language:hass.language||"zh-CN"});
-  return {text,speech:r.response?.speech?.plain?.speech||"",response_type:r.response?.response_type,elapsed_ms:Math.round(performance.now()-start),conversation_id_match:r.conversation_id===id};
- };
- const check=async(text,expect,id=cid)=>{
-  const r=await call(text,id);r.passed=r.conversation_id_match&&r.response_type!=="error"&&!!expect&&r.speech.includes(expect);report.checks.push(r);return r;
- };
+ const hass=document.querySelector('home-assistant')?.hass;
+ if(!hass)throw Error('找不到 HA 前端');
+ const list=await hass.callWS({type:'conversation/agent/list'}),agents=(list.agents||[]).filter(a=>a.name==='Nexora');
+ if(agents.length!==1)throw Error('未找到唯一 Nexora Agent');
+ const agent=agents[0],cid='nexora-v054-smoke:'+crypto.randomUUID(),other='nexora-v054-smoke:'+crypto.randomUUID();
+ const report=window.__nexora054Smoke={version_expected:'0.5.4',checks:[],errors:[],structural_passed:false,manual_value_review_required:true};
+ const menu=s=>s.trimEnd().endsWith('回复数字选择，help 返回主菜单，exit 退出菜单。');
+ const choices=s=>[...s.matchAll(/^([1-9]|1[0-9]|20)\.\s+(.+)$/gm)].map(m=>({n:m[1],label:m[2].trim()}));
+ async function ask(text,id=cid){
+  const start=performance.now(),r=await hass.callWS({type:'conversation/process',text,conversation_id:id,agent_id:agent.id,language:'zh-CN'});
+  if(r.conversation_id!==id)throw Error('会话 ID 不一致');
+  return {speech:r.response?.speech?.plain?.speech||'',type:r.response?.response_type,elapsed_ms:Math.round(performance.now()-start)};
+ }
+ function usable(r){return !!r.speech&&r.type!=='error'&&!menu(r.speech)&&!/^请输入|^无效|^输入无效|^当前没有有效菜单|^该查询|^本地.*失败|^会话已更新/.test(r.speech)&&!/对话暂时不可用|AI.{0,12}(?:不可用|失败|超时)|查询未完成|查询失败|查询超时|部分失败|缺少.*上下文|没有.*上下文/.test(r.speech);}
+ function save(name,r,ok){report.checks.push({name,passed:!!ok,...r});}
+ async function select(path){
+  let r=await ask('help');
+  for(const label of path){
+   if(!menu(r.speech))throw Error('提前进入查询：'+label);
+   const found=choices(r.speech).filter(x=>x.label===label||x.label.endsWith(' '+label));
+   if(found.length!==1)throw Error('路径不存在或不唯一：'+label);
+   r=await ask(found[0].n);
+  }
+  return r;
+ }
  try{
-  if(!agent)throw Error("未发现 Nexora");
-  const native=await call("水费余额是多少",cid,"conversation.home_assistant");
-  if(native.response_type==="error"||!native.speech)throw Error("原生水费查询失败");
-  report.native_reference=native.speech;
-  await check("help","1. ⚡ 水电气");
-  await check("detail","4. 🏠 全屋状态");
-  await check("灯光","💡 灯光");
-  await check("家电","🔌 家电");
-  await check("全屋状态","🏠 全屋状态");
-  await check("detail","2. 💡 灯光");
-  await check("1","水费");
-  await check("水费","账户余额");
-  await check("1",native.speech);
-  await check("上个月呢","用量还是费用");
-  await check("用量","账单用水量");
-  await check("这个月呢","账单用水量");
-  await check("detail","1. ⚡ 水电气");
-  await check("1.2.1",native.speech);
-  await check("1","没有有效菜单",other);
-  await check("88","无效选项");
-  await check("0","水电气");
-  await check("电费","电费");
-  const tier=await check("燃气阶梯","第三阶梯");
-  tier.passed=tier.passed&&!/^99\. 下一页$/m.test(tier.speech);
-  const fixtures=await check("按灯具","15. 晾衣架灯");
-  fixtures.passed=fixtures.passed&&!/^9[89]\. /m.test(fixtures.speech);
-  await check("12","厨房筒灯");
-  await check("0","按灯具");
-  await check("水费历史查询","月度用量");
-  await check("EXIT","已退出");
-  await check("1","没有有效菜单");
-  await check("detail","水电气");
-  await check("退出","已退出");
-  await check("1","没有有效菜单");
-  const family=await check("家庭成员","奶奶");
-  family.passed=family.passed&&!family.speech.includes("爷爷");
-  const door=await check("门锁及门窗","入户门");
-  door.passed=door.passed&&!door.speech.includes("窗户");
-  await check("其他设备","马桶盖");
-  await check("exit","已退出");
-  report.passed=report.checks.every(x=>x.passed);
- }catch(e){report.error=e.message||String(e);}
- console.log("========== Nexora v0.4.0-preview 真实环境验收 ==========");
- console.log(JSON.stringify(report,null,2));
- console.log("========== 验收结束 ==========");
+  const root=await ask('help');save('help 唯一场景菜单',root,menu(root.speech)&&!root.speech.includes('发送 detail 查看完整菜单'));
+  if(!report.checks.at(-1).passed)throw Error('菜单预检失败');
+  let r=await ask('detail');save('旧 detail 仅返回同一菜单',r,r.speech===root.speech);
+  if(!report.checks.at(-1).passed)throw Error('兼容指令仍开启旧菜单');
+  const cases=[
+   ['我家水电气账户概况',['水电气','综合查询','主住所','账户概况']],
+   ['所有账户概况',['水电气','综合查询','所有账户','账户概况']],
+   ['全屋照明概况',['灯光','全屋照明概况']],
+   ['洗衣机当前洗衣进度',['家电','洗衣机','当前洗衣进度']],
+   ['全屋环境温湿度',['全屋状态','环境温湿度','全屋环境']]
+  ];
+  for(const [q,path] of cases){
+   try{
+    const byMenu=await select(path);save('菜单：'+q,byMenu,usable(byMenu));
+    await ask('exit');const byLanguage=await ask(q);
+    const title=s=>s.split('\n')[0].trim();
+    save('自然语言：'+q,byLanguage,usable(byLanguage)&&usable(byMenu)&&title(byLanguage.speech)===title(byMenu.speech));
+   }catch(e){report.checks.push({name:q,passed:false,error:e.message,visibility_review_required:true});}
+  }
+  await ask('exit');
+  for(const q of ['我家水电气余额还有多少','有没有欠费的','需要充值吗','所有账户呢','余额呢']){
+   r=await ask(q);save('连续追问：'+q,r,usable(r)&&!/请先明确|请先查询/.test(r.speech));
+  }
+  r=await ask('exit');save('退出',r,r.speech.includes('已退出'));
+  r=await ask('1',other);save('独立会话无菜单',r,r.speech.includes('没有有效菜单'));
+  r=await ask('1',cid);save('退出后无菜单',r,r.speech.includes('没有有效菜单'));
+  report.structural_passed=report.checks.every(x=>x.passed);
+ }catch(e){report.errors.push(e.message||String(e));}
+ finally{
+  for(const id of [cid,other])try{await ask('exit',id);}catch(e){report.errors.push('退出清理：'+e.message);}
+  if(report.errors.length)report.structural_passed=false;
+  console.log('========== Nexora v0.5.4-preview 场景专项验收 ==========');console.log(JSON.stringify(report,null,2));
+ }
 })();
