@@ -269,7 +269,7 @@ def _presence(rows):
             continue
         x=re.fullmatch(r"([^：。\n]+)：(未检测到人体|已检测到人体|检测到人体)。",text)
         if x and any(other.key.target==step.key.target and other.key.metric=="duration"
-                and ok=="ok" and re.fullmatch(re.escape(x[1]+"："+x[2])+r"，设备报告已持续[^。\n]+。",v)
+                and ok in {"ok","data_gap"} and re.fullmatch(re.escape(x[1]+"："+x[2])+r"(?:，设备报告已持续[^。\n]+。|，持续时间数据不可用。)",v)
                 for other,ok,v in rows):
             skip.add(step)
     return [text for step,_,text in rows if step not in skip]
