@@ -4,9 +4,16 @@ import logging
 from uuid import uuid4
 from .capability import Resolver
 from .binding_extractor import BindingExtractor
-from .executor import _slot_equal, _slots_match, execute_readonly
+from .executor import _slot_equal, _slots_match, execute_readonly, ExecutionResult
 from .router import Route, RouteDecision, decide, from_reply
-from .semantic import SemanticIndex
+from .semantic import SemanticIndex, normalize
+from .semantic_lexicon import describe
+from .business_model import QueryKey
+from .query_planner import QueryPlanner
+from .query_context import QueryContext
+from .plan_executor import run_plan
+from .response_composer import compose
+from .menu import Menu
 from .fallback import AIConversations, FallbackGuard, AI_PROMPT
 from .diagnostics import RouteDiagnostics
 
@@ -28,6 +35,16 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         self.ai_sessions = AIConversations()
         self.route_diagnostics = RouteDiagnostics()
         self.ai_timeout = 60
+        self.planner = self.query_context = None
+        if isinstance(menu,Menu):
+            try:
+                self.planner=QueryPlanner(menu)
+                self.query_context=QueryContext(self.planner,menu.clock,max_sessions=menu.max_sessions)
+            except (ValueError,KeyError):
+                # Invalid or incomplete custom registry must not prevent the
+                # compatible legacy path from loading.
+                self.planner=self.query_context=None
+                _LOGGER.warning("Nexora structured query registry unavailable; retaining legacy routes",exc_info=True)
 
     @property
     def supported_languages(self):
@@ -213,12 +230,82 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         except Exception:
             return None
 
+    def _boundary(self,text,today):
+        def known(q):
+            if self.semantic.match(q,today=today) is not None:
+                return True
+            return bool(self.planner and self.planner.plan(q,today).plan)
+        return self.fallback_guard.classify(text,known)
+
+    def _structured(self,text,match,today):
+        """Keep canonical/fixed/dynamic compatibility; widen broad aliases
+        and explicit ambiguities only when a registered plan resolves them."""
+        if self.planner is None:
+            return None
+        if match is not None and match.capability and (
+                match.params or normalize(text) in self.semantic.exact):
+            return None
+        candidate=self.planner.plan(text,today)
+        if match is None:
+            return candidate
+        if candidate.plan is None:
+            return None
+        if match.clarification is not None:
+            # Only a recognized semantic scene can replace a legacy
+            # clarification. Never suppress invalid-date/account warnings.
+            if candidate.plan.focus and candidate.plan.focus.goal:
+                return candidate
+            return None
+        plan=candidate.plan
+        if (plan.focus and plan.focus.goal and len(plan.primary+plan.supplements)>1
+                and match.capability in {step.capability for step in plan.primary}):
+            return candidate
+        return None
+
+    async def _execute_query_plan(self,plan,u,cid,key,generation,today,available,visible,get_state,started):
+        self.menu.followups.clear(key)
+        members=plan.primary+plan.supplements
+        current=lambda:self.menu.followups.is_current(key,generation)
+        if any(self.menu.capabilities.get(step.capability,{}).get("native_slots") for step in members):
+            await self._prepare_capabilities(u,available)
+        async def dispatch(step):
+            if not current():
+                return ExecutionResult(error="查询会话已更新。")
+            cap=self.menu.capabilities.get(step.capability)
+            p=describe(cap) if cap else None
+            if p is None or QueryKey(p.family,p.target,p.metric,p.period,p.parameter,p.account)!=step.key:
+                return ExecutionResult(error="查询能力配置已变化。")
+            if not self.menu._available(step.capability,visible):
+                return ExecutionResult(error="该查询当前不可用。")
+            reply=self.menu._query(step.capability,dict(step.params))
+            return await execute_readonly(hass=self.hass,conversation_api=conversation,intent_api=intent,
+                handler_for=self._handler,resolver=self.resolver,cap=cap,reply=reply,u=u,
+                get_state=get_state,logger=_LOGGER)
+        run=await run_plan(plan,dispatch,current)
+        def label(step):
+            try:
+                return self.menu._query(step.capability,dict(step.params)).sentence
+            except (ValueError,KeyError):
+                return "注册查询"
+        composed=compose(plan,run,label)
+        if composed.primary_completed and current():
+            # A multi-metric scene retains its semantic goal, not an
+            # arbitrary last result. For single steps preserve the legacy
+            # follow-up engine as well.
+            if len(members)==1:
+                self.menu.followups.complete(key,generation,members[0].capability,dict(members[0].params),today)
+            if self.query_context:
+                self.query_context.remember(key,plan.focus,today,scene=True,current=current())
+        self._record("local_planner","completed" if composed.primary_completed else "error",started)
+        return self._reply(u,cid,composed.text)
+
     async def async_process(self,u):
         """Standard HA Conversation Agent entry; no transport-specific protocols."""
         started=self.route_diagnostics.clock()
         cid=u.conversation_id or uuid4().hex
         key=(u.context.user_id,u.device_id,u.satellite_id,cid)
         generation=self.menu.followups.begin(key)
+        prior=self.query_context.consume(key) if self.query_context else None
         handlers=[h for h in intent.async_get(self.hass)
                   if type(h) is ScriptIntentHandler and "speech" in h.config
                   and not any(k in h.config for k in ("action","reprompt","card"))]
@@ -241,9 +328,21 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         # Always visit the menu state machine: independent messages cancel old
         # parameter prompts and clear stale business context before any await.
         today=dt_util.now().date()
+        if prior and self.query_context:
+            session=self.menu.sessions.get(key)
+            if not (session and session.pending) and text not in self.menu.aliases and not PATH_RE.fullmatch(text):
+                boundary=self._boundary(u.text,today)
+                if boundary.kind not in {"cancelled","compound","control"}:
+                    inherited=self.query_context.resolve(u.text,prior,today)
+                    if inherited.plan:
+                        return await self._execute_query_plan(inherited.plan,u,cid,key,generation,today,available,visible,get_state,started)
+                    if inherited.message:
+                        self.menu.followups.clear(key)
+                        self._record("local_planner","reply",started)
+                        return self._reply(u,cid,inherited.message)
         decision=decide(self.menu,key,u.text,visible,today=today)
         if decision.route is Route.FALLBACK:
-            boundary=self.fallback_guard.classify(u.text,lambda q:self.semantic.match(q,today=today) is not None)
+            boundary=self._boundary(u.text,today)
             # Do not pass cancelled reads or compound query/control requests to
             # either native recognition or an action-capable fallback.
             if boundary.kind in {"cancelled","compound"}:
@@ -254,6 +353,27 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             if match is None and boundary.kind=="control":
                 self.menu.followups.clear(key)
                 return await self._async_fallback(u,cid,key,started)
+            candidate=self._structured(u.text,match,today) if boundary.kind!="control" else None
+            if candidate and candidate.plan:
+                plan=candidate.plan
+                native=await self._native_registered_query(u,visible,today,available)
+                if not self.menu.followups.is_current(key,generation):
+                    return self._reply(u,cid,"查询会话已更新，请重新发送。")
+                if native is not None:
+                    if native.route is Route.LOCAL_REPLY:
+                        self._record("local_native","reply",started)
+                        return self._reply(u,cid,native.reply.text)
+                    compatible=any(native.reply.capability==step.capability and
+                        native.reply.slots==self.menu._query(step.capability,dict(step.params)).slots
+                        for step in plan.primary+plan.supplements)
+                    if not compatible:
+                        self._record("local_planner","reply",started)
+                        return self._reply(u,cid,"原生识别与查询对象、指标或日期参数不一致，请明确查询内容。")
+                return await self._execute_query_plan(plan,u,cid,key,generation,today,available,visible,get_state,started)
+            if candidate and candidate.message:
+                self.menu.followups.clear(key)
+                self._record("local_planner","reply",started)
+                return self._reply(u,cid,candidate.message)
             # Explicit ambiguity / invalid date is a local terminal reply even
             # if the native recognizer would otherwise pick an interpretation.
             if match is not None and match.clarification is not None:
@@ -308,5 +428,9 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 self.menu.followups.complete(key,generation,reply.capability,params,today)
             else:
                 self.menu.followups.complete(key,generation,reply.capability)
+        if ok and self.query_context and self.menu.followups.is_current(key,generation):
+            params={k:reply.slots[v] for k,v in cap.get("parameter_slots",{}).items()}
+            focus=self.query_context.from_registered(reply.capability,params,today)
+            self.query_context.remember(key,focus,today,scene=False)
         self._record(route,"completed" if ok else "error",started)
         return conversation.ConversationResult(response=response, conversation_id=cid)
