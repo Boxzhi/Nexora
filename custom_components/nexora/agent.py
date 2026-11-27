@@ -7,7 +7,7 @@ from .binding_extractor import BindingExtractor
 from .executor import _slot_equal, _slots_match, execute_readonly
 from .router import Route, RouteDecision, decide, from_reply
 from .semantic import SemanticIndex
-from .fallback import AIConversations, FallbackGuard, GUARD_REPLY, AI_PROMPT
+from .fallback import AIConversations, FallbackGuard, AI_PROMPT
 from .diagnostics import RouteDiagnostics
 
 from homeassistant.components import conversation
@@ -80,9 +80,10 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         return self.route_diagnostics.snapshot()
 
     async def _async_fallback(self,u,cid,key,started):
-        if self.fallback_guard.blocked(u.text):
+        boundary=self.fallback_guard.classify(u.text)
+        if boundary.reply:
             self._record("guard","blocked",started)
-            return self._reply(u,cid,GUARD_REPLY)
+            return self._reply(u,cid,boundary.reply)
         try:
             agent=conversation.async_get_agent(self.hass,self.fallback)
         except (KeyError,ValueError):
@@ -235,7 +236,17 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         today=dt_util.now().date()
         decision=decide(self.menu,key,u.text,visible,today=today)
         if decision.route is Route.FALLBACK:
+            boundary=self.fallback_guard.classify(u.text)
+            # Do not pass cancelled reads or compound query/control requests to
+            # either native recognition or an action-capable fallback.
+            if boundary.kind in {"cancelled","compound"}:
+                self.menu.followups.clear(key)
+                self._record("guard","blocked",started)
+                return self._reply(u,cid,boundary.reply)
             match=self.semantic.match(u.text,today=today)
+            if match is None and boundary.kind=="control":
+                self.menu.followups.clear(key)
+                return await self._async_fallback(u,cid,key,started)
             # Explicit ambiguity / invalid date is a local terminal reply even
             # if the native recognizer would otherwise pick an interpretation.
             if match is not None and match.clarification is not None:
@@ -247,13 +258,13 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 if not self.menu.followups.is_current(key,generation):
                     return self._reply(u,cid,"查询会话已更新，请重新发送。")
                 if native is not None:
-                    if (match is not None and match.params and native.route is Route.LOCAL_QUERY
+                    if (match is not None and native.route is Route.LOCAL_QUERY
                             and (native.reply.capability!=match.capability or
                                  native.reply.slots!=self.menu._query(match.capability,dict(match.params)).slots)):
-                        # An explicitly parsed date/account must not silently
-                        # execute a different native interpretation.
+                        # Native still has priority when the registered
+                        # meaning agrees; conflicting meanings never execute.
                         from .menu import Reply
-                        decision=from_reply(Reply("原生识别与日期或账户参数不一致，请明确查询对象和日期。"),"local_semantic")
+                        decision=from_reply(Reply("原生识别与查询对象、指标或日期参数不一致，请明确查询内容。"),"local_semantic")
                     else:
                         decision=native
                 elif match is not None:
