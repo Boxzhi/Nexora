@@ -48,6 +48,55 @@ def _bill_pair(plan,rows):
         lines.extend(("",x["qual"]))
     return "\n".join(lines)
 
+def _latest_bill(scene,rows):
+    """Merge the repeated period only for consistent, verified latest-bill speech."""
+    config={
+        "scene.utility.water.bill":("w","抚州公用水务",{
+            "latest_usage":("本期用水量",r"\d+(?:\.\d+)?吨",True),
+            "latest_cost":("本期水费",MONEY,True),
+            "read":("最近抄表日期",r"\d{4}-\d{2}-\d{2}",False),
+            "meter":("本期表读数",r"\d+(?:\.\d+)?立方米",True),
+        }),
+        "scene.utility.gas.bill":("g","华润燃气",{
+            "latest_usage":("本期用气量",r"\d+(?:\.\d+)?立方米",True),
+            "latest_cost":("本期燃气账单",MONEY,True),
+            "prior_usage":("上期用气量",r"\d+(?:\.\d+)?立方米（抄表日期：\d{4}-\d{2}-\d{2}）",False),
+            "read":("最近抄表日期",r"\d{4}-\d{2}-\d{2}",False),
+            "meter":("本期表读数",r"\d+(?:\.\d+)?立方米",True),
+            "settlement":("本期结算状态",r"[^。；（）\n]+",True),
+            "year_usage":("本年累计用气量",r"\d+(?:\.\d+)?立方米",False),
+        }),
+    }.get(scene)
+    if not config:
+        return None
+    target,owner,fields=config
+    if len(rows)!=len(fields) or {step.key.metric for step,_,_ in rows}!=set(fields):
+        return None
+    period=set()
+    values={}
+    for step,kind,text in rows:
+        if kind!="ok" or step.key.family!="utility" or step.key.target!=target or step.params:
+            return None
+        metric=step.key.metric
+        label,pattern,has_period=fields[metric]
+        suffix=r"（账单月份：(\d{4}-?(?:0[1-9]|1[0-2]))）" if has_period else ""
+        match=re.fullmatch(re.escape(owner+label+"：")+"("+pattern+")"+suffix+r"。",text)
+        if not match:
+            return None
+        if has_period:
+            period.add(match[2].replace("-",""))
+        values[metric]=label+"："+match[1]
+    if len(period)!=1:
+        return None
+    ym=next(iter(period))
+    lines=["账单月份："+ym[:4]+"-"+ym[4:],values["latest_usage"],values["latest_cost"]]
+    if "settlement" in values:
+        lines.append(values["settlement"])
+    lines.extend(("",values["read"],values["meter"]))
+    if "prior_usage" in values:
+        lines.extend(("",values["prior_usage"],values["year_usage"]))
+    return owner+" · 本期账单",lines
+
 def _payment(rows):
     lines=[]
     for step,kind,text in rows:
@@ -297,6 +346,12 @@ def compose_menu(plan,run,label,normalize):
         lines=summary_rows(rows)
         if lines is None:
             lines=[text for _,_,text in rows]
+    elif scene in {"scene.utility.water.bill","scene.utility.gas.bill"}:
+        bill=_latest_bill(scene,rows)
+        if bill is None:
+            lines=[text for _,_,text in rows]
+        else:
+            heading,lines=bill
     elif scene.startswith("scene.utility.gas.pay."):
         heading="华润燃气 · "+heading.rsplit(" · ",1)[-1]
         lines=_payment(rows)
