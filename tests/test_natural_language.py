@@ -15,6 +15,8 @@ class NaturalLanguageTests(unittest.TestCase):
           ("能不能帮我看看家里的燃气费还剩下多少钱","utility","g","","remaining_unspecified"),
           ("我想知道主卧空调设置的是多少度","appliance","m","target",""),
           ("客厅灯现在还有多少盏灯是开着的","lights","ke_ting","count_on",""),
+          ("客厅现在还有多少盏灯是开着的","lights","ke_ting","count_on",""),
+          ("我想知道主卧那台空调设置的是多少度","appliance","m","target",""),
           ("帮我看看现在家里都有些什么人在","home","all","","family_presence"),
           ("主卧空调现在温度是多少","appliance","m","","temperature_unspecified"),
           ("我想知道洗衣机目前怎么样","appliance","w","","progress"),
@@ -38,6 +40,6 @@ class NaturalLanguageTests(unittest.TestCase):
     def test_unexplained_text_is_never_ignored(self):
         for q in ("不要查燃气余额","燃气余额然后关灯","燃气余额我乱写","空调调到26度",
                   "主卧空调温度昨天","火星燃气余额","次住所主卧温度","燃气余额2025年",
-                  "主卧空调多少度并关灯","主卧空调温度是多少帮我关闭"):
+                  "主卧空调多少度并关灯","主卧空调温度是多少帮我关闭","门锁反锁","大门上锁","主卧窗帘关闭","马桶盖打开"):
             with self.subTest(q=q):
                 self.assertFalse(self.parser.parse(q))

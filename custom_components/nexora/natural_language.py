@@ -164,16 +164,16 @@ SPECIAL_RULES={
     "purifier":((r"(?:滤芯|滤芯寿命)(?:怎么样|还剩多少|剩多少|如何|寿命多少)?","filters",""),
                 (r"滤芯(?:该|要|需要)(?:更换|换)(?:了)?(?:吗|没)?","","maintenance")),
     "door":((r"(?:关好|关严)(?:了)?(?:吗|没|没有)|(?:好|安全)(?:了)?(?:吗|没|没有)|(?:状态|情况|怎么样)","","entry_safety"),
-             (r"(?:反锁)(?:了)?(?:吗|没|没有|状态)?","deadbolt",""),
-             (r"(?:上锁|锁好|锁)(?:了)?(?:吗|没|没有|状态)?","lock",""),
-             (r"(?:关着|关闭|关)(?:了)?(?:吗|没|没有|状态)?","door","")),
+             (r"(?:反锁)(?:了)?(?:吗|没|没有|状态)","deadbolt",""),
+             (r"(?:上锁|锁好|锁)(?:了)?(?:吗|没|没有|状态)","lock",""),
+             (r"(?:关着|关闭|关)(?:了)?(?:吗|没|没有|状态)","door","")),
     "family":((r"(?:现在)?(?:都)?(?:有)?(?:哪些人|什么人|些什么人|谁)(?:在家|在)?|(?:有没有|有)人(?:吗|没|没有)?","","family_presence"),
               (r"(?:现在)?(?:有)?(?:多少|几)(?:个)?人(?:在家|在)?","family_count","")),
     "person":((r"(?:现在)?(?:在家|回家|到家|在不在家)(?:了)?(?:吗|没|没有)?","person",""),),
     "battery":((r"(?:电池)?(?:电量|剩余电量|还有多少电|还剩多少电)(?:多少|是多少)?","battery",""),),
-    "curtain":((r"(?:开着|关着|打开|关闭)(?:了)?(?:吗|没|没有)?","curtain",""),
+    "curtain":((r"(?:开着|关着|打开|关闭)(?:了)?(?:吗|没|没有|状态)","curtain",""),
                (r"(?:打开|开)(?:了)?(?:多少|百分之多少)|位置(?:多少|是多少)?","curtain_pos","")),
-    "lid":((r"(?:盖上|合上|打开|关着|开着)(?:了)?(?:吗|没|没有)?","lid",""),),
+    "lid":((r"(?:盖上|合上|打开|关着|开着)(?:了)?(?:吗|没|没有|状态)","lid",""),),
     "heater":((r"(?:开着|工作|运行)(?:吗|没|没有)?","heater",""),),
     "safety":((r"(?:异常|提醒|问题|警报|告警)(?:有哪些|多少|吗)?","","alerts"),),
 }
@@ -199,6 +199,9 @@ class QueryParser:
         for t,words in DEVICES.items():
             d={"w":"washer","p":"purifier"}.get(t,"appliance")
             add("appliance",t,d,words+({"ac":("空调","两台空调"),"w":("衣服","洗衣服")}.get(t,())))
+            if t in {"m","s"}:
+                room="主卧" if t=="m" else "次卧"
+                add("appliance",t,d,tuple(a+b+"空调" for a in ROOMS.get(room,(room,)) for b in ("那台","这台","的","的那台","的这台")))
         # Rooms and individual fixtures use actual registered targets.
         for k,item in registry.by_key.items():
             cap=menu.capabilities[item.capability_id]
@@ -210,6 +213,7 @@ class QueryParser:
                     add("lights",k.target,"fixture",(name,))
                 else:
                     add("lights",k.target,"light_scope",tuple(a+b for a in ROOMS.get(name,(name,)) for b in ("灯光","灯具","灯")))
+                    add("lights",k.target,"light_room",ROOMS.get(name,(name,)))
             if k.family=="home":
                 if k.metric in {"temp","hum","room_env","presence","lux","duration","duration_present","duration_absent","water"}:
                     add("home",k.target,"environment",ROOMS.get(k.target,(k.target,)))
@@ -244,9 +248,9 @@ class QueryParser:
             word=surface(menu.settings.get(key,""))
             if word:
                 self.accounts.add(word,account)
-        for domain in ("utility","light_scope","fixture","appliance","washer","purifier","environment",
+        for domain in ("utility","light_scope","light_room","fixture","appliance","washer","purifier","environment",
                        "door","family","person","battery","curtain","lid","heater","safety"):
-            common=UTILITY_RULES if domain=="utility" else LIGHT_RULES if domain in {"light_scope","fixture"} else (
+            common=UTILITY_RULES if domain=="utility" else LIGHT_RULES if domain in {"light_scope","light_room","fixture"} else (
                 APPLIANCE_RULES if domain in {"appliance","washer","purifier"} else HOME_ENV_RULES if domain=="environment" else ())
             self.rules[domain]=tuple((re.compile(p),m,g) for p,m,g in SPECIAL_RULES.get(domain,())+common)
 
@@ -259,6 +263,8 @@ class QueryParser:
 
     def _metrics(self,sub,tail):
         out=set()
+        if sub.domain=="light_room" and not re.search(r"灯|灯具|灯光",tail):
+            return out
         # Domain rules take precedence over legacy fragment aliases. This is
         # essential for broad status queries and temperature ambiguity.
         for pattern,metric,goal in self.rules[sub.domain]:
