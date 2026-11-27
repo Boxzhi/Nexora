@@ -86,3 +86,37 @@ class ResponseComposerTests(unittest.TestCase):
         for r in (Response("error"),Response(extra=True)):
             rc.format_response(key,r)
             self.assertIn("燃气燃气",r.data["speech"]["plain"]["speech"])
+
+    def test_verified_scene_contracts_and_partial_fallback(self):
+        from types import SimpleNamespace
+        def build(f,target,goal,metrics,texts,caveat="",kinds=None):
+            steps=tuple(qp.Step(bm.QueryKey(*k),k[2]) for k in metrics)
+            focus=SimpleNamespace(subject=SimpleNamespace(family=f,target=target),goal=goal)
+            p=qp.Plan(steps,focus=focus,caveat=caveat)
+            r=pe.PlanRun(tuple(pe.Outcome(x,k,text) for x,k,text in zip(steps,kinds or ["ok"]*len(steps),texts)))
+            return p,r
+        p,r=build("appliance","w","progress",[("appliance","w",m) for m in ("status","phase","remaining")],
+            ["海尔洗衣机正在运行，程序：混合。","海尔洗衣机洗涤阶段：漂洗。","海尔洗衣机正在运行，设备报告剩余时间：10分钟。"])
+        self.assertEqual(rc.compose(p,r,label).text,"海尔洗衣机正在运行混合程序，目前处于漂洗阶段，设备报告剩余10分钟。")
+        missing=pe.PlanRun((r.outcomes[0],pe.Outcome(p.primary[1],"error",error="超时"),r.outcomes[2]))
+        self.assertIn("phase：超时",rc.compose(p,missing,label).text)
+        p,r=build("appliance","p","overview",[("appliance","p",m) for m in ("status","filters","replace")],
+            ["米家净水器：待机中。","米家净水器PPC滤芯剩余90.0%，RO滤芯剩余95.0%。","米家净水器：PPC滤芯当前未达更换提醒阈值；RO滤芯当前未达更换提醒阈值。"])
+        self.assertIn("均未达到更换提醒阈值",rc.compose(p,r,label).text)
+        changed=pe.PlanRun(r.outcomes[:2]+(pe.Outcome(p.primary[2],"ok","PPC滤芯需要更换，RO滤芯当前未达更换提醒阈值。"),))
+        self.assertIn("PPC滤芯需要更换",rc.compose(p,changed,label).text)
+        p,r=build("appliance","m","temperature_unspecified",[("appliance","m","target"),("appliance","m","temp")],
+            ["主卧空调已关闭，无当前运行参数。","主卧空调设备报告室温：18.9℃（空调已关闭，读数可能未实时刷新）。"],kinds=["state_limit","ok"])
+        self.assertEqual(rc.compose(p,r,label).text,"主卧空调已关闭，暂无运行设定温度。最近报告室温18.9℃，读数可能未实时刷新。")
+        p,r=build("home","阳台","brightness_unspecified",[("home","阳台","lux"),("lights","yang_tai","list_on")],
+            ["阳台光照度：4勒克斯。","阳台1组灯具均已关闭。"],caveat="环境光照度与灯具开关状态是不同指标。")
+        self.assertEqual(rc.compose(p,r,label).text,"阳台环境光照度为4勒克斯，1组灯具均已关闭。")
+        wrong=pe.PlanRun((r.outcomes[0],pe.Outcome(p.primary[1],"ok","餐厅2组灯具均已关闭。")))
+        self.assertIn(p.caveat,rc.compose(p,wrong,label).text)
+        self.assertIn("餐厅2组灯具均已关闭",rc.compose(p,wrong,label).text)
+
+    def test_overview_paragraphs_preserve_every_character(self):
+        s="家庭Wi-Fi：2位成员的设备已连接。入户门锁：状态无法确认。15组灯光中，1组开启。已监测家电运行：洗衣机（漂洗）；热水器燃烧状态未统计。3个有效监测区域平均温度：18.3℃。未确认到异常，但部分项目无法核实；数据不可用：入户门锁。"
+        v=rc.normalize_speech(bm.QueryKey("home","all","overview"),s)
+        self.assertEqual(v.replace("\n",""),s)
+        self.assertEqual(len(v.splitlines()),6)
