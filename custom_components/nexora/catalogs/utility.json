@@ -273,7 +273,7 @@
     {
       "id": "utility.electric.j.basic.balance",
       "category": "utility.electric.j.basic",
-      "name": "电费余额",
+      "name": "账户余额",
       "order": 1,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -287,7 +287,7 @@
     {
       "id": "utility.electric.j.basic.debt",
       "category": "utility.electric.j.basic",
-      "name": "电费欠费了吗",
+      "name": "欠费情况",
       "order": 2,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -301,7 +301,7 @@
     {
       "id": "utility.electric.j.basic.daily",
       "category": "utility.electric.j.basic",
-      "name": "最近一天用了多少度电",
+      "name": "最近一日用电量",
       "order": 3,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -343,7 +343,7 @@
     {
       "id": "utility.electric.j.basic.year_usage",
       "category": "utility.electric.j.basic",
-      "name": "今年用了多少度电",
+      "name": "年度用电量",
       "order": 6,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -357,7 +357,7 @@
     {
       "id": "utility.electric.j.basic.year_cost",
       "category": "utility.electric.j.basic",
-      "name": "今年电费是多少",
+      "name": "年度电费",
       "order": 7,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -371,7 +371,7 @@
     {
       "id": "utility.electric.j.basic.update",
       "category": "utility.electric.j.basic",
-      "name": "电费余额什么时候更新的",
+      "name": "数据更新时间",
       "order": 8,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -762,7 +762,7 @@
     {
       "id": "utility.electric.j.history.h_coverage",
       "category": "utility.electric.j.history",
-      "name": "电历史数据覆盖范围",
+      "name": "历史数据覆盖范围",
       "order": 31,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -776,7 +776,7 @@
     {
       "id": "utility.electric.l.basic.balance",
       "category": "utility.electric.l.basic",
-      "name": "电费余额",
+      "name": "账户余额",
       "order": 32,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -790,7 +790,7 @@
     {
       "id": "utility.electric.l.basic.debt",
       "category": "utility.electric.l.basic",
-      "name": "电费欠费了吗",
+      "name": "欠费情况",
       "order": 33,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -804,7 +804,7 @@
     {
       "id": "utility.electric.l.basic.daily",
       "category": "utility.electric.l.basic",
-      "name": "最近一天用了多少度电",
+      "name": "最近一日用电量",
       "order": 34,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -846,7 +846,7 @@
     {
       "id": "utility.electric.l.basic.year_usage",
       "category": "utility.electric.l.basic",
-      "name": "今年用了多少度电",
+      "name": "年度用电量",
       "order": 37,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -860,7 +860,7 @@
     {
       "id": "utility.electric.l.basic.year_cost",
       "category": "utility.electric.l.basic",
-      "name": "今年电费是多少",
+      "name": "年度电费",
       "order": 38,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -874,7 +874,7 @@
     {
       "id": "utility.electric.l.basic.update",
       "category": "utility.electric.l.basic",
-      "name": "电费余额什么时候更新的",
+      "name": "数据更新时间",
       "order": 39,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1265,7 +1265,7 @@
     {
       "id": "utility.electric.l.history.h_coverage",
       "category": "utility.electric.l.history",
-      "name": "电历史数据覆盖范围",
+      "name": "历史数据覆盖范围",
       "order": 62,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1293,7 +1293,7 @@
     {
       "id": "utility.water.debt",
       "category": "utility.water",
-      "name": "水费欠费了吗",
+      "name": "欠费情况",
       "order": 64,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1335,7 +1335,7 @@
     {
       "id": "utility.water.read",
       "category": "utility.water",
-      "name": "水费最近什么时候抄表",
+      "name": "最近抄表日期",
       "order": 67,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1349,7 +1349,7 @@
     {
       "id": "utility.water.meter",
       "category": "utility.water",
-      "name": "水表本期读数",
+      "name": "本期表读数",
       "order": 68,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1363,7 +1363,7 @@
     {
       "id": "utility.water.update",
       "category": "utility.water",
-      "name": "水务数据更新时间",
+      "name": "数据更新时间",
       "order": 69,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1613,7 +1613,7 @@
     {
       "id": "utility.water.history.h_coverage",
       "category": "utility.water.history",
-      "name": "水历史数据覆盖范围",
+      "name": "历史数据覆盖范围",
       "order": 84,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1627,7 +1627,7 @@
     {
       "id": "utility.gas.basic.balance",
       "category": "utility.gas.basic",
-      "name": "燃气费余额",
+      "name": "账户余额",
       "order": 85,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1641,7 +1641,7 @@
     {
       "id": "utility.gas.basic.debt",
       "category": "utility.gas.basic",
-      "name": "燃气欠费了吗",
+      "name": "欠费情况",
       "order": 86,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1697,7 +1697,7 @@
     {
       "id": "utility.gas.basic.read",
       "category": "utility.gas.basic",
-      "name": "燃气最近什么时候抄表",
+      "name": "最近抄表日期",
       "order": 90,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1711,7 +1711,7 @@
     {
       "id": "utility.gas.basic.meter",
       "category": "utility.gas.basic",
-      "name": "燃气本期表读数",
+      "name": "本期表读数",
       "order": 91,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1725,7 +1725,7 @@
     {
       "id": "utility.gas.basic.year_usage",
       "category": "utility.gas.basic",
-      "name": "今年累计用气量",
+      "name": "本年累计用气量",
       "order": 92,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1739,7 +1739,7 @@
     {
       "id": "utility.gas.basic.settlement",
       "category": "utility.gas.basic",
-      "name": "燃气本期账单结清了吗",
+      "name": "本期结算状态",
       "order": 93,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1753,7 +1753,7 @@
     {
       "id": "utility.gas.basic.update",
       "category": "utility.gas.basic",
-      "name": "燃气数据更新时间",
+      "name": "数据更新时间",
       "order": 94,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1767,7 +1767,7 @@
     {
       "id": "utility.gas.pay.last_pay",
       "category": "utility.gas.pay",
-      "name": "燃气最近缴费金额",
+      "name": "最近缴费金额",
       "order": 95,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1781,7 +1781,7 @@
     {
       "id": "utility.gas.pay.last_pay_date",
       "category": "utility.gas.pay",
-      "name": "燃气最近缴费时间",
+      "name": "最近缴费时间",
       "order": 96,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1795,7 +1795,7 @@
     {
       "id": "utility.gas.pay.last_pay_channel",
       "category": "utility.gas.pay",
-      "name": "燃气最近缴费渠道",
+      "name": "最近缴费渠道",
       "order": 97,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1809,7 +1809,7 @@
     {
       "id": "utility.gas.pay.year_pay",
       "category": "utility.gas.pay",
-      "name": "今年燃气交了多少钱",
+      "name": "年度缴费金额",
       "order": 98,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1823,7 +1823,7 @@
     {
       "id": "utility.gas.pay.year_pay_count",
       "category": "utility.gas.pay",
-      "name": "今年燃气交了几次费",
+      "name": "年度缴费次数",
       "order": 99,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1837,7 +1837,7 @@
     {
       "id": "utility.gas.pay.payment_update",
       "category": "utility.gas.pay",
-      "name": "燃气缴费历史更新时间",
+      "name": "缴费历史更新时间",
       "order": 100,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1851,7 +1851,7 @@
     {
       "id": "utility.gas.tier.tier",
       "category": "utility.gas.tier",
-      "name": "目前处于第几阶梯用气",
+      "name": "当前用气阶梯",
       "order": 101,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1865,7 +1865,7 @@
     {
       "id": "utility.gas.tier.tier1_price",
       "category": "utility.gas.tier",
-      "name": "燃气第一阶梯气价",
+      "name": "第一阶梯气价",
       "order": 102,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1879,7 +1879,7 @@
     {
       "id": "utility.gas.tier.tier1_used",
       "category": "utility.gas.tier",
-      "name": "燃气第一阶梯累计用了多少气",
+      "name": "第一阶梯已用量",
       "order": 103,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1893,7 +1893,7 @@
     {
       "id": "utility.gas.tier.tier1_remaining",
       "category": "utility.gas.tier",
-      "name": "燃气第一阶梯还剩多少气",
+      "name": "第一阶梯剩余量",
       "order": 104,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1907,7 +1907,7 @@
     {
       "id": "utility.gas.tier.tier1_limit",
       "category": "utility.gas.tier",
-      "name": "燃气第一阶梯总额度",
+      "name": "第一阶梯总额度",
       "order": 105,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1921,7 +1921,7 @@
     {
       "id": "utility.gas.tier.tier2_price",
       "category": "utility.gas.tier",
-      "name": "燃气第二阶梯气价",
+      "name": "第二阶梯气价",
       "order": 106,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1935,7 +1935,7 @@
     {
       "id": "utility.gas.tier.tier2_used",
       "category": "utility.gas.tier",
-      "name": "燃气第二阶梯累计用了多少气",
+      "name": "第二阶梯已用量",
       "order": 107,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1949,7 +1949,7 @@
     {
       "id": "utility.gas.tier.tier2_remaining",
       "category": "utility.gas.tier",
-      "name": "燃气第二阶梯还剩多少气",
+      "name": "第二阶梯剩余量",
       "order": 108,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1963,7 +1963,7 @@
     {
       "id": "utility.gas.tier.tier2_limit",
       "category": "utility.gas.tier",
-      "name": "燃气第二阶梯总额度",
+      "name": "第二阶梯总额度",
       "order": 109,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1977,7 +1977,7 @@
     {
       "id": "utility.gas.tier.tier3_price",
       "category": "utility.gas.tier",
-      "name": "燃气第三阶梯气价",
+      "name": "第三阶梯气价",
       "order": 110,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -1991,7 +1991,7 @@
     {
       "id": "utility.gas.tier.tier3_used",
       "category": "utility.gas.tier",
-      "name": "燃气第三阶梯累计用了多少气",
+      "name": "第三阶梯已用量",
       "order": 111,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
@@ -2281,7 +2281,7 @@
     {
       "id": "utility.gas.history.h_coverage",
       "category": "utility.gas.history",
-      "name": "燃气历史数据覆盖范围",
+      "name": "历史数据覆盖范围",
       "order": 128,
       "intent": "LuxeUtilityQuery",
       "read_only": true,

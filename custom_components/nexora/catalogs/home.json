@@ -133,7 +133,7 @@
     {
       "id": "home.family.family_all",
       "category": "home.family",
-      "name": "现在家里有谁",
+      "name": "当前在家人员",
       "order": 1,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -146,7 +146,7 @@
     {
       "id": "home.family.family_count_all",
       "category": "home.family",
-      "name": "家里现在有几个人",
+      "name": "在家人数",
       "order": 2,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -167,7 +167,13 @@
       "slots": {
         "luxe_home_query": "person",
         "luxe_home_target": "爸爸"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.family.person_father"
+        }
+      ]
     },
     {
       "id": "home.family.person_mother",
@@ -180,7 +186,13 @@
       "slots": {
         "luxe_home_query": "person",
         "luxe_home_target": "妈妈"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.family.person_mother"
+        }
+      ]
     },
     {
       "id": "home.family.person_grandfather",
@@ -193,7 +205,13 @@
       "slots": {
         "luxe_home_query": "person",
         "luxe_home_target": "爷爷"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.family.person_grandfather"
+        }
+      ]
     },
     {
       "id": "home.family.person_grandmother",
@@ -206,12 +224,18 @@
       "slots": {
         "luxe_home_query": "person",
         "luxe_home_target": "奶奶"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.family.person_grandmother"
+        }
+      ]
     },
     {
       "id": "home.env.master.temp_master",
       "category": "home.env.master",
-      "name": "主卧温度多少",
+      "name": "温度",
       "order": 7,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -219,12 +243,18 @@
       "slots": {
         "luxe_home_query": "temp",
         "luxe_home_target": "主卧"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.env.master.temp_master"
+        }
+      ]
     },
     {
       "id": "home.env.master.hum_master",
       "category": "home.env.master",
-      "name": "主卧湿度多少",
+      "name": "湿度",
       "order": 8,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -232,12 +262,18 @@
       "slots": {
         "luxe_home_query": "hum",
         "luxe_home_target": "主卧"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.env.master.hum_master"
+        }
+      ]
     },
     {
       "id": "home.env.master.room_env_master",
       "category": "home.env.master",
-      "name": "主卧温湿度",
+      "name": "温湿度",
       "order": 9,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -245,12 +281,18 @@
       "slots": {
         "luxe_home_query": "room_env",
         "luxe_home_target": "主卧"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.env.master.room_env_master"
+        }
+      ]
     },
     {
       "id": "home.env.secondary.temp_secondary",
       "category": "home.env.secondary",
-      "name": "次卧温度多少",
+      "name": "温度",
       "order": 10,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -258,12 +300,18 @@
       "slots": {
         "luxe_home_query": "temp",
         "luxe_home_target": "次卧"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.env.secondary.temp_secondary"
+        }
+      ]
     },
     {
       "id": "home.env.secondary.hum_secondary",
       "category": "home.env.secondary",
-      "name": "次卧湿度多少",
+      "name": "湿度",
       "order": 11,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -271,12 +319,18 @@
       "slots": {
         "luxe_home_query": "hum",
         "luxe_home_target": "次卧"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.env.secondary.hum_secondary"
+        }
+      ]
     },
     {
       "id": "home.env.secondary.room_env_secondary",
       "category": "home.env.secondary",
-      "name": "次卧温湿度",
+      "name": "温湿度",
       "order": 12,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -284,12 +338,18 @@
       "slots": {
         "luxe_home_query": "room_env",
         "luxe_home_target": "次卧"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.env.secondary.room_env_secondary"
+        }
+      ]
     },
     {
       "id": "home.env.living_dining.temp_living_dining",
       "category": "home.env.living_dining",
-      "name": "客餐厅温度多少",
+      "name": "温度",
       "order": 13,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -297,12 +357,18 @@
       "slots": {
         "luxe_home_query": "temp",
         "luxe_home_target": "客餐厅"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.env.living_dining.temp_living_dining"
+        }
+      ]
     },
     {
       "id": "home.env.living_dining.hum_living_dining",
       "category": "home.env.living_dining",
-      "name": "客餐厅湿度多少",
+      "name": "湿度",
       "order": 14,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -310,12 +376,18 @@
       "slots": {
         "luxe_home_query": "hum",
         "luxe_home_target": "客餐厅"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.env.living_dining.hum_living_dining"
+        }
+      ]
     },
     {
       "id": "home.env.living_dining.room_env_living_dining",
       "category": "home.env.living_dining",
-      "name": "客餐厅温湿度",
+      "name": "温湿度",
       "order": 15,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -323,12 +395,18 @@
       "slots": {
         "luxe_home_query": "room_env",
         "luxe_home_target": "客餐厅"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.env.living_dining.room_env_living_dining"
+        }
+      ]
     },
     {
       "id": "home.env.bathroom.temp_bathroom",
       "category": "home.env.bathroom",
-      "name": "卫生间温度多少",
+      "name": "温度",
       "order": 16,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -336,7 +414,13 @@
       "slots": {
         "luxe_home_query": "temp",
         "luxe_home_target": "卫生间"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.env.bathroom.temp_bathroom"
+        }
+      ]
     },
     {
       "id": "home.env.env_all",
@@ -432,7 +516,7 @@
     {
       "id": "home.presence.entry.presence_entry",
       "category": "home.presence.entry",
-      "name": "玄关有人吗",
+      "name": "人体感应",
       "order": 24,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -440,12 +524,18 @@
       "slots": {
         "luxe_home_query": "presence",
         "luxe_home_target": "玄关"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.entry.presence_entry"
+        }
+      ]
     },
     {
       "id": "home.presence.entry.lux_entry",
       "category": "home.presence.entry",
-      "name": "玄关光照度是多少",
+      "name": "光照度",
       "order": 25,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -453,12 +543,18 @@
       "slots": {
         "luxe_home_query": "lux",
         "luxe_home_target": "玄关"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.entry.lux_entry"
+        }
+      ]
     },
     {
       "id": "home.presence.entry.duration_entry",
       "category": "home.presence.entry",
-      "name": "玄关人体感应持续时间",
+      "name": "感应持续时间",
       "order": 26,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -466,12 +562,18 @@
       "slots": {
         "luxe_home_query": "duration",
         "luxe_home_target": "玄关"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.entry.duration_entry"
+        }
+      ]
     },
     {
       "id": "home.presence.entry.duration_present_entry",
       "category": "home.presence.entry",
-      "name": "玄关有人多久了",
+      "name": "有人持续时间",
       "order": 27,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -479,12 +581,18 @@
       "slots": {
         "luxe_home_query": "duration_present",
         "luxe_home_target": "玄关"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.entry.duration_present_entry"
+        }
+      ]
     },
     {
       "id": "home.presence.entry.duration_absent_entry",
       "category": "home.presence.entry",
-      "name": "玄关无人多久了",
+      "name": "无人持续时间",
       "order": 28,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -492,12 +600,18 @@
       "slots": {
         "luxe_home_query": "duration_absent",
         "luxe_home_target": "玄关"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.entry.duration_absent_entry"
+        }
+      ]
     },
     {
       "id": "home.presence.living.presence_living",
       "category": "home.presence.living",
-      "name": "客厅有人吗",
+      "name": "人体感应",
       "order": 29,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -505,12 +619,18 @@
       "slots": {
         "luxe_home_query": "presence",
         "luxe_home_target": "客厅"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.living.presence_living"
+        }
+      ]
     },
     {
       "id": "home.presence.living.lux_living",
       "category": "home.presence.living",
-      "name": "客厅光照度是多少",
+      "name": "光照度",
       "order": 30,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -518,12 +638,18 @@
       "slots": {
         "luxe_home_query": "lux",
         "luxe_home_target": "客厅"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.living.lux_living"
+        }
+      ]
     },
     {
       "id": "home.presence.balcony.presence_balcony",
       "category": "home.presence.balcony",
-      "name": "阳台有人吗",
+      "name": "人体感应",
       "order": 31,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -531,12 +657,18 @@
       "slots": {
         "luxe_home_query": "presence",
         "luxe_home_target": "阳台"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.balcony.presence_balcony"
+        }
+      ]
     },
     {
       "id": "home.presence.balcony.lux_balcony",
       "category": "home.presence.balcony",
-      "name": "阳台光照度是多少",
+      "name": "光照度",
       "order": 32,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -544,12 +676,18 @@
       "slots": {
         "luxe_home_query": "lux",
         "luxe_home_target": "阳台"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.balcony.lux_balcony"
+        }
+      ]
     },
     {
       "id": "home.presence.balcony.duration_balcony",
       "category": "home.presence.balcony",
-      "name": "阳台人体感应持续时间",
+      "name": "感应持续时间",
       "order": 33,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -557,12 +695,18 @@
       "slots": {
         "luxe_home_query": "duration",
         "luxe_home_target": "阳台"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.balcony.duration_balcony"
+        }
+      ]
     },
     {
       "id": "home.presence.balcony.duration_present_balcony",
       "category": "home.presence.balcony",
-      "name": "阳台有人多久了",
+      "name": "有人持续时间",
       "order": 34,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -570,12 +714,18 @@
       "slots": {
         "luxe_home_query": "duration_present",
         "luxe_home_target": "阳台"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.balcony.duration_present_balcony"
+        }
+      ]
     },
     {
       "id": "home.presence.balcony.duration_absent_balcony",
       "category": "home.presence.balcony",
-      "name": "阳台无人多久了",
+      "name": "无人持续时间",
       "order": 35,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -583,12 +733,18 @@
       "slots": {
         "luxe_home_query": "duration_absent",
         "luxe_home_target": "阳台"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.balcony.duration_absent_balcony"
+        }
+      ]
     },
     {
       "id": "home.presence.kitchen.presence_kitchen",
       "category": "home.presence.kitchen",
-      "name": "厨房有人吗",
+      "name": "人体感应",
       "order": 36,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -596,12 +752,18 @@
       "slots": {
         "luxe_home_query": "presence",
         "luxe_home_target": "厨房"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.kitchen.presence_kitchen"
+        }
+      ]
     },
     {
       "id": "home.presence.kitchen.lux_kitchen",
       "category": "home.presence.kitchen",
-      "name": "厨房光照度是多少",
+      "name": "光照度",
       "order": 37,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -609,12 +771,18 @@
       "slots": {
         "luxe_home_query": "lux",
         "luxe_home_target": "厨房"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.kitchen.lux_kitchen"
+        }
+      ]
     },
     {
       "id": "home.presence.bathroom.presence_bathroom",
       "category": "home.presence.bathroom",
-      "name": "卫生间有人吗",
+      "name": "人体感应",
       "order": 38,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -622,12 +790,18 @@
       "slots": {
         "luxe_home_query": "presence",
         "luxe_home_target": "卫生间"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.bathroom.presence_bathroom"
+        }
+      ]
     },
     {
       "id": "home.presence.bathroom.lux_bathroom",
       "category": "home.presence.bathroom",
-      "name": "卫生间光照度是多少",
+      "name": "光照度",
       "order": 39,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -635,12 +809,18 @@
       "slots": {
         "luxe_home_query": "lux",
         "luxe_home_target": "卫生间"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.bathroom.lux_bathroom"
+        }
+      ]
     },
     {
       "id": "home.presence.bathroom.duration_bathroom",
       "category": "home.presence.bathroom",
-      "name": "卫生间人体感应持续时间",
+      "name": "感应持续时间",
       "order": 40,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -648,12 +828,18 @@
       "slots": {
         "luxe_home_query": "duration",
         "luxe_home_target": "卫生间"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.bathroom.duration_bathroom"
+        }
+      ]
     },
     {
       "id": "home.presence.bathroom.duration_present_bathroom",
       "category": "home.presence.bathroom",
-      "name": "卫生间有人多久了",
+      "name": "有人持续时间",
       "order": 41,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -661,12 +847,18 @@
       "slots": {
         "luxe_home_query": "duration_present",
         "luxe_home_target": "卫生间"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.bathroom.duration_present_bathroom"
+        }
+      ]
     },
     {
       "id": "home.presence.bathroom.duration_absent_bathroom",
       "category": "home.presence.bathroom",
-      "name": "卫生间无人多久了",
+      "name": "无人持续时间",
       "order": 42,
       "intent": "LuxeHomeQuery",
       "read_only": true,
@@ -674,7 +866,13 @@
       "slots": {
         "luxe_home_query": "duration_absent",
         "luxe_home_target": "卫生间"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.presence.bathroom.duration_absent_bathroom"
+        }
+      ]
     },
     {
       "id": "home.presence.presence_all_all",
@@ -739,7 +937,13 @@
       "slots": {
         "luxe_home_query": "lock",
         "luxe_home_target": "all"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.access.door.lock_all"
+        }
+      ]
     },
     {
       "id": "home.access.door.door_all",
@@ -752,7 +956,13 @@
       "slots": {
         "luxe_home_query": "door",
         "luxe_home_target": "all"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.access.door.door_all"
+        }
+      ]
     },
     {
       "id": "home.access.door.deadbolt_all",
@@ -765,7 +975,13 @@
       "slots": {
         "luxe_home_query": "deadbolt",
         "luxe_home_target": "all"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.access.door.deadbolt_all"
+        }
+      ]
     },
     {
       "id": "home.access.door.childlock_all",
@@ -778,7 +994,13 @@
       "slots": {
         "luxe_home_query": "childlock",
         "luxe_home_target": "all"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.access.door.childlock_all"
+        }
+      ]
     },
     {
       "id": "home.access.door.windows_all",
@@ -791,7 +1013,13 @@
       "slots": {
         "luxe_home_query": "windows",
         "luxe_home_target": "all"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.windows"
+        }
+      ]
     },
     {
       "id": "home.devices.lid_all",
@@ -804,7 +1032,13 @@
       "slots": {
         "luxe_home_query": "lid",
         "luxe_home_target": "all"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.devices.lid_all"
+        }
+      ]
     },
     {
       "id": "home.safety.water_kitchen",
@@ -817,7 +1051,13 @@
       "slots": {
         "luxe_home_query": "water",
         "luxe_home_target": "厨房"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.safety.water_kitchen"
+        }
+      ]
     },
     {
       "id": "home.safety.water_balcony",
@@ -830,7 +1070,13 @@
       "slots": {
         "luxe_home_query": "water",
         "luxe_home_target": "阳台"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.safety.water_balcony"
+        }
+      ]
     },
     {
       "id": "home.safety.water_all_all",
@@ -856,7 +1102,13 @@
       "slots": {
         "luxe_home_query": "battery",
         "luxe_home_target": "玄关人体传感器"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.battery.individual.battery_entry_presence"
+        }
+      ]
     },
     {
       "id": "home.battery.individual.battery_living_presence",
@@ -869,7 +1121,13 @@
       "slots": {
         "luxe_home_query": "battery",
         "luxe_home_target": "客厅人体传感器"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.battery.individual.battery_living_presence"
+        }
+      ]
     },
     {
       "id": "home.battery.individual.battery_balcony_presence",
@@ -882,7 +1140,13 @@
       "slots": {
         "luxe_home_query": "battery",
         "luxe_home_target": "阳台人体传感器"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.battery.individual.battery_balcony_presence"
+        }
+      ]
     },
     {
       "id": "home.battery.individual.battery_kitchen_presence",
@@ -895,7 +1159,13 @@
       "slots": {
         "luxe_home_query": "battery",
         "luxe_home_target": "厨房人体传感器"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.battery.individual.battery_kitchen_presence"
+        }
+      ]
     },
     {
       "id": "home.battery.individual.battery_kitchen_leak",
@@ -908,7 +1178,13 @@
       "slots": {
         "luxe_home_query": "battery",
         "luxe_home_target": "厨房水浸卫士"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.battery.individual.battery_kitchen_leak"
+        }
+      ]
     },
     {
       "id": "home.battery.individual.battery_balcony_leak",
@@ -921,7 +1197,13 @@
       "slots": {
         "luxe_home_query": "battery",
         "luxe_home_target": "阳台水浸传感器"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.battery.individual.battery_balcony_leak"
+        }
+      ]
     },
     {
       "id": "home.battery.individual.battery_toilet_lid",
@@ -934,7 +1216,13 @@
       "slots": {
         "luxe_home_query": "battery",
         "luxe_home_target": "马桶盖传感器"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.battery.individual.battery_toilet_lid"
+        }
+      ]
     },
     {
       "id": "home.battery.individual.battery_master_climate",
@@ -947,7 +1235,13 @@
       "slots": {
         "luxe_home_query": "battery",
         "luxe_home_target": "主卧温湿度计"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.battery.individual.battery_master_climate"
+        }
+      ]
     },
     {
       "id": "home.battery.individual.battery_secondary_climate",
@@ -960,7 +1254,13 @@
       "slots": {
         "luxe_home_query": "battery",
         "luxe_home_target": "次卧温湿度计"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.battery.individual.battery_secondary_climate"
+        }
+      ]
     },
     {
       "id": "home.battery.individual.battery_living_climate",
@@ -973,7 +1273,13 @@
       "slots": {
         "luxe_home_query": "battery",
         "luxe_home_target": "客餐厅温湿度计"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.battery.individual.battery_living_climate"
+        }
+      ]
     },
     {
       "id": "home.battery.individual.battery_lock_main",
@@ -986,7 +1292,13 @@
       "slots": {
         "luxe_home_query": "battery",
         "luxe_home_target": "门锁主电池"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.battery.individual.battery_lock_main"
+        }
+      ]
     },
     {
       "id": "home.battery.individual.battery_lock_camera",
@@ -999,7 +1311,13 @@
       "slots": {
         "luxe_home_query": "battery",
         "luxe_home_target": "门锁猫眼电池"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.battery.individual.battery_lock_camera"
+        }
+      ]
     },
     {
       "id": "home.battery.batteries_all",
@@ -1038,7 +1356,13 @@
       "slots": {
         "luxe_home_query": "curtain",
         "luxe_home_target": "主卧"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.access.curtains.curtain_master"
+        }
+      ]
     },
     {
       "id": "home.access.curtains.curtain_pos_master",
@@ -1051,7 +1375,13 @@
       "slots": {
         "luxe_home_query": "curtain_pos",
         "luxe_home_target": "主卧"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.access.curtains.curtain_pos_master"
+        }
+      ]
     },
     {
       "id": "home.access.curtains.curtain_secondary",
@@ -1064,7 +1394,13 @@
       "slots": {
         "luxe_home_query": "curtain",
         "luxe_home_target": "次卧"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.access.curtains.curtain_secondary"
+        }
+      ]
     },
     {
       "id": "home.access.curtains.curtain_pos_secondary",
@@ -1077,7 +1413,13 @@
       "slots": {
         "luxe_home_query": "curtain_pos",
         "luxe_home_target": "次卧"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.access.curtains.curtain_pos_secondary"
+        }
+      ]
     },
     {
       "id": "home.access.curtains.curtain_living_dining",
@@ -1090,7 +1432,13 @@
       "slots": {
         "luxe_home_query": "curtain",
         "luxe_home_target": "客餐厅"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.access.curtains.curtain_living_dining"
+        }
+      ]
     },
     {
       "id": "home.access.curtains.curtain_pos_living_dining",
@@ -1103,7 +1451,13 @@
       "slots": {
         "luxe_home_query": "curtain_pos",
         "luxe_home_target": "客餐厅"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.access.curtains.curtain_pos_living_dining"
+        }
+      ]
     },
     {
       "id": "home.access.curtains.curtains_all",
@@ -1129,7 +1483,13 @@
       "slots": {
         "luxe_home_query": "heater",
         "luxe_home_target": "all"
-      }
+      },
+      "requires": [
+        {
+          "kind": "binding",
+          "key": "home.devices.heater_all"
+        }
+      ]
     },
     {
       "id": "home.overview.lights_all",

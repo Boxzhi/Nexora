@@ -1,0 +1,10 @@
+# Copy to /config/nexora/bindings.yaml; reload Nexora.
+# Uncomment only bindings explicitly verified in YOUR installed intent scripts.
+# null = confirmed not configured; non-empty list = configured (offline stays visible).
+# An absent key = unknown; keep the option.
+# home.family.person_grandfather: null
+# home.windows: null
+# appliance.w:
+#   - switch.example_washer_power
+# lights.fixtures.living_ceiling:
+#   - light.example

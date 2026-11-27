@@ -1,10 +1,11 @@
 """Validated declarative registry and isolated in-memory menu sessions."""
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import date
 import re
 from string import Formatter
 from time import monotonic
-from typing import Any
+from .capability import validate_requirements
+from .followup import Followups
 
 HELP = {"help", "帮助", "使用指南", "你能做什么"}
 EXIT = {"exit", "退出", "关闭菜单"}
@@ -23,7 +24,7 @@ PARAMETERS = {
 PROMPTS = {"month": "月份（1–12）", "year": "年份（2000–2099）", "year_month": "年月（YYYY-MM）", "date": "日期（YYYY-MM-DD）", "month_day": "月日（MM-DD）"}
 ID = re.compile(r"[a-z][a-z0-9_]*(?:\.[a-z0-9_]+)*\Z")
 SLOT = re.compile(r"[a-zA-Z][a-zA-Z0-9_]*\Z")
-TRANSLATE = str.maketrans("０１２３４５６７８９－", "0123456789-")
+TRANSLATE = str.maketrans("０１２３４５６７８９－．", "0123456789-.")
 
 @dataclass(frozen=True)
 class Item:
@@ -74,6 +75,7 @@ class Menu:
             raise ValueError("Invalid session bounds")
         for catalog in catalogs:
             self._register(catalog)
+        self.followups = Followups(self, clock, max_sessions=max_sessions)
         self._add_shortcuts()
         self.children = {key: tuple(sorted((x for x in self.items.values() if x.parent == key), key=lambda x: (x.order, x.id))) for key in self.items}
 
@@ -125,6 +127,7 @@ class Menu:
             slots = x["slots"]
             if not isinstance(slots, dict) or not all(SLOT.fullmatch(k) and type(v) in (str, int) for k, v in slots.items()):
                 raise ValueError("Invalid slots")
+            validate_requirements(x)
             native_slots = x.get("native_slots", {})
             # Only the existing single-light query may resolve a local entity ID
             # from a strict recognition result. No generic wildcard slots.
@@ -189,12 +192,6 @@ class Menu:
         for i, item_id in enumerate(shown, 1):
             item = self.items[item_id]
             lines.append(f"{i}. {item.icon} {item.name}" if item.icon else f"{i}. {item.name}")
-            if item.kind == "query":
-                cap = self.capabilities[item_id]
-                if not cap.get("parameter"):
-                    sentence = cap["sentence"].format(secondary=self.settings["secondary"])
-                    if sentence != item.name:
-                        lines.append("   示例：" + sentence)
         if not shown:
             lines.append("当前没有可用的查询能力，请检查意图库。")
         if (page+1)*8 < len(items):
@@ -217,18 +214,27 @@ class Menu:
         t = text.strip().casefold().translate(TRANSLATE)
         s = self.sessions.get(key)
         if t in HELP:
+            self.followups.clear(key)
             return self._render(key, "root", available)
         if t in EXIT:
             self.sessions.pop(key, None)
+            self.followups.clear(key)
             return Reply("已退出查询菜单。")
         if t in self.aliases:
-            return self._render(key, self.aliases[t], available)
+            self.followups.clear(key)
+            node = self.aliases[t]
+            if not self._available(node, available):
+                return Reply("该分类暂无已配置的查询能力，请发送 help。")
+            return self._render(key, node, available)
         if s and s.pending:
+            if re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", t):
+                return Reply("请先完成当前参数输入，或发送0返回。")
             if t in BACK:
                 return self._render(key, s.node, available, s.page)
             if not re.fullmatch(r"[0-9-]+", t) and t not in NEXT | PREV:
                 # A complete independent question remains usable during a date prompt.
                 s.pending = None
+                self.followups.clear(key)
                 return None
             cap_id = s.pending
             if not self._available(cap_id, available):
@@ -243,7 +249,15 @@ class Menu:
             s.pending = None
             s.expires = self.clock()+self.ttl
             return self._query(cap_id, params)
+        if re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", t):
+            return self._path(key, t, available, today)
         if t not in BACK | NEXT | PREV and not (t.isascii() and t.isdigit()):
+            result = self.followups.route(key, t, available)
+            if isinstance(result, str):
+                return Reply(result)
+            if result is not None:
+                return self._query(result, {})
+            self.followups.clear(key)
             return None
         if not s:
             return Reply("当前没有有效菜单，请发送 help。")
@@ -257,6 +271,7 @@ class Menu:
         if not self._available(cap_id, available):
             return Reply("该查询已不可用，请发送 help 刷新菜单。")
         if self.items[cap_id].kind == "menu":
+            self.followups.clear(key)
             return self._render(key, cap_id, available)
         s.expires = self.clock()+self.ttl
         param = self.capabilities[cap_id].get("parameter")
@@ -264,3 +279,33 @@ class Menu:
             s.pending = cap_id
             return Reply("请输入" + PROMPTS[param] + "，或发送0返回。")
         return self._query(cap_id, {})
+
+    def _path(self, key, text, available, today):
+        """Traverse the displayed snapshot first; validate the rest atomically."""
+        parts = text.split(".")
+        session = self.sessions.get(key)
+        if session is None:
+            return Reply("当前没有有效菜单，请发送 help。")
+        if len(parts) > 10 or any(len(p) != 1 or p not in "12345678" for p in parts):
+            return Reply("无效数字路径，请使用1–8逐级选择。")
+        original = replace(session)
+        for i, part in enumerate(parts):
+            s = self.sessions[key]
+            n = int(part)-1
+            if n >= len(s.shown):
+                self.sessions[key] = original
+                return Reply("无效数字路径，请按当前菜单选择。")
+            item_id = s.shown[n]
+            if not self._available(item_id, available):
+                self.sessions[key] = original
+                return Reply("该查询已不可用，请发送 help 刷新菜单。")
+            if self.items[item_id].kind == "menu":
+                result = self._render(key, item_id, available)
+                continue
+            if i != len(parts)-1:
+                self.sessions[key] = original
+                return Reply("无效数字路径，不能跨越查询或参数输入步骤。")
+            self.followups.clear(key)
+            return self.route(key, part, available, today)
+        self.followups.clear(key)
+        return result

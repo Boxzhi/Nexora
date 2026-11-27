@@ -1484,7 +1484,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.living_ceiling"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.living_ceiling.brightness",
@@ -1499,7 +1509,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.living_ceiling"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.living_ceiling.temperature",
@@ -1514,7 +1534,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.living_ceiling"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.living_spot.single_state",
@@ -1529,7 +1559,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.living_spot"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.living_spot.brightness",
@@ -1544,7 +1584,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.living_spot"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.living_spot.temperature",
@@ -1559,7 +1609,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.living_spot"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.living_strip.single_state",
@@ -1574,7 +1634,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.living_strip"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.living_strip.brightness",
@@ -1589,7 +1659,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.living_strip"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.living_strip.temperature",
@@ -1604,7 +1684,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.living_strip"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.dining_fan.single_state",
@@ -1619,7 +1709,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.dining_fan"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.dining_fan.brightness",
@@ -1634,7 +1734,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.dining_fan"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.dining_fan.temperature",
@@ -1649,7 +1759,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.dining_fan"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.dining_strip.single_state",
@@ -1664,7 +1784,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.dining_strip"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.dining_strip.brightness",
@@ -1679,7 +1809,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.dining_strip"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.dining_strip.temperature",
@@ -1694,7 +1834,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.dining_strip"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.master_ceiling.single_state",
@@ -1709,7 +1859,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.master_ceiling"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.master_ceiling.brightness",
@@ -1724,7 +1884,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.master_ceiling"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.master_ceiling.temperature",
@@ -1739,7 +1909,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.master_ceiling"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.secondary_ceiling.single_state",
@@ -1754,7 +1934,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.secondary_ceiling"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.secondary_ceiling.brightness",
@@ -1769,7 +1959,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.secondary_ceiling"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.secondary_ceiling.temperature",
@@ -1784,7 +1984,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.secondary_ceiling"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.child_ceiling.single_state",
@@ -1799,7 +2009,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.child_ceiling"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.child_ceiling.brightness",
@@ -1814,7 +2034,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.child_ceiling"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.child_ceiling.temperature",
@@ -1829,7 +2059,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.child_ceiling"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.entry_downlight.single_state",
@@ -1844,7 +2084,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.entry_downlight"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.entry_downlight.brightness",
@@ -1859,7 +2109,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.entry_downlight"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.entry_downlight.temperature",
@@ -1874,7 +2134,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.entry_downlight"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.shoe_strip.single_state",
@@ -1889,7 +2159,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.shoe_strip"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.shoe_strip.brightness",
@@ -1904,7 +2184,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.shoe_strip"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.shoe_strip.temperature",
@@ -1919,7 +2209,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.shoe_strip"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.hall_downlight.single_state",
@@ -1934,7 +2234,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.hall_downlight"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.hall_downlight.brightness",
@@ -1949,7 +2259,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.hall_downlight"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.hall_downlight.temperature",
@@ -1964,7 +2284,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.hall_downlight"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.kitchen_downlight.single_state",
@@ -1979,7 +2309,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.kitchen_downlight"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.kitchen_downlight.brightness",
@@ -1994,7 +2334,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.kitchen_downlight"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.kitchen_downlight.temperature",
@@ -2009,7 +2359,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.kitchen_downlight"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.bath_panel.single_state",
@@ -2024,7 +2384,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.bath_panel"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.bath_panel.brightness",
@@ -2039,7 +2409,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.bath_panel"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.bath_panel.temperature",
@@ -2054,7 +2434,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.bath_panel"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.bath_heater.single_state",
@@ -2069,7 +2459,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.bath_heater"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.bath_heater.brightness",
@@ -2084,7 +2484,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.bath_heater"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.bath_heater.temperature",
@@ -2099,7 +2509,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.bath_heater"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.airer.single_state",
@@ -2114,7 +2534,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "presence"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.airer"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.airer.brightness",
@@ -2129,7 +2559,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "brightness"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.airer"
+        }
+      ]
     },
     {
       "id": "lights.fixtures.airer.temperature",
@@ -2144,7 +2584,17 @@
       },
       "native_slots": {
         "luxe_light_id": "light"
-      }
+      },
+      "requires": [
+        {
+          "kind": "native_light",
+          "feature": "color_temp"
+        },
+        {
+          "kind": "binding",
+          "key": "lights.fixtures.airer"
+        }
+      ]
     }
   ]
 }

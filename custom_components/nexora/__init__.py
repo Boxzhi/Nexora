@@ -30,14 +30,29 @@ def load_catalogs(local):
                     raise ValueError("Invalid YAML catalog") from err
     return result
 
+def load_bindings(path):
+    import yaml
+    from .capability import validate_bindings
+    p=Path(path)
+    if not p.is_file():
+        return {}
+    if p.stat().st_size>1_000_000:
+        raise ValueError("Bindings too large")
+    with p.open(encoding="utf-8") as stream:
+        try:
+            return validate_bindings(yaml.safe_load(stream) or {})
+        except yaml.YAMLError as err:
+            raise ValueError("Invalid bindings YAML") from err
+
 async def async_setup_entry(hass, entry):
     try:
         catalogs = await hass.async_add_executor_job(load_catalogs, hass.config.path("nexora", "catalogs"))
         menu = Menu(catalogs, settings=entry.data)
+        bindings = await hass.async_add_executor_job(load_bindings, hass.config.path('nexora','bindings.yaml'))
     except (ValueError, TypeError, KeyError, OSError) as err:
         _LOGGER.error("Nexora catalog initialization failed: %s", type(err).__name__)
         raise ConfigEntryNotReady("Invalid Nexora catalog") from err
-    agent = NexoraAgent(hass, entry.entry_id, menu, entry.data["fallback_agent"])
+    agent = NexoraAgent(hass, entry.entry_id, menu, entry.data["fallback_agent"], bindings)
     conversation.async_set_agent(hass, entry, agent)
     return True
 
