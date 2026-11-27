@@ -138,7 +138,9 @@ class SemanticIndex:
             for name,target in (("主卧空调","m"),("主卧室空调","m"),("次卧空调","s"),("次卧室空调","s"),("浴霸","b")):
                 if phrase.startswith(name) and self.clarifications[phrase].endswith("实际检测温度？"):
                     opts={k:choice("appliance",target,metric) for k,metric in
-                          (("设定温度","target"),("调的几度","target"),("检测温度","temp"),("实际温度","temp"),("室温","temp"))}
+                          (("设定温度","target"),("调的几度","target"),("检测温度","temp"),("实际温度","temp"))}
+                    if target in {"m","s"}:
+                        opts["室温"]=choice("appliance",target,"temp")
             if phrase in ("大门好了吗","大门好了没","大门安全吗","入户门好了吗","门好了吗"):
                 opts={k:choice("home","all",metric) for k,metric in (("关闭状态","door"),("关门状态","door"),("上锁状态","lock"),("反锁状态","deadbolt"))}
             if "环境光照度，还是" in self.clarifications[phrase]:

@@ -157,9 +157,16 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 device_id=u.device_id,satellite_id=u.satellite_id,language=u.language,agent_id="conversation.home_assistant")
             async with asyncio.timeout(3):
                 result=await recognize(probe,strict_intents_only=True)
-            if result is None or result.unmatched_entities or result.intent.name not in INTENTS:
+            if result is None or result.intent.name not in INTENTS:
                 return None
+            from .menu import Reply
+            def unresolved():
+                return RouteDecision(Route.LOCAL_REPLY,Reply("已识别为本地查询，但查询参数不一致或未唯一注册，无法确认实际数据。请明确查询对象和指标，或发送 help。"),"local_native")
+            if result.unmatched_entities:
+                return unresolved()
             slots={item.name:item.value for item in result.entities_list}
+            if len(slots)!=len(result.entities_list):
+                return unresolved()
             if result.intent.name=="LuxeLightQuery" and "luxe_light_id" in slots:
                 await self._prepare_capabilities(u,available)
             matches=[]
@@ -197,7 +204,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 if _slots_match(slots,expected,cap.get("native_slots",{})):
                     matches.append((cap,params))
             if len(matches)!=1:
-                return None
+                return unresolved()
             cap,params=matches[0]
             if not self.menu._available(cap["id"],visible):
                 from .menu import Reply

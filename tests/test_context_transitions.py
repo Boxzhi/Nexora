@@ -108,3 +108,11 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(self.route("风速呢").capability,"appliance.fan.speed")
         self.remember("appliance.ac.master.temp")
         self.assertEqual(self.route("开关状态呢").capability,"appliance.ac.master.status")
+
+    def test_fixed_account_alias_collision_is_local(self):
+        self.m.settings["primary_label"]="同名账户"
+        self.m.settings["secondary_label"]="同名账户"
+        self.remember("utility.electric.j.basic.balance")
+        r=self.route("同名账户呢")
+        self.assertIsNone(r.capability)
+        self.assertIn("歧义",r.text)

@@ -8,7 +8,8 @@
  if(agent.length!==1)throw Error("未找到唯一 Nexora 代理");
  const report={version:"v0.4.1-preview",checks:[],passed:false};
  const cid="nexora-v041:"+crypto.randomUUID(),other="nexora-v041:"+crypto.randomUUID();
- const gap=/数据不可用|暂无|不可用|未配置|无法获取|暂时无/;
+ const gap=/数据(?:尚未获取|不可用|不足)|暂无.{0,8}(?:账单|数据)|状态未知|超出.{0,10}(?:范围|覆盖)|状态无法确认/;
+ const routeError=/严格识别不可用|意图库|参数不一致|本地查询暂时失败|当前不可用|已不可用|目标已变化|无法确认实际数据|上下文已失效|没有足够的本地查询上下文/;
  async function call(text,id=cid){
   const start=performance.now();
   const r=await hass.callWS({type:"conversation/process",text,conversation_id:id,agent_id:agent[0].id,language:"zh-CN"});
@@ -16,7 +17,7 @@
  }
  async function check(text,expected,id=cid,allowGap=false){
   const r=await call(text,id);
-  r.result=!r.cid_match||r.type==="error"?"fail":expected.test(r.speech)?"pass":allowGap&&gap.test(r.speech)?"data_gap":"fail";
+  r.result=!r.cid_match||r.type==="error"||!r.speech?"fail":allowGap&&routeError.test(r.speech)?"fail":allowGap&&gap.test(r.speech)?"data_gap":expected.test(r.speech)?"pass":"fail";
   report.checks.push(r);
  }
  try{
@@ -40,8 +41,10 @@
   await check("次卧呢",/上下文|补充查询对象/,other);
   await check("不要查燃气余额",/取消.*查询/);
   await check("exit",/已退出/);
-  report.passed=report.checks.every(r=>r.result!=="fail");
+  report.complete=report.checks.length===20;
+  report.execution_passed=report.complete&&report.checks.every(r=>r.result!=="fail");
   report.data_gaps=report.checks.filter(r=>r.result==="data_gap").length;
+  report.passed=report.execution_passed&&report.data_gaps===0;
  }catch(e){report.error=e.message||String(e)}
  finally{for(const id of [cid,other])try{await call("exit",id)}catch{}}
  window.__nexoraV041Probe=report;

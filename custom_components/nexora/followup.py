@@ -77,8 +77,10 @@ class Followups:
         self.contexts[key]=Context(capability,self.clock()+self.ttl,params=tuple(sorted((params or {}).items())),anchor=today or date.today())
 
     def _find(self,slots,available):
-        choices=[c["id"] for c in self.menu.capabilities.values() if c["intent"]=="LuxeUtilityQuery" and c["slots"]==slots and not c.get("parameter") and self.menu._available(c["id"],available)]
-        return choices[0] if len(choices)==1 else "当前没有对应的本地查询，请发送 help。"
+        choices=[c["id"] for c in self.menu.capabilities.values() if c["intent"]=="LuxeUtilityQuery" and c["slots"]==slots and not c.get("parameter")]
+        if len(choices)>1:
+            return "当前查询存在多个注册能力，请明确查询对象。"
+        return choices[0] if len(choices)==1 and self.menu._available(choices[0],available) else "当前没有对应的本地查询，请发送 help。"
 
     def _route_utility(self,key,text,available):
         self.prune()
@@ -127,6 +129,8 @@ class Followups:
                 slots["utility_metric"]="h_year_usage" if METRIC_SWITCH[text]=="usage" else "h_year_cost"
                 return self._find(slots,available)
             return "请补充需要查询的账期，或发送 help。"
+        if text in options and len(options[text])>1:
+            return "账户名称存在歧义，请明确账户。"
         if text in targets and kind=="e":
             slots["luxe_utility_property"]=targets[text]
             return self._find(slots,available)

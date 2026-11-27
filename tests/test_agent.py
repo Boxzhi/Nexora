@@ -570,3 +570,26 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertEqual(self.conv.async_converse.await_count,3)
         self.native.async_recognize_intent.assert_not_awaited()
         self.it.async_handle.assert_not_awaited()
+
+    async def test_native_recognized_unregistered_slots_never_fall_back(self):
+        self.menu.route=lambda *a,**kw:None
+        self.u.text="未登记的同义词"
+        self.menu.capabilities={"water":{"id":"water","intent":"LuxeUtilityQuery","sentence":"水费余额是多少","slots":self.slots}}
+        self.result.entities_list=[SimpleNamespace(name="unknown",value="x")]
+        r=await self.agent.async_process(self.u)
+        self.assertIn("未唯一注册",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_duplicate_native_slots_rejected(self):
+        self.result.entities_list.append(SimpleNamespace(name="utility_kind",value="w"))
+        r=await self.agent.async_process(self.u)
+        self.assertIn("参数重复",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_invalid_local_response_never_crashes_or_falls_back(self):
+        self.it.async_handle.return_value=None
+        r=await self.agent.async_process(self.u)
+        self.assertIn("未返回有效回复",r.response.speech)
+        self.conv.async_converse.assert_not_awaited()

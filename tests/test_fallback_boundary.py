@@ -40,3 +40,6 @@ class BoundaryTests(unittest.TestCase):
     def test_unknown_real_time_not_education(self):
         for q in ("我家空调为什么现在没开","为什么空调现在报错","家里今天用了多少电","查一下乙账户的电费"):
             self.assertEqual(self.guard.classify(q).kind,"live")
+
+    def test_mixed_request_with_short_conjunction(self):
+        self.assertEqual(self.guard.classify("燃气余额多少并关灯").kind,"compound")

@@ -32,7 +32,7 @@ OBJECT_CONTROL = re.compile(r"^(?:请|麻烦|帮我|请帮我)?(?:把|将).+(?:�
 ENTITY = re.compile(r"(?:switch|light|sensor|binary_sensor|climate|cover|lock|camera)\.[a-z0-9_]+",re.I)
 MISSING_CONTEXT = {"还剩多少","剩多少","还有多少钱","余额呢","多少钱","多少度","几度","调的几度","设了几度","现在屋里几度","还有多久","还要多久","设定温度","实际温度","检测温度","环境光照度","关闭状态","上锁状态","反锁状态","第一阶梯","第二阶梯","用量呢","费用呢"}
 # Explicit query+action composition is not an implicit authorization to run either.
-SEPARATOR = re.compile(r"然后|接着|同时|顺便|并且|再(?:帮我)?(?=查|关|开|调|设|启|停|锁|解)|[，,；;]")
+SEPARATOR = re.compile(r"然后|接着|同时|顺便|并且|并(?=查询|查|关|开|调|设|启|停|锁|解)|再(?:帮我)?(?=查|关|开|调|设|启|停|锁|解)|[，,；;]")
 GUARD_REPLY = "这条家庭实时查询尚未匹配已注册的查询能力，无法确认实际数据。请明确设备、账户和查询项目，或发送 help。"
 AI_PROMPT = ("涉及家庭实时数据时，仅依据可验证的数据来源回答；无法验证时请明确说明，"
              "不要推测设备是否存在或实际状态，不要将未验证结果当成真实数据。其他任务遵循原有代理配置及权限。")
