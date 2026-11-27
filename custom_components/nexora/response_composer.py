@@ -112,7 +112,7 @@ def compose(plan,run,label):
     # state-limit message is safe to collapse across different metrics.
     same={}
     for outcome in run.outcomes:
-        if outcome.kind in {"ok","data_gap","state_limit"} and outcome.speech:
+        if outcome.kind in {"ok","data_gap","partial_data","state_limit","capability_limit"} and outcome.speech:
             same.setdefault(_clean(outcome),[]).append(outcome)
     # Error messages retain the corresponding registered query label.
     def append(value):
@@ -133,7 +133,7 @@ def compose(plan,run,label):
                 append(label(step)+"：查询未完成。")
                 primary_ok=False
             continue
-        if outcome.kind not in {"ok","data_gap","state_limit"}:
+        if outcome.kind not in {"ok","data_gap","partial_data","state_limit","capability_limit"}:
             append(label(step)+"：查询未完成。")
             if step in plan.primary:
                 primary_ok=False

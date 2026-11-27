@@ -145,3 +145,9 @@ class PlannerAdapterTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(await self.ask(query),"华润燃气账户余额：83.36元。")
             self.assertEqual(self.calls,[cap["id"]])
         self.conv.async_converse.assert_not_awaited()
+
+    async def test_quality_diagnostics_separate_from_execution(self):
+        self.speech["utility.gas.basic.balance"]="华润燃气账户余额：数据不可用。"
+        self.assertIn("数据不可用",await self.ask(self.menu._query("utility.gas.basic.balance",{}).sentence))
+        self.assertIn("query_quality:data_gap",self.agent.diagnostics_snapshot())
+        self.conv.async_converse.assert_not_awaited()

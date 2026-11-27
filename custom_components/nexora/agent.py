@@ -11,7 +11,7 @@ from .semantic_lexicon import describe
 from .business_model import QueryKey
 from .query_planner import QueryPlanner
 from .query_context import QueryContext
-from .plan_executor import run_plan
+from .plan_executor import run_plan, response_quality
 from .response_composer import compose, format_response
 from .menu import Menu, PARAMETERS, parse_parameter
 from .fallback import AIConversations, FallbackGuard, AI_PROMPT
@@ -300,6 +300,9 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             except (ValueError,KeyError):
                 return "注册查询"
         composed=compose(plan,run,label)
+        if not run.superseded:
+            for outcome in run.outcomes:
+                self._record("query_quality",outcome.kind,started)
         if composed.primary_completed and current():
             # A multi-metric scene retains its semantic goal, not an
             # arbitrary last result. For single steps preserve the legacy
@@ -448,6 +451,8 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         if ok:
             p=describe(cap)
             if p is not None:
-                response=format_response(QueryKey(p.family,p.target,p.metric,p.period,p.parameter,p.account),response)
+                semantic_key=QueryKey(p.family,p.target,p.metric,p.period,p.parameter,p.account)
+                self._record("query_quality",response_quality(semantic_key,response),started)
+                response=format_response(semantic_key,response)
         self._record(route,"completed" if ok else "error",started)
         return conversation.ConversationResult(response=response, conversation_id=cid)

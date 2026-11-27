@@ -126,3 +126,25 @@ class PlanExecutorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual([o.kind for o in r.outcomes],["ok","skipped","skipped"])
         self.assertEqual(pe.unpack(b,answer("海尔洗衣机已关机，无法确认当前数据。")).kind,"state_limit")
         self.assertNotEqual(pe.unpack(step("temp"),answer("海尔洗衣机已关机，无法确认当前数据。")).kind,"state_limit")
+
+    def test_real_ha_quality_classification(self):
+        cases=[
+            ("utility","e","h_year_usage","京华府2026年账单累计用电量：1703度（10期有效账单；本月暂无账单）。","partial_data"),
+            ("utility","w","h_year_cost","抚州公用水务2025年账单累计水费：16.80元（1期有效账单；缺失或异常月份：1、2、3、4、5、6、7、8、9、10、11月，仅为已知账单合计）。","partial_data"),
+            ("utility","g","h_year_usage","华润燃气2025年账单累计用气量：182立方米（10期有效账单；缺失或异常月份：1、8月，仅为已知账单合计）。","partial_data"),
+            ("utility","e","h_year_cost","京华府2025年账单累计电费：暂无有效账单数据。","data_gap"),
+            ("utility","e","h_day","京华府2026-11-27用电量：数据尚未获取（最新记录：2026-11-26）。","data_gap"),
+            ("utility","e","h_day","京华府2026-01-01用电量：超出每日历史覆盖范围（最早记录：2026-10-16）。","data_gap"),
+            ("utility","all","balances","京华府电费余额数据不可用；燃气费余额83.36元；水费余额93.92元。","partial_data"),
+            ("utility","e","debt","京华府电费：欠费情况暂无法确认。","data_gap"),
+            ("home","all","lock","入户门锁：状态无法确认；最近一次事件为上锁（历史记录，不代表当前状态）。","data_gap"),
+            ("home","all","family","家庭Wi-Fi：2位成员的设备已连接：妈妈、奶奶；1位未连接：爸爸；未配置：爷爷。Wi-Fi仅供在家判断参考。","capability_limit"),
+            ("lights","lights.fixtures.dining_fan","brightness","餐厅风扇灯当前已关闭，无法获取实时亮度。","state_limit"),
+            ("appliance","m","temp","主卧空调设备报告室温：18.9℃（空调已关闭，读数可能未实时刷新）。","state_limit"),
+            ("appliance","b","target","米家浴霸取暖设定温度：暖风未开启。","state_limit"),
+            ("appliance","m","status","主卧空调已关闭。","ok"),
+            ("utility","e","h_month_usage","京华府2026年11月用电量：168.07度（截至2026-11-26，26天有效记录）。","ok"),
+        ]
+        for f,t,m,s,k in cases:
+            with self.subTest(s=s):
+                self.assertEqual(pe.unpack(step(m,f,t),answer(s)).kind,k)

@@ -26,7 +26,44 @@ class PlanRun:
 AC_NAMES={"m":"主卧空调","s":"次卧空调"}
 LIGHT_NAMES={"all":"全屋","ke_ting":"客厅","can_ting":"餐厅","zhu_wo":"主卧","ci_wo":"次卧","er_tong_fang":"儿童房","xuan_guan":"玄关","guo_dao":"过道","chu_fang":"厨房","wei_sheng_jian":"卫生间","yang_tai":"阳台"}
 STATE_LIMIT=re.compile(r"^(?:主卧空调|次卧空调|餐厅风扇|洗衣机)(?:：|:)?(?:已关闭|已关机)，无当前运行参数[。.]?$")
-GAP=re.compile(r"(?:数据不可用|数据尚未获取|状态无法确认|状态未知|暂无该月正式账单|暂无该年正式账单|无法获取数据)[。.]?$")
+GAP=re.compile(r"数据不可用|数据尚未获取|状态无法确认|状态未知|欠费情况暂无法确认|暂无(?:该月|该年|有效|该月正式|该年正式)账单(?:数据)?|无法获取数据|超出每日历史覆盖范围|缺失或异常月份|本月暂无账单|部分项目无法核实")
+YEAR_PARTIAL=re.compile(r"^[^。；\n]{1,80}\d{4}年账单累计(?:用电量|电费|用水量|水费|用气量|燃气费)：-?\d+(?:\.\d+)?(?:度|元|吨|立方米)（[1-9]\d*期有效账单；(?:本月暂无账单|缺失或异常月份：[^。；\n]+，仅为已知账单合计)）。$")
+PHYSICAL_STATE_LIMIT=re.compile(r"^(?:[^。；\n]{1,40}当前已关闭，无法获取实时(?:亮度|色温)|(?:主卧|次卧)空调设备报告室温：-?\d+(?:\.\d+)?℃（空调已关闭，读数可能未实时刷新）)[。.]?$")
+CAPABILITY_LIMIT=re.compile(r"未配置：[^。；\n]+|未监测窗户、实时烟雾和燃气泄漏")
+VALID_AGGREGATE=re.compile(r"(?:余额-?\d+(?:\.\d+)?元|余额：-?\d+(?:\.\d+)?元|[：:]-?\d+(?:\.\d+)?元，余额正常|当前无欠费|[1-9]\d*组灯光中，|[1-9]\d*个有效监测区域平均(?:温度|湿度)：|\d+位成员的设备已连接)")
+
+def classify_speech(key,speech):
+    """Conservative quality annotation for actual registered speech.
+
+    This annotation is not a device fact, an authorization, or a reason
+    to substitute data. Unknown text is retained; only verified contracts
+    are classified as partial results.
+    """
+    text=speech.strip()
+    if key.family=="utility" and key.metric in {"h_year_usage","h_year_cost"} and YEAR_PARTIAL.fullmatch(text):
+        return "partial_data"
+    if GAP.search(text):
+        if ((key.family=="utility" and key.target=="all") or
+            (key.family=="home" and key.metric=="overview")) and VALID_AGGREGATE.search(text):
+            return "partial_data"
+        return "data_gap"
+    if STATE_LIMIT.fullmatch(text) or PHYSICAL_STATE_LIMIT.fullmatch(text):
+        return "state_limit"
+    if key.family=="appliance":
+        if key.target=="w" and text.rstrip("。.")=="海尔洗衣机已关机，无法确认当前数据":
+            return "state_limit"
+        if key.target=="ac" and text=="主卧空调已关闭，无当前运行参数。次卧空调已关闭，无当前运行参数。":
+            return "state_limit"
+        if key.target=="b" and text in {"米家浴霸暖风档位：未运行。","米家浴霸换气档位：未运行。","米家浴霸吹风档位：未运行。","米家浴霸取暖设定温度：暖风未开启。","米家浴霸杀菌剩余时间：当前未在杀菌。"}:
+            return "state_limit"
+    if CAPABILITY_LIMIT.search(text):
+        return "capability_limit"
+    return "ok"
+
+def response_quality(key,response):
+    """Use the same classification for the single-query route."""
+    speech=response.as_dict().get("speech",{}).get("plain",{}).get("speech")
+    return classify_speech(key,speech) if isinstance(speech,str) and speech.strip() else "unclassified"
 
 def unpack(step,result):
     if result.error is not None:
@@ -41,11 +78,7 @@ def unpack(step,result):
         speech=speech.strip()
     except (AttributeError,TypeError,KeyError):
         return Outcome(step,"error",error="本地查询未返回有效回复。")
-    if STATE_LIMIT.fullmatch(speech) or (step.key.family=="appliance" and step.key.target=="w" and speech.rstrip("。.")=="海尔洗衣机已关机，无法确认当前数据"):
-        return Outcome(step,"state_limit",speech)
-    if GAP.search(speech):
-        return Outcome(step,"data_gap",speech)
-    return Outcome(step,"ok",speech)
+    return Outcome(step,classify_speech(step.key,speech),speech)
 
 def stop_supplements(plan,outcomes):
     for outcome in outcomes:

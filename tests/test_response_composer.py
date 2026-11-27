@@ -137,3 +137,12 @@ class ResponseComposerTests(unittest.TestCase):
                 key=bm.QueryKey(family,target,metric)
                 self.assertEqual(rc.normalize_speech(key,before),after)
                 self.assertEqual(rc.normalize_speech(key,after),after)
+
+    def test_partial_coverage_not_rewritten_as_missing_or_complete(self):
+        a=step("utility","e","h_year_usage")
+        p=qp.Plan((a,))
+        text="京华府2026年账单累计用电量：1703度（10期有效账单；本月暂无账单）。"
+        r=pe.PlanRun((pe.Outcome(a,"partial_data",text),))
+        result=rc.compose(p,r,label)
+        self.assertTrue(result.primary_completed)
+        self.assertEqual(result.text,text)
