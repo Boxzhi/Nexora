@@ -1,0 +1,60 @@
+name: Publish Nexora v0.5.0-preview
+on:
+  push:
+    branches:
+      - release/v0.5.0-preview
+    paths:
+      - .github/workflows/publish-v050-preview.yml
+permissions:
+  contents: write
+concurrency:
+  group: nexora-v050-preview-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: github.repository == 'Boxzhi/Nexora' && github.ref == 'refs/heads/release/v0.5.0-preview'
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Boxzhi/Nexora
+      RELEASE_TAG: v0.5.0-preview
+      RELEASE_SHA: 20314aa3b86a95d4a3e03b048e64a99fbbb63747
+    steps:
+      - name: Verify fixed candidate and publish prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GH_REPO/commits/$RELEASE_SHA" --jq .sha | grep -Fx "$RELEASE_SHA"
+          if gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "Release already exists; refusing overwrite."
+            exit 1
+          fi
+          if gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag already exists; refusing reuse."
+            exit 1
+          fi
+          cat > release-notes.md <<'EOF'
+          ## 新增
+          - 结构化本地语义解析：独立提取对象、指标、账户和时间，支持受控口语、灵活词序及审定错别字纠正。
+          - Query Planner：业务级默认语义、55项默认及场景策略，支持单项、组合及多项只读查询。
+          - 场景语义焦点：受控指标继承、同类对象切换及明确跨模块追问。
+          - 多查询执行：每个计划最多4项、2路并发、12秒执行预算（原生识别和映射准备另计），保留部分成功结果。
+          - Response Composer：整合实际查询回复、保留不同账户及对象归属、合并重复状态说明。
+          ## 优化与保护
+          - 保留原菜单、原生严格识别、完整句式和动态参数兼容路径。
+          - 校验对象、单位、账户、日期、原生目标及重复 Slots；混合查询与控制请求仍在本地拦截，不自动执行控制。
+          - 无需新数据库、后台轮询、第三方依赖或大模型。家庭实时查询保护仍是启发式规则，不是权限沙箱。
+          ## 升级说明
+          - 仅升级 Nexora。保留四套原始意图库的八个 YAML 文件、原配置和现有 CN IM Hub、AI Hub。
+          - bindings.yaml 仍为可选配置。意图库内置化不在本次升级范围。
+          - 升级前备份，HACS 下载后重启 HA Core；异常时恢复 v0.4.1-preview。
+          - 验收脚本独立交付，不作为 Release 附件。
+          ## 验证状态
+          - 固定候选 20314aa：224项自动化测试、443项模拟查询执行、6225条原组合语料、85条原独立语料、886条原反例、68条新版口语回归、30条新版反例及8条备用代理测试通过。
+          - 纯本地规划器 CI P95 0.0806ms（1272次测试）；不是实际 HA 或微信响应耗时。固定语料经过整改，不代表盲测泛化准确率。
+          - Python 编译及 Hassfest 通过；HACS 8/10，Topics 与 Brands 尚未通过。
+          - 真实 HA 及微信专项验收尚未执行。本版本为 Pre-release，不是正式稳定版。
+          EOF
+          gh release create "$RELEASE_TAG" --repo "$GH_REPO" --target "$RELEASE_SHA" --title "Nexora v0.5.0-preview" --prerelease --latest=false --notes-file release-notes.md
+          gh release view "$RELEASE_TAG" --repo "$GH_REPO" --json url,tagName,isPrerelease,isDraft
