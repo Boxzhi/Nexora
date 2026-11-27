@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nexora",
+        "description": "Select the existing fallback agent. Secondary account sentence alias must already exist in your installed intent library. Leave it blank to hide secondary-account queries.",
+        "data": {
+          "fallback_agent": "Fallback conversation agent ID",
+          "primary_label": "Primary electricity account label",
+          "secondary_label": "Secondary electricity account label",
+          "secondary": "Secondary account sentence alias (optional)"
+        }
+      }
+    },
+    "error": {
+      "invalid_agent": "Conversation agent not found",
+      "invalid_label": "Use a non-empty label of at most 40 characters"
+    },
+    "abort": {
+      "already_configured": "Already configured"
+    }
+  }
+}

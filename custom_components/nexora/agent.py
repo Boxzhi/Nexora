@@ -1,0 +1,71 @@
+"""Route menu commands locally and preserve the existing conversation fallback."""
+import asyncio
+import logging
+from uuid import uuid4
+
+from homeassistant.components import conversation
+from homeassistant.components.intent_script.helpers import ScriptIntentHandler
+from homeassistant.helpers import intent
+from homeassistant.util import dt as dt_util
+
+_LOGGER = logging.getLogger(__name__)
+
+class NexoraAgent(conversation.AbstractConversationAgent):
+    def __init__(self, hass, entry_id, menu, fallback):
+        self.hass, self.entry_id, self.menu, self.fallback = hass, entry_id, menu, fallback
+
+    @property
+    def supported_languages(self):
+        return "*"
+
+    def _reply(self, u, cid, text):
+        r = intent.IntentResponse(language=u.language)
+        r.async_set_speech(text)
+        return conversation.ConversationResult(response=r, conversation_id=cid)
+
+    def _handler(self, name):
+        for h in intent.async_get(self.hass):
+            if h.intent_type == name and type(h) is ScriptIntentHandler and "speech" in h.config and not any(k in h.config for k in ("action", "reprompt", "card")):
+                return h
+        return None
+
+    async def async_process(self, u):
+        cid = u.conversation_id or uuid4().hex
+        key = (u.context.user_id, u.device_id, u.satellite_id, cid)
+        reply = self.menu.route(key, u.text, lambda cap: self._handler(cap["intent"]) is not None, today=dt_util.now().date())
+        if reply is None:
+            try:
+                agent = conversation.async_get_agent(self.hass, self.fallback)
+            except (KeyError, ValueError):
+                agent = None
+            if agent is None or agent is self or self.fallback == self.entry_id:
+                return self._reply(u, cid, "备用对话代理配置错误。")
+            return await conversation.async_converse(self.hass, text=u.text, conversation_id=u.conversation_id, context=u.context, language=u.language, agent_id=self.fallback, device_id=u.device_id, satellite_id=u.satellite_id, extra_system_prompt=u.extra_system_prompt)
+        if reply.capability is None:
+            return self._reply(u, cid, reply.text)
+        cap = self.menu.capabilities[reply.capability]
+        handler = self._handler(cap["intent"])
+        if handler is None:
+            return self._reply(u, cid, "只读查询配置不可用，请检查意图库。")
+        try:
+            async with asyncio.timeout(5):
+                # Fail closed if HA recognition APIs or sentence-trigger registry differ.
+                native = conversation.async_get_agent(self.hass, "conversation.home_assistant")
+                recognize = getattr(native, "async_recognize_intent", None)
+                triggers = getattr(native, "_trigger_intents_config", None)
+                if not callable(recognize) or not isinstance(triggers, dict) or triggers.get("intents"):
+                    return self._reply(u, cid, "本地严格识别不可用，请检查 HA 版本或句式触发器。")
+                probe = conversation.ConversationInput(text=reply.sentence, context=u.context, conversation_id=None, device_id=u.device_id, satellite_id=u.satellite_id, language=u.language, agent_id="conversation.home_assistant")
+                result = await recognize(probe, strict_intents_only=True)
+                if result is None or result.unmatched_entities or result.intent.name != cap["intent"]:
+                    return self._reply(u, cid, "该问句与已安装意图库不匹配，请检查版本。")
+                recognized = {item.name: item.value for item in result.entities_list}
+                expected = reply.slots
+                if set(recognized) != set(expected) or any(str(recognized[k]) != str(v) for k,v in expected.items()) or self._handler(cap["intent"]) is not handler:
+                    return self._reply(u, cid, "查询参数与已安装意图库不一致，请检查版本。")
+                # No await between handler identity validation and dispatch.
+                response = await intent.async_handle(self.hass, "conversation", cap["intent"], {k:{"value":v,"text":str(v)} for k,v in recognized.items()}, reply.sentence, u.context, u.language, assistant="conversation", conversation_agent_id="conversation.home_assistant")
+        except Exception:
+            _LOGGER.debug("Nexora local query failed", exc_info=True)
+            return self._reply(u, cid, "本地查询暂时失败，请稍后重试。")
+        return conversation.ConversationResult(response=response, conversation_id=cid)

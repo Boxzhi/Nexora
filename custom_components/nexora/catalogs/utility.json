@@ -1,0 +1,2289 @@
+{
+  "schema_version": 1,
+  "module": {
+    "id": "utility",
+    "name": "水电气",
+    "order": 100,
+    "version": "1.1.0"
+  },
+  "categories": [
+    {
+      "id": "utility.electric",
+      "name": "电费",
+      "parent": "utility",
+      "order": 10,
+      "aliases": [
+        "电费查询"
+      ]
+    },
+    {
+      "id": "utility.water",
+      "name": "水费",
+      "parent": "utility",
+      "order": 20,
+      "aliases": [
+        "水务",
+        "水费查询"
+      ]
+    },
+    {
+      "id": "utility.gas",
+      "name": "燃气费",
+      "parent": "utility",
+      "order": 30,
+      "aliases": [
+        "燃气",
+        "天然气费",
+        "燃气费查询"
+      ]
+    },
+    {
+      "id": "utility.summary",
+      "name": "综合查询",
+      "parent": "utility",
+      "order": 40,
+      "aliases": [
+        "水电气综合查询"
+      ]
+    },
+    {
+      "id": "utility.electric.j",
+      "name": "{primary_label}",
+      "parent": "utility.electric",
+      "order": 10,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.j.basic",
+      "name": "余额及基本查询",
+      "parent": "utility.electric.j",
+      "order": 10,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.j.history",
+      "name": "历史用电及账单",
+      "parent": "utility.electric.j",
+      "order": 20,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.j.history.day",
+      "name": "日用电量",
+      "parent": "utility.electric.j.history",
+      "order": 10,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.j.history.h_month_usage",
+      "name": "月度用量",
+      "parent": "utility.electric.j.history",
+      "order": 33,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.j.history.h_month_cost",
+      "name": "月度费用",
+      "parent": "utility.electric.j.history",
+      "order": 38,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.j.history.h_year_usage",
+      "name": "年度累计用量",
+      "parent": "utility.electric.j.history",
+      "order": 43,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.j.history.h_year_cost",
+      "name": "年度累计费用",
+      "parent": "utility.electric.j.history",
+      "order": 46,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.l",
+      "name": "{secondary_label}",
+      "parent": "utility.electric",
+      "order": 20,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.l.basic",
+      "name": "余额及基本查询",
+      "parent": "utility.electric.l",
+      "order": 10,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.l.history",
+      "name": "历史用电及账单",
+      "parent": "utility.electric.l",
+      "order": 20,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.l.history.day",
+      "name": "日用电量",
+      "parent": "utility.electric.l.history",
+      "order": 10,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.l.history.h_month_usage",
+      "name": "月度用量",
+      "parent": "utility.electric.l.history",
+      "order": 64,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.l.history.h_month_cost",
+      "name": "月度费用",
+      "parent": "utility.electric.l.history",
+      "order": 69,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.l.history.h_year_usage",
+      "name": "年度累计用量",
+      "parent": "utility.electric.l.history",
+      "order": 74,
+      "aliases": []
+    },
+    {
+      "id": "utility.electric.l.history.h_year_cost",
+      "name": "年度累计费用",
+      "parent": "utility.electric.l.history",
+      "order": 77,
+      "aliases": []
+    },
+    {
+      "id": "utility.water.history",
+      "name": "水费历史查询",
+      "parent": "utility.water",
+      "order": 1,
+      "aliases": []
+    },
+    {
+      "id": "utility.water.history.history_usage",
+      "name": "月度用量",
+      "parent": "utility.water.history",
+      "order": 89,
+      "aliases": []
+    },
+    {
+      "id": "utility.water.history.history_cost",
+      "name": "月度费用",
+      "parent": "utility.water.history",
+      "order": 93,
+      "aliases": []
+    },
+    {
+      "id": "utility.water.history.h_year_usage",
+      "name": "年度累计用量",
+      "parent": "utility.water.history",
+      "order": 97,
+      "aliases": []
+    },
+    {
+      "id": "utility.water.history.h_year_cost",
+      "name": "年度累计费用",
+      "parent": "utility.water.history",
+      "order": 100,
+      "aliases": []
+    },
+    {
+      "id": "utility.gas.basic",
+      "name": "账户及本期账单",
+      "parent": "utility.gas",
+      "order": 10,
+      "aliases": []
+    },
+    {
+      "id": "utility.gas.pay",
+      "name": "燃气缴费查询",
+      "parent": "utility.gas",
+      "order": 20,
+      "aliases": [
+        "燃气缴费"
+      ]
+    },
+    {
+      "id": "utility.gas.tier",
+      "name": "燃气阶梯查询",
+      "parent": "utility.gas",
+      "order": 30,
+      "aliases": [
+        "燃气阶梯"
+      ]
+    },
+    {
+      "id": "utility.gas.history",
+      "name": "燃气历史查询",
+      "parent": "utility.gas",
+      "order": 40,
+      "aliases": []
+    },
+    {
+      "id": "utility.gas.history.h_month_usage",
+      "name": "月度用量",
+      "parent": "utility.gas.history",
+      "order": 131,
+      "aliases": []
+    },
+    {
+      "id": "utility.gas.history.h_month_cost",
+      "name": "月度费用",
+      "parent": "utility.gas.history",
+      "order": 136,
+      "aliases": []
+    },
+    {
+      "id": "utility.gas.history.h_year_usage",
+      "name": "年度累计用量",
+      "parent": "utility.gas.history",
+      "order": 141,
+      "aliases": []
+    },
+    {
+      "id": "utility.gas.history.h_year_cost",
+      "name": "年度累计费用",
+      "parent": "utility.gas.history",
+      "order": 144,
+      "aliases": []
+    },
+    {
+      "id": "utility.summary.primary",
+      "name": "主住所",
+      "parent": "utility.summary",
+      "order": 10,
+      "aliases": []
+    },
+    {
+      "id": "utility.summary.all",
+      "name": "全部账户",
+      "parent": "utility.summary",
+      "order": 20,
+      "aliases": []
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "utility.electric.j.basic.balance",
+      "category": "utility.electric.j.basic",
+      "name": "电费余额",
+      "order": 1,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "电费余额",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "balance",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.electric.j.basic.debt",
+      "category": "utility.electric.j.basic",
+      "name": "电费欠费了吗",
+      "order": 2,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "电费欠费了吗",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "debt",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.electric.j.basic.daily",
+      "category": "utility.electric.j.basic",
+      "name": "最近一天用了多少度电",
+      "order": 3,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "最近一天用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "daily",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.electric.j.basic.latest_usage",
+      "category": "utility.electric.j.basic",
+      "name": "最新月度用电量",
+      "order": 4,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "最新月度用电量",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "latest_usage",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.electric.j.basic.latest_cost",
+      "category": "utility.electric.j.basic",
+      "name": "最新月度电费",
+      "order": 5,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "最新月度电费",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "latest_cost",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.electric.j.basic.year_usage",
+      "category": "utility.electric.j.basic",
+      "name": "今年用了多少度电",
+      "order": 6,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "year_usage",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.electric.j.basic.year_cost",
+      "category": "utility.electric.j.basic",
+      "name": "今年电费是多少",
+      "order": 7,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年电费是多少",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "year_cost",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.electric.j.basic.update",
+      "category": "utility.electric.j.basic",
+      "name": "电费余额什么时候更新的",
+      "order": 8,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "电费余额什么时候更新的",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "update",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.electric.j.history.day.h_day_today",
+      "category": "utility.electric.j.history.day",
+      "name": "今天",
+      "order": 9,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今天用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_day",
+        "luxe_utility_property": "j",
+        "utility_period": "today"
+      }
+    },
+    {
+      "id": "utility.electric.j.history.day.h_day_yesterday",
+      "category": "utility.electric.j.history.day",
+      "name": "昨天",
+      "order": 10,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "昨天用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_day",
+        "luxe_utility_property": "j",
+        "utility_period": "yesterday"
+      }
+    },
+    {
+      "id": "utility.electric.j.history.day.h_day_before",
+      "category": "utility.electric.j.history.day",
+      "name": "前天",
+      "order": 11,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "前天用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_day",
+        "luxe_utility_property": "j",
+        "utility_period": "before"
+      }
+    },
+    {
+      "id": "utility.electric.j.history.day.h_day_explicit",
+      "category": "utility.electric.j.history.day",
+      "name": "指定日期",
+      "order": 12,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{year}年{month}月{day}日用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_day",
+        "luxe_utility_property": "j",
+        "utility_period": "explicit"
+      },
+      "parameter": "date"
+    },
+    {
+      "id": "utility.electric.j.history.day.h_day_year",
+      "category": "utility.electric.j.history.day",
+      "name": "今年指定日期",
+      "order": 13,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{month}月{day}日用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_day",
+        "luxe_utility_property": "j",
+        "utility_period": "year"
+      },
+      "parameter": "month_day"
+    },
+    {
+      "id": "utility.electric.j.history.h_month_usage.h_month_usage_current",
+      "category": "utility.electric.j.history.h_month_usage",
+      "name": "本月",
+      "order": 14,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "这个月用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "current"
+      }
+    },
+    {
+      "id": "utility.electric.j.history.h_month_usage.h_month_usage_previous",
+      "category": "utility.electric.j.history.h_month_usage",
+      "name": "上月",
+      "order": 15,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "上个月用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "previous"
+      }
+    },
+    {
+      "id": "utility.electric.j.history.h_month_usage.h_month_usage_year",
+      "category": "utility.electric.j.history.h_month_usage",
+      "name": "今年指定月份",
+      "order": 16,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年{month}月用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.electric.j.history.h_month_usage.h_month_usage_last_year",
+      "category": "utility.electric.j.history.h_month_usage",
+      "name": "去年指定月份",
+      "order": 17,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "去年{month}月用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "last_year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.electric.j.history.h_month_usage.h_month_usage_explicit",
+      "category": "utility.electric.j.history.h_month_usage",
+      "name": "指定年月",
+      "order": 18,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{year}年{month}月用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "explicit"
+      },
+      "parameter": "year_month"
+    },
+    {
+      "id": "utility.electric.j.history.h_month_cost.h_month_cost_current",
+      "category": "utility.electric.j.history.h_month_cost",
+      "name": "本月",
+      "order": 19,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "这个月电费是多少",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "current"
+      }
+    },
+    {
+      "id": "utility.electric.j.history.h_month_cost.h_month_cost_previous",
+      "category": "utility.electric.j.history.h_month_cost",
+      "name": "上月",
+      "order": 20,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "上个月电费是多少",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "previous"
+      }
+    },
+    {
+      "id": "utility.electric.j.history.h_month_cost.h_month_cost_year",
+      "category": "utility.electric.j.history.h_month_cost",
+      "name": "今年指定月份",
+      "order": 21,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年{month}月电费是多少",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.electric.j.history.h_month_cost.h_month_cost_last_year",
+      "category": "utility.electric.j.history.h_month_cost",
+      "name": "去年指定月份",
+      "order": 22,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "去年{month}月电费是多少",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "last_year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.electric.j.history.h_month_cost.h_month_cost_explicit",
+      "category": "utility.electric.j.history.h_month_cost",
+      "name": "指定年月",
+      "order": 23,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{year}年{month}月电费是多少",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "explicit"
+      },
+      "parameter": "year_month"
+    },
+    {
+      "id": "utility.electric.j.history.h_year_usage.h_year_usage_year",
+      "category": "utility.electric.j.history.h_year_usage",
+      "name": "今年",
+      "order": 24,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年账单累计用电量",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_year_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "year"
+      }
+    },
+    {
+      "id": "utility.electric.j.history.h_year_usage.h_year_usage_last_year",
+      "category": "utility.electric.j.history.h_year_usage",
+      "name": "去年",
+      "order": 25,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "去年账单累计用电量",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_year_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "last_year"
+      }
+    },
+    {
+      "id": "utility.electric.j.history.h_year_usage.h_year_usage_explicit",
+      "category": "utility.electric.j.history.h_year_usage",
+      "name": "指定年份",
+      "order": 26,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{year}年账单累计用电量",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_year_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "explicit"
+      },
+      "parameter": "year"
+    },
+    {
+      "id": "utility.electric.j.history.h_year_cost.h_year_cost_year",
+      "category": "utility.electric.j.history.h_year_cost",
+      "name": "今年",
+      "order": 27,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年账单累计电费",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_year_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "year"
+      }
+    },
+    {
+      "id": "utility.electric.j.history.h_year_cost.h_year_cost_last_year",
+      "category": "utility.electric.j.history.h_year_cost",
+      "name": "去年",
+      "order": 28,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "去年账单累计电费",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_year_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "last_year"
+      }
+    },
+    {
+      "id": "utility.electric.j.history.h_year_cost.h_year_cost_explicit",
+      "category": "utility.electric.j.history.h_year_cost",
+      "name": "指定年份",
+      "order": 29,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{year}年账单累计电费",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_year_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "explicit"
+      },
+      "parameter": "year"
+    },
+    {
+      "id": "utility.electric.j.history.h_avg_current",
+      "category": "utility.electric.j.history",
+      "name": "这个月日均用电量",
+      "order": 30,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "这个月日均用电量",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_avg",
+        "luxe_utility_property": "j",
+        "utility_period": "current"
+      }
+    },
+    {
+      "id": "utility.electric.j.history.h_coverage",
+      "category": "utility.electric.j.history",
+      "name": "电历史数据覆盖范围",
+      "order": 31,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "电历史数据覆盖范围",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_coverage",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.electric.l.basic.balance",
+      "category": "utility.electric.l.basic",
+      "name": "电费余额",
+      "order": 32,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的电费余额",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "balance",
+        "luxe_utility_property": "l"
+      }
+    },
+    {
+      "id": "utility.electric.l.basic.debt",
+      "category": "utility.electric.l.basic",
+      "name": "电费欠费了吗",
+      "order": 33,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的电费欠费了吗",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "debt",
+        "luxe_utility_property": "l"
+      }
+    },
+    {
+      "id": "utility.electric.l.basic.daily",
+      "category": "utility.electric.l.basic",
+      "name": "最近一天用了多少度电",
+      "order": 34,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的最近一天用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "daily",
+        "luxe_utility_property": "l"
+      }
+    },
+    {
+      "id": "utility.electric.l.basic.latest_usage",
+      "category": "utility.electric.l.basic",
+      "name": "最新月度用电量",
+      "order": 35,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的最新月度用电量",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "latest_usage",
+        "luxe_utility_property": "l"
+      }
+    },
+    {
+      "id": "utility.electric.l.basic.latest_cost",
+      "category": "utility.electric.l.basic",
+      "name": "最新月度电费",
+      "order": 36,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的最新月度电费",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "latest_cost",
+        "luxe_utility_property": "l"
+      }
+    },
+    {
+      "id": "utility.electric.l.basic.year_usage",
+      "category": "utility.electric.l.basic",
+      "name": "今年用了多少度电",
+      "order": 37,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的今年用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "year_usage",
+        "luxe_utility_property": "l"
+      }
+    },
+    {
+      "id": "utility.electric.l.basic.year_cost",
+      "category": "utility.electric.l.basic",
+      "name": "今年电费是多少",
+      "order": 38,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的今年电费是多少",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "year_cost",
+        "luxe_utility_property": "l"
+      }
+    },
+    {
+      "id": "utility.electric.l.basic.update",
+      "category": "utility.electric.l.basic",
+      "name": "电费余额什么时候更新的",
+      "order": 39,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的电费余额什么时候更新的",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "update",
+        "luxe_utility_property": "l"
+      }
+    },
+    {
+      "id": "utility.electric.l.history.day.h_day_today",
+      "category": "utility.electric.l.history.day",
+      "name": "今天",
+      "order": 40,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的今天用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_day",
+        "luxe_utility_property": "l",
+        "utility_period": "today"
+      }
+    },
+    {
+      "id": "utility.electric.l.history.day.h_day_yesterday",
+      "category": "utility.electric.l.history.day",
+      "name": "昨天",
+      "order": 41,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的昨天用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_day",
+        "luxe_utility_property": "l",
+        "utility_period": "yesterday"
+      }
+    },
+    {
+      "id": "utility.electric.l.history.day.h_day_before",
+      "category": "utility.electric.l.history.day",
+      "name": "前天",
+      "order": 42,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的前天用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_day",
+        "luxe_utility_property": "l",
+        "utility_period": "before"
+      }
+    },
+    {
+      "id": "utility.electric.l.history.day.h_day_explicit",
+      "category": "utility.electric.l.history.day",
+      "name": "指定日期",
+      "order": 43,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的{year}年{month}月{day}日用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_day",
+        "luxe_utility_property": "l",
+        "utility_period": "explicit"
+      },
+      "parameter": "date"
+    },
+    {
+      "id": "utility.electric.l.history.day.h_day_year",
+      "category": "utility.electric.l.history.day",
+      "name": "今年指定日期",
+      "order": 44,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的{month}月{day}日用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_day",
+        "luxe_utility_property": "l",
+        "utility_period": "year"
+      },
+      "parameter": "month_day"
+    },
+    {
+      "id": "utility.electric.l.history.h_month_usage.h_month_usage_current",
+      "category": "utility.electric.l.history.h_month_usage",
+      "name": "本月",
+      "order": 45,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的这个月用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "l",
+        "utility_period": "current"
+      }
+    },
+    {
+      "id": "utility.electric.l.history.h_month_usage.h_month_usage_previous",
+      "category": "utility.electric.l.history.h_month_usage",
+      "name": "上月",
+      "order": 46,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的上个月用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "l",
+        "utility_period": "previous"
+      }
+    },
+    {
+      "id": "utility.electric.l.history.h_month_usage.h_month_usage_year",
+      "category": "utility.electric.l.history.h_month_usage",
+      "name": "今年指定月份",
+      "order": 47,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的今年{month}月用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "l",
+        "utility_period": "year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.electric.l.history.h_month_usage.h_month_usage_last_year",
+      "category": "utility.electric.l.history.h_month_usage",
+      "name": "去年指定月份",
+      "order": 48,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的去年{month}月用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "l",
+        "utility_period": "last_year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.electric.l.history.h_month_usage.h_month_usage_explicit",
+      "category": "utility.electric.l.history.h_month_usage",
+      "name": "指定年月",
+      "order": 49,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的{year}年{month}月用了多少度电",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "l",
+        "utility_period": "explicit"
+      },
+      "parameter": "year_month"
+    },
+    {
+      "id": "utility.electric.l.history.h_month_cost.h_month_cost_current",
+      "category": "utility.electric.l.history.h_month_cost",
+      "name": "本月",
+      "order": 50,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的这个月电费是多少",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "l",
+        "utility_period": "current"
+      }
+    },
+    {
+      "id": "utility.electric.l.history.h_month_cost.h_month_cost_previous",
+      "category": "utility.electric.l.history.h_month_cost",
+      "name": "上月",
+      "order": 51,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的上个月电费是多少",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "l",
+        "utility_period": "previous"
+      }
+    },
+    {
+      "id": "utility.electric.l.history.h_month_cost.h_month_cost_year",
+      "category": "utility.electric.l.history.h_month_cost",
+      "name": "今年指定月份",
+      "order": 52,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的今年{month}月电费是多少",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "l",
+        "utility_period": "year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.electric.l.history.h_month_cost.h_month_cost_last_year",
+      "category": "utility.electric.l.history.h_month_cost",
+      "name": "去年指定月份",
+      "order": 53,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的去年{month}月电费是多少",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "l",
+        "utility_period": "last_year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.electric.l.history.h_month_cost.h_month_cost_explicit",
+      "category": "utility.electric.l.history.h_month_cost",
+      "name": "指定年月",
+      "order": 54,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的{year}年{month}月电费是多少",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "l",
+        "utility_period": "explicit"
+      },
+      "parameter": "year_month"
+    },
+    {
+      "id": "utility.electric.l.history.h_year_usage.h_year_usage_year",
+      "category": "utility.electric.l.history.h_year_usage",
+      "name": "今年",
+      "order": 55,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的今年账单累计用电量",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_year_usage",
+        "luxe_utility_property": "l",
+        "utility_period": "year"
+      }
+    },
+    {
+      "id": "utility.electric.l.history.h_year_usage.h_year_usage_last_year",
+      "category": "utility.electric.l.history.h_year_usage",
+      "name": "去年",
+      "order": 56,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的去年账单累计用电量",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_year_usage",
+        "luxe_utility_property": "l",
+        "utility_period": "last_year"
+      }
+    },
+    {
+      "id": "utility.electric.l.history.h_year_usage.h_year_usage_explicit",
+      "category": "utility.electric.l.history.h_year_usage",
+      "name": "指定年份",
+      "order": 57,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的{year}年账单累计用电量",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_year_usage",
+        "luxe_utility_property": "l",
+        "utility_period": "explicit"
+      },
+      "parameter": "year"
+    },
+    {
+      "id": "utility.electric.l.history.h_year_cost.h_year_cost_year",
+      "category": "utility.electric.l.history.h_year_cost",
+      "name": "今年",
+      "order": 58,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的今年账单累计电费",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_year_cost",
+        "luxe_utility_property": "l",
+        "utility_period": "year"
+      }
+    },
+    {
+      "id": "utility.electric.l.history.h_year_cost.h_year_cost_last_year",
+      "category": "utility.electric.l.history.h_year_cost",
+      "name": "去年",
+      "order": 59,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的去年账单累计电费",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_year_cost",
+        "luxe_utility_property": "l",
+        "utility_period": "last_year"
+      }
+    },
+    {
+      "id": "utility.electric.l.history.h_year_cost.h_year_cost_explicit",
+      "category": "utility.electric.l.history.h_year_cost",
+      "name": "指定年份",
+      "order": 60,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的{year}年账单累计电费",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_year_cost",
+        "luxe_utility_property": "l",
+        "utility_period": "explicit"
+      },
+      "parameter": "year"
+    },
+    {
+      "id": "utility.electric.l.history.h_avg_current",
+      "category": "utility.electric.l.history",
+      "name": "这个月日均用电量",
+      "order": 61,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的这个月日均用电量",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_avg",
+        "luxe_utility_property": "l",
+        "utility_period": "current"
+      }
+    },
+    {
+      "id": "utility.electric.l.history.h_coverage",
+      "category": "utility.electric.l.history",
+      "name": "电历史数据覆盖范围",
+      "order": 62,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{secondary}的电历史数据覆盖范围",
+      "slots": {
+        "utility_kind": "e",
+        "utility_metric": "h_coverage",
+        "luxe_utility_property": "l"
+      }
+    },
+    {
+      "id": "utility.water.balance",
+      "category": "utility.water",
+      "name": "水费余额",
+      "order": 63,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "水费余额",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "balance",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.water.debt",
+      "category": "utility.water",
+      "name": "水费欠费了吗",
+      "order": 64,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "水费欠费了吗",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "debt",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.water.latest_usage",
+      "category": "utility.water",
+      "name": "本期用水量",
+      "order": 65,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "本期用水量",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "latest_usage",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.water.latest_cost",
+      "category": "utility.water",
+      "name": "本期水费",
+      "order": 66,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "本期水费",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "latest_cost",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.water.read",
+      "category": "utility.water",
+      "name": "水费最近什么时候抄表",
+      "order": 67,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "水费最近什么时候抄表",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "read",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.water.meter",
+      "category": "utility.water",
+      "name": "水表本期读数",
+      "order": 68,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "水表本期读数",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "meter",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.water.update",
+      "category": "utility.water",
+      "name": "水务数据更新时间",
+      "order": 69,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "水务数据更新时间",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "update",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.water.history.history_usage.history_usage_current",
+      "category": "utility.water.history.history_usage",
+      "name": "本月",
+      "order": 70,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "这个月用了多少吨水",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "history_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "current"
+      }
+    },
+    {
+      "id": "utility.water.history.history_usage.history_usage_previous",
+      "category": "utility.water.history.history_usage",
+      "name": "上月",
+      "order": 71,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "上个月用了多少吨水",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "history_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "previous"
+      }
+    },
+    {
+      "id": "utility.water.history.history_usage.history_usage_year",
+      "category": "utility.water.history.history_usage",
+      "name": "今年指定月份",
+      "order": 72,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年{month}月用了多少吨水",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "history_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.water.history.history_usage.history_usage_last_year",
+      "category": "utility.water.history.history_usage",
+      "name": "去年指定月份",
+      "order": 73,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "去年{month}月用了多少吨水",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "history_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "last_year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.water.history.history_cost.history_cost_current",
+      "category": "utility.water.history.history_cost",
+      "name": "本月",
+      "order": 74,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "这个月水费是多少",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "history_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "current"
+      }
+    },
+    {
+      "id": "utility.water.history.history_cost.history_cost_previous",
+      "category": "utility.water.history.history_cost",
+      "name": "上月",
+      "order": 75,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "上个月水费是多少",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "history_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "previous"
+      }
+    },
+    {
+      "id": "utility.water.history.history_cost.history_cost_year",
+      "category": "utility.water.history.history_cost",
+      "name": "今年指定月份",
+      "order": 76,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年{month}月水费是多少",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "history_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.water.history.history_cost.history_cost_last_year",
+      "category": "utility.water.history.history_cost",
+      "name": "去年指定月份",
+      "order": 77,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "去年{month}月水费是多少",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "history_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "last_year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.water.history.h_year_usage.h_year_usage_year",
+      "category": "utility.water.history.h_year_usage",
+      "name": "今年",
+      "order": 78,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年账单累计用水量",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "h_year_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "year"
+      }
+    },
+    {
+      "id": "utility.water.history.h_year_usage.h_year_usage_last_year",
+      "category": "utility.water.history.h_year_usage",
+      "name": "去年",
+      "order": 79,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "去年账单累计用水量",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "h_year_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "last_year"
+      }
+    },
+    {
+      "id": "utility.water.history.h_year_usage.h_year_usage_explicit",
+      "category": "utility.water.history.h_year_usage",
+      "name": "指定年份",
+      "order": 80,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{year}年账单累计用水量",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "h_year_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "explicit"
+      },
+      "parameter": "year"
+    },
+    {
+      "id": "utility.water.history.h_year_cost.h_year_cost_year",
+      "category": "utility.water.history.h_year_cost",
+      "name": "今年",
+      "order": 81,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年账单累计水费",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "h_year_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "year"
+      }
+    },
+    {
+      "id": "utility.water.history.h_year_cost.h_year_cost_last_year",
+      "category": "utility.water.history.h_year_cost",
+      "name": "去年",
+      "order": 82,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "去年账单累计水费",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "h_year_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "last_year"
+      }
+    },
+    {
+      "id": "utility.water.history.h_year_cost.h_year_cost_explicit",
+      "category": "utility.water.history.h_year_cost",
+      "name": "指定年份",
+      "order": 83,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{year}年账单累计水费",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "h_year_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "explicit"
+      },
+      "parameter": "year"
+    },
+    {
+      "id": "utility.water.history.h_coverage",
+      "category": "utility.water.history",
+      "name": "水历史数据覆盖范围",
+      "order": 84,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "水历史数据覆盖范围",
+      "slots": {
+        "utility_kind": "w",
+        "utility_metric": "h_coverage",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.basic.balance",
+      "category": "utility.gas.basic",
+      "name": "燃气费余额",
+      "order": 85,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气费余额",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "balance",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.basic.debt",
+      "category": "utility.gas.basic",
+      "name": "燃气欠费了吗",
+      "order": 86,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气欠费了吗",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "debt",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.basic.latest_usage",
+      "category": "utility.gas.basic",
+      "name": "本期用气量",
+      "order": 87,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "本期用气量",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "latest_usage",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.basic.latest_cost",
+      "category": "utility.gas.basic",
+      "name": "本期燃气账单",
+      "order": 88,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "本期燃气账单",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "latest_cost",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.basic.prior_usage",
+      "category": "utility.gas.basic",
+      "name": "上期用气量",
+      "order": 89,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "上期用气量",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "prior_usage",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.basic.read",
+      "category": "utility.gas.basic",
+      "name": "燃气最近什么时候抄表",
+      "order": 90,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气最近什么时候抄表",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "read",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.basic.meter",
+      "category": "utility.gas.basic",
+      "name": "燃气本期表读数",
+      "order": 91,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气本期表读数",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "meter",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.basic.year_usage",
+      "category": "utility.gas.basic",
+      "name": "今年累计用气量",
+      "order": 92,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年累计用气量",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "year_usage",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.basic.settlement",
+      "category": "utility.gas.basic",
+      "name": "燃气本期账单结清了吗",
+      "order": 93,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气本期账单结清了吗",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "settlement",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.basic.update",
+      "category": "utility.gas.basic",
+      "name": "燃气数据更新时间",
+      "order": 94,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气数据更新时间",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "update",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.pay.last_pay",
+      "category": "utility.gas.pay",
+      "name": "燃气最近缴费金额",
+      "order": 95,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气最近缴费金额",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "last_pay",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.pay.last_pay_date",
+      "category": "utility.gas.pay",
+      "name": "燃气最近缴费时间",
+      "order": 96,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气最近缴费时间",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "last_pay_date",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.pay.last_pay_channel",
+      "category": "utility.gas.pay",
+      "name": "燃气最近缴费渠道",
+      "order": 97,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气最近缴费渠道",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "last_pay_channel",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.pay.year_pay",
+      "category": "utility.gas.pay",
+      "name": "今年燃气交了多少钱",
+      "order": 98,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年燃气交了多少钱",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "year_pay",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.pay.year_pay_count",
+      "category": "utility.gas.pay",
+      "name": "今年燃气交了几次费",
+      "order": 99,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年燃气交了几次费",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "year_pay_count",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.pay.payment_update",
+      "category": "utility.gas.pay",
+      "name": "燃气缴费历史更新时间",
+      "order": 100,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气缴费历史更新时间",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "payment_update",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.tier.tier",
+      "category": "utility.gas.tier",
+      "name": "目前处于第几阶梯用气",
+      "order": 101,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "目前处于第几阶梯用气",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "tier",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.tier.tier1_price",
+      "category": "utility.gas.tier",
+      "name": "燃气第一阶梯气价",
+      "order": 102,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气第一阶梯气价",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "tier1_price",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.tier.tier1_used",
+      "category": "utility.gas.tier",
+      "name": "燃气第一阶梯累计用了多少气",
+      "order": 103,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气第一阶梯累计用了多少气",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "tier1_used",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.tier.tier1_remaining",
+      "category": "utility.gas.tier",
+      "name": "燃气第一阶梯还剩多少气",
+      "order": 104,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气第一阶梯还剩多少气",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "tier1_remaining",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.tier.tier1_limit",
+      "category": "utility.gas.tier",
+      "name": "燃气第一阶梯总额度",
+      "order": 105,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气第一阶梯总额度",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "tier1_limit",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.tier.tier2_price",
+      "category": "utility.gas.tier",
+      "name": "燃气第二阶梯气价",
+      "order": 106,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气第二阶梯气价",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "tier2_price",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.tier.tier2_used",
+      "category": "utility.gas.tier",
+      "name": "燃气第二阶梯累计用了多少气",
+      "order": 107,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气第二阶梯累计用了多少气",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "tier2_used",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.tier.tier2_remaining",
+      "category": "utility.gas.tier",
+      "name": "燃气第二阶梯还剩多少气",
+      "order": 108,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气第二阶梯还剩多少气",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "tier2_remaining",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.tier.tier2_limit",
+      "category": "utility.gas.tier",
+      "name": "燃气第二阶梯总额度",
+      "order": 109,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气第二阶梯总额度",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "tier2_limit",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.tier.tier3_price",
+      "category": "utility.gas.tier",
+      "name": "燃气第三阶梯气价",
+      "order": 110,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气第三阶梯气价",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "tier3_price",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.tier.tier3_used",
+      "category": "utility.gas.tier",
+      "name": "燃气第三阶梯累计用了多少气",
+      "order": 111,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气第三阶梯累计用了多少气",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "tier3_used",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.gas.history.h_month_usage.h_month_usage_current",
+      "category": "utility.gas.history.h_month_usage",
+      "name": "本月",
+      "order": 112,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "这个月用了多少气",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "current"
+      }
+    },
+    {
+      "id": "utility.gas.history.h_month_usage.h_month_usage_previous",
+      "category": "utility.gas.history.h_month_usage",
+      "name": "上月",
+      "order": 113,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "上个月用了多少气",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "previous"
+      }
+    },
+    {
+      "id": "utility.gas.history.h_month_usage.h_month_usage_year",
+      "category": "utility.gas.history.h_month_usage",
+      "name": "今年指定月份",
+      "order": 114,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年{month}月用了多少气",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.gas.history.h_month_usage.h_month_usage_last_year",
+      "category": "utility.gas.history.h_month_usage",
+      "name": "去年指定月份",
+      "order": 115,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "去年{month}月用了多少气",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "last_year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.gas.history.h_month_usage.h_month_usage_explicit",
+      "category": "utility.gas.history.h_month_usage",
+      "name": "指定年月",
+      "order": 116,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{year}年{month}月用了多少气",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_month_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "explicit"
+      },
+      "parameter": "year_month"
+    },
+    {
+      "id": "utility.gas.history.h_month_cost.h_month_cost_current",
+      "category": "utility.gas.history.h_month_cost",
+      "name": "本月",
+      "order": 117,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "这个月燃气费是多少",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "current"
+      }
+    },
+    {
+      "id": "utility.gas.history.h_month_cost.h_month_cost_previous",
+      "category": "utility.gas.history.h_month_cost",
+      "name": "上月",
+      "order": 118,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "上个月燃气费是多少",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "previous"
+      }
+    },
+    {
+      "id": "utility.gas.history.h_month_cost.h_month_cost_year",
+      "category": "utility.gas.history.h_month_cost",
+      "name": "今年指定月份",
+      "order": 119,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年{month}月燃气费是多少",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.gas.history.h_month_cost.h_month_cost_last_year",
+      "category": "utility.gas.history.h_month_cost",
+      "name": "去年指定月份",
+      "order": 120,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "去年{month}月燃气费是多少",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "last_year"
+      },
+      "parameter": "month"
+    },
+    {
+      "id": "utility.gas.history.h_month_cost.h_month_cost_explicit",
+      "category": "utility.gas.history.h_month_cost",
+      "name": "指定年月",
+      "order": 121,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{year}年{month}月燃气费是多少",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_month_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "explicit"
+      },
+      "parameter": "year_month"
+    },
+    {
+      "id": "utility.gas.history.h_year_usage.h_year_usage_year",
+      "category": "utility.gas.history.h_year_usage",
+      "name": "今年",
+      "order": 122,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年账单累计用气量",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_year_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "year"
+      }
+    },
+    {
+      "id": "utility.gas.history.h_year_usage.h_year_usage_last_year",
+      "category": "utility.gas.history.h_year_usage",
+      "name": "去年",
+      "order": 123,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "去年账单累计用气量",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_year_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "last_year"
+      }
+    },
+    {
+      "id": "utility.gas.history.h_year_usage.h_year_usage_explicit",
+      "category": "utility.gas.history.h_year_usage",
+      "name": "指定年份",
+      "order": 124,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{year}年账单累计用气量",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_year_usage",
+        "luxe_utility_property": "j",
+        "utility_period": "explicit"
+      },
+      "parameter": "year"
+    },
+    {
+      "id": "utility.gas.history.h_year_cost.h_year_cost_year",
+      "category": "utility.gas.history.h_year_cost",
+      "name": "今年",
+      "order": 125,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "今年账单累计燃气费",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_year_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "year"
+      }
+    },
+    {
+      "id": "utility.gas.history.h_year_cost.h_year_cost_last_year",
+      "category": "utility.gas.history.h_year_cost",
+      "name": "去年",
+      "order": 126,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "去年账单累计燃气费",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_year_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "last_year"
+      }
+    },
+    {
+      "id": "utility.gas.history.h_year_cost.h_year_cost_explicit",
+      "category": "utility.gas.history.h_year_cost",
+      "name": "指定年份",
+      "order": 127,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "{year}年账单累计燃气费",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_year_cost",
+        "luxe_utility_property": "j",
+        "utility_period": "explicit"
+      },
+      "parameter": "year"
+    },
+    {
+      "id": "utility.gas.history.h_coverage",
+      "category": "utility.gas.history",
+      "name": "燃气历史数据覆盖范围",
+      "order": 128,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "燃气历史数据覆盖范围",
+      "slots": {
+        "utility_kind": "g",
+        "utility_metric": "h_coverage",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.summary.primary.balances",
+      "category": "utility.summary.primary",
+      "name": "水电气余额",
+      "order": 129,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "水电气余额",
+      "slots": {
+        "utility_kind": "all",
+        "utility_metric": "balances",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.summary.all.balances_all",
+      "category": "utility.summary.all",
+      "name": "全部账户余额",
+      "order": 130,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "全部账户余额",
+      "slots": {
+        "utility_kind": "all",
+        "utility_metric": "balances",
+        "luxe_utility_property": "j",
+        "utility_period": "all"
+      }
+    },
+    {
+      "id": "utility.summary.primary.debts",
+      "category": "utility.summary.primary",
+      "name": "水电气有没有欠费",
+      "order": 131,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "水电气有没有欠费",
+      "slots": {
+        "utility_kind": "all",
+        "utility_metric": "debts",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.summary.all.debts_all",
+      "category": "utility.summary.all",
+      "name": "全部账户欠费情况",
+      "order": 132,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "全部账户欠费情况",
+      "slots": {
+        "utility_kind": "all",
+        "utility_metric": "debts",
+        "luxe_utility_property": "j",
+        "utility_period": "all"
+      }
+    },
+    {
+      "id": "utility.summary.primary.low",
+      "category": "utility.summary.primary",
+      "name": "水电气有没有账户需要充值",
+      "order": 133,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "水电气有没有账户需要充值",
+      "slots": {
+        "utility_kind": "all",
+        "utility_metric": "low",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.summary.all.low_all",
+      "category": "utility.summary.all",
+      "name": "所有账户有没有需要充值",
+      "order": 134,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "所有账户有没有需要充值",
+      "slots": {
+        "utility_kind": "all",
+        "utility_metric": "low",
+        "luxe_utility_property": "j",
+        "utility_period": "all"
+      }
+    },
+    {
+      "id": "utility.summary.primary.updates",
+      "category": "utility.summary.primary",
+      "name": "水电气数据更新时间",
+      "order": 135,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "水电气数据更新时间",
+      "slots": {
+        "utility_kind": "all",
+        "utility_metric": "updates",
+        "luxe_utility_property": "j"
+      }
+    },
+    {
+      "id": "utility.summary.all.updates_all",
+      "category": "utility.summary.all",
+      "name": "全部账户数据更新时间",
+      "order": 136,
+      "intent": "LuxeUtilityQuery",
+      "read_only": true,
+      "sentence": "全部账户数据更新时间",
+      "slots": {
+        "utility_kind": "all",
+        "utility_metric": "updates",
+        "luxe_utility_property": "j",
+        "utility_period": "all"
+      }
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nexora",
+        "description": "填写原有对话代理 ID。第二账户匹配别名必须是已安装意图库支持的名称；留空则隐藏第二账户查询。",
+        "data": {
+          "fallback_agent": "备用对话代理 ID",
+          "primary_label": "主电费账户显示名称",
+          "secondary_label": "第二电费账户显示名称",
+          "secondary": "第二账户匹配别名（选填）"
+        }
+      }
+    },
+    "error": {
+      "invalid_agent": "找不到指定的对话代理",
+      "invalid_label": "名称不能为空且不得超过40个字符"
+    },
+    "abort": {
+      "already_configured": "已配置"
+    }
+  }
+}
