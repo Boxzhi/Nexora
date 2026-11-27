@@ -6,6 +6,7 @@ their original wording, and failures remain attributed to the member.
 """
 import re
 from .reply_format import render_section
+from .utility_response import summary_rows
 
 GOOD={"ok","partial_data","data_gap","state_limit","capability_limit"}
 MONEY=r"-?\d+(?:\.\d+)?元"
@@ -188,7 +189,11 @@ def compose_menu(plan,run,label,normalize):
         return combined,completed
     heading=plan.title
     scene=plan.menu_scene
-    if scene.startswith("scene.utility.gas.pay."):
+    if scene in {"scene.utility.summary.primary.overview","scene.utility.summary.all.overview"}:
+        lines=summary_rows(rows)
+        if lines is None:
+            lines=[text for _,_,text in rows]
+    elif scene.startswith("scene.utility.gas.pay."):
         heading="华润燃气 · "+heading.rsplit(" · ",1)[-1]
         lines=_payment(rows)
     elif scene=="scene.utility.gas.tier.details":
