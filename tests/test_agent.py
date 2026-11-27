@@ -104,7 +104,7 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertEqual(r.conversation_id,"test")
         self.assertIsNone(self.conv.async_converse.call_args.kwargs["conversation_id"])
         self.assertIn("p",self.conv.async_converse.call_args.kwargs["extra_system_prompt"])
-        self.assertIn("不得推测",self.conv.async_converse.call_args.kwargs["extra_system_prompt"])
+        self.assertIn("不要推测",self.conv.async_converse.call_args.kwargs["extra_system_prompt"])
         await self.agent.async_process(self.u)
         self.assertEqual(self.conv.async_converse.call_args.kwargs["conversation_id"],"ai-session")
         self.u.conversation_id="other"
@@ -197,63 +197,6 @@ class Tests(IsolatedAsyncioTestCase):
         self.it.async_handle.assert_awaited_once()
         self.conv.async_converse.assert_not_awaited()
 
-    def test_menu_protocol_classifies_only_reserved_syntax(self):
-        self.menu.aliases={"阳台":"home.balcony"}
-        for text in ("HELP","退出","１","12","20","98","99","1.2.12","1.2.1","2026-11-27","prev","阳台"):
-            with self.subTest(text=text):
-                self.assertTrue(self.agent.is_menu_message(text))
-        for text in ("阳台有人吗","关闭客厅灯","上个月呢","请帮我分析",""):
-            with self.subTest(text=text):
-                self.assertFalse(self.agent.is_menu_message(text))
-
-    async def test_menu_protocol_query_uses_existing_executor(self):
-        await self.agent.async_process_menu(self.u)
-        self.it.async_handle.assert_awaited_once()
-        self.conv.async_converse.assert_not_awaited()
-
-    async def test_menu_protocol_never_falls_back(self):
-        self.menu.route=lambda *a,**kw:None
-        r=await self.agent.async_process_menu(self.u)
-        self.assertIn("help",r.response.speech)
-        self.conv.async_converse.assert_not_awaited()
-        self.it.async_handle.assert_not_awaited()
-
-    async def test_menu_protocol_rejects_free_text_without_routing(self):
-        self.u.text="关闭客厅灯"
-        self.menu.route=lambda *a,**kw:self.fail("unexpected route")
-        r=await self.agent.async_process_menu(self.u)
-        self.assertIn("非菜单指令",r.response.speech)
-        self.conv.async_converse.assert_not_awaited()
-        self.it.async_handle.assert_not_awaited()
-
-    def test_capture_fast_context_exact_slots_only(self):
-        from importlib import import_module
-        Followups=import_module("nexora_adapter_test.followup").Followups
-        self.menu.settings={"primary_label":"主账户","secondary_label":"第二账户","secondary":""}
-        self.menu._available=lambda *args:True
-        self.menu.capabilities["water"]["slots"]=self.slots
-        self.menu.followups=Followups(self.menu,lambda:0)
-        cid="wechat:test:a"
-        token=self.agent.begin_fast_context(cid)
-        self.assertFalse(self.agent.finish_fast_context(cid,token,"LuxeUtilityQuery",{**self.slots,"extra":"x"}))
-        self.assertTrue(self.agent.finish_fast_context(cid,token,"LuxeUtilityQuery",self.slots))
-        self.assertEqual(self.menu.followups.contexts[(None,None,None,cid)].capability,"water")
-        newer=self.agent.begin_fast_context(cid)
-        self.assertFalse(self.agent.finish_fast_context(cid,token,"LuxeUtilityQuery",self.slots))
-        self.assertFalse(self.agent.finish_fast_context(cid,newer,"Other",self.slots))
-        self.assertNotIn((None,None,None,cid),self.menu.followups.contexts)
-
-    def test_context_followup_protocol(self):
-        from importlib import import_module
-        Followups=import_module("nexora_adapter_test.followup").Followups
-        self.menu.settings={"primary_label":"主账户","secondary_label":"第二账户","secondary":"other"}
-        self.menu.followups=Followups(self.menu,lambda:0)
-        self.assertTrue(self.agent.is_menu_message("上个月呢"))
-        self.assertTrue(self.agent.is_menu_message("费用呢"))
-        self.assertTrue(self.agent.is_menu_message("另一个账户呢"))
-        self.assertFalse(self.agent.is_menu_message("阳台有人吗"))
-        self.assertIn("失效",self.menu.followups.route("missing","费用呢",lambda c:True))
-
     async def test_semantic_query_uses_strict_executor_and_no_fallback(self):
         from importlib import import_module
         SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
@@ -263,8 +206,12 @@ class Tests(IsolatedAsyncioTestCase):
         self.menu.route=lambda *a,**kw:None
         self.agent.semantic=SemanticIndex(self.menu)
         self.u.text="请问水费余额？"
-        self.assertTrue(self.agent.is_semantic_message(self.u.text))
-        await self.agent.async_process_semantic(self.u)
+        self.assertIsNotNone(self.agent.semantic.match(self.u.text))
+        original=self.native.async_recognize_intent
+        async def recognize(u,**kw):
+            return None if u.text==self.u.text else await original(u,**kw)
+        self.native.async_recognize_intent=recognize
+        await self.agent.async_process(self.u)
         self.it.async_handle.assert_awaited_once()
         self.conv.async_converse.assert_not_awaited()
 
@@ -277,27 +224,20 @@ class Tests(IsolatedAsyncioTestCase):
         self.agent.semantic=SemanticIndex(self.menu)
         self.u.text="水费余额"
         self.h.config["action"]={}
-        r=await self.agent.async_process_semantic(self.u)
+        r=await self.agent.async_process(self.u)
         self.assertIn("不可用",r.response.speech)
         self.it.async_handle.assert_not_awaited()
         self.conv.async_converse.assert_not_awaited()
 
-    async def test_semantic_unknown_never_uses_ai(self):
-        self.u.text="打开客厅灯"
-        r=await self.agent.async_process_semantic(self.u)
-        self.assertIn("查询能力已变化",r.response.speech)
-        self.it.async_handle.assert_not_awaited()
-        self.conv.async_converse.assert_not_awaited()
-
-    async def test_unmatched_home_query_and_controls_blocked_before_ai(self):
+    async def test_unmatched_live_queries_blocked_before_ai(self):
         self.menu.route=lambda *a,**kw:None
-        for text in ("阳台光照传感器是不是坏了","帮我打开客厅灯","我家还剩多少钱","关掉空调","sensor.foo","它呢"):
+        for text in ("阳台光照传感器是不是坏了","我家还剩多少钱","sensor.foo","主卧空调当前状态","爸爸现在在家吗"):
             self.u.text=text
             r=await self.agent.async_process(self.u)
             self.assertIn("无法确认",r.response.speech)
         self.conv.async_converse.assert_not_awaited()
         self.it.async_handle.assert_not_awaited()
-        self.assertEqual(self.agent.diagnostics_snapshot()["guard:blocked"]["count"],6)
+        self.assertEqual(self.agent.diagnostics_snapshot()["guard:blocked"]["count"],5)
 
     async def test_ai_timeout_releases_session_and_never_retries(self):
         self.menu.route=lambda *a,**kw:None
@@ -348,25 +288,6 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertEqual(len(remembered),1)
         self.conv.async_converse.assert_awaited_once()
 
-    async def test_persisted_guard_request_cannot_fall_back(self):
-        self.menu.route=lambda *a,**kw:None
-        self.u.text="你好"
-        r=await self.agent.async_process_guarded(self.u)
-        self.assertIn("无法确认",r.response.speech)
-        self.conv.async_converse.assert_not_awaited()
-
-    async def test_ordinary_ai_turn_never_touches_business_context(self):
-        from unittest.mock import Mock
-        self.u.text="讲个故事"
-        self.menu.followups.begin=Mock()
-        self.menu.followups.clear=Mock()
-        self.menu.route=Mock(side_effect=AssertionError("local state touched"))
-        self.conv.async_converse=AsyncMock(return_value=SimpleNamespace(response=Response("zh-CN"),conversation_id="ai"))
-        await self.agent.async_process(self.u)
-        self.menu.followups.begin.assert_not_called()
-        self.menu.followups.clear.assert_not_called()
-        self.menu.route.assert_not_called()
-
     async def test_guard_preserves_registered_exact_parameter_query(self):
         self.menu.route=lambda *a,**kw:None
         self.u.text="2024年3月1日用了多少度电"
@@ -409,3 +330,87 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertEqual(sessions.reserve("b"),(True,None))
         self.assertFalse(sessions.rejected_ids)
         sessions.release("b")
+
+    def test_no_transport_private_protocol(self):
+        for name in ("menu_protocol_version","context_protocol_version","semantic_protocol_version",
+                     "guard_protocol_version","begin_fast_context","finish_fast_context",
+                     "async_process_menu","async_process_semantic","async_process_guarded"):
+            self.assertFalse(hasattr(self.agent,name),name)
+        self.assertTrue(callable(self.agent.async_process))
+
+    async def test_general_questions_and_controls_delegate_without_local_execution(self):
+        self.menu.route=lambda *a,**kw:None
+        self.native.async_recognize_intent.return_value=None
+        self.conv.async_converse=AsyncMock(return_value=SimpleNamespace(response=Response("zh-CN"),conversation_id="ai"))
+        for text in ("洗衣机怎么清洁","空调如何省电","介绍一下 Home Assistant",
+                     "给爸爸写一段生日祝福","帮我设置一个学习计划","关闭客厅灯","什么是光照度"):
+            with self.subTest(text=text):
+                self.u.text=text
+                await self.agent.async_process(self.u)
+        self.assertEqual(self.conv.async_converse.await_count,7)
+        self.it.async_handle.assert_not_awaited()
+
+    async def test_native_priority_over_semantic_alias(self):
+        from importlib import import_module
+        SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
+        self.menu.route=lambda *a,**kw:None
+        other={**self.slots,"utility_kind":"g"}
+        self.menu.capabilities={
+            "water":{"id":"water","intent":"LuxeUtilityQuery","sentence":"水费余额是多少","slots":self.slots},
+            "gas":{"id":"gas","intent":"LuxeUtilityQuery","sentence":"燃气费余额是多少","slots":other}}
+        self.menu._available=lambda cid,visible:visible(self.menu.capabilities[cid])
+        self.menu._query=lambda cid,p:SimpleNamespace(capability=cid,sentence=self.menu.capabilities[cid]["sentence"],slots=self.menu.capabilities[cid]["slots"])
+        self.agent.semantic=SemanticIndex(self.menu)
+        self.u.text="水费余额"
+        self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in other.items()]
+        await self.agent.async_process(self.u)
+        self.assertEqual(self.it.async_handle.call_args.args[3]["utility_kind"]["value"],"g")
+        self.conv.async_converse.assert_not_awaited()
+        self.assertEqual(self.agent.diagnostics_snapshot()["local_native:completed"]["count"],1)
+
+    async def test_native_non_household_synonym_is_not_sent_to_ai(self):
+        self.menu.route=lambda *a,**kw:None
+        self.u.text="查一下余额"
+        cap={"id":"water","intent":"LuxeUtilityQuery","sentence":"水费余额是多少","slots":self.slots}
+        self.menu.capabilities={"water":cap}
+        self.menu._available=lambda cid,visible:visible(cap)
+        self.menu._query=lambda cid,p:SimpleNamespace(capability=cid,sentence=cap["sentence"],slots=self.slots)
+        await self.agent.async_process(self.u)
+        self.it.async_handle.assert_awaited_once()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_native_light_synonym_initializes_mapping(self):
+        self.menu.route=lambda *a,**kw:None
+        self.h=Handler("LuxeLightQuery")
+        self.u.text="那盏灯亮着没"
+        slots={"light_query":"single_state"}
+        cap={"id":"fixture","category":"lights.fixture","intent":"LuxeLightQuery","sentence":"测试灯状态如何","slots":slots,"native_slots":{"luxe_light_id":"light"}}
+        self.menu.capabilities={"fixture":cap}
+        self.result.intent.name="LuxeLightQuery"
+        self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in {**slots,"luxe_light_id":"light.example"}.items()]
+        self.menu._available=lambda cid,visible:visible(cap)
+        self.menu._query=lambda cid,p:SimpleNamespace(capability=cid,sentence=cap["sentence"],slots=slots)
+        self.agent.resolver.invalidate()
+        await self.agent.async_process(self.u)
+        self.assertEqual(self.agent.resolver.targets["lights.fixture"],"light.example")
+        self.it.async_handle.assert_awaited_once()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_independent_dialog_cancels_pending_date_prompt(self):
+        import json
+        from importlib import import_module
+        Menu=import_module("nexora_adapter_test.menu").Menu
+        directory=Path(__file__).resolve().parents[1]/"custom_components/nexora/catalogs"
+        menu=Menu([json.loads(p.read_text()) for p in sorted(directory.glob("*.json"))])
+        self.agent=self.a.NexoraAgent(object(),"entry",menu,"fallback")
+        key=("u",None,None,"test")
+        menu.route(key,"help")
+        menu.route(key,"1.1.1.2.1.4")
+        self.assertIsNotNone(menu.sessions[key].pending)
+        self.native.async_recognize_intent.return_value=None
+        self.u.text="讲个故事"
+        self.conv.async_converse=AsyncMock(return_value=SimpleNamespace(response=Response("zh-CN"),conversation_id="ai"))
+        await self.agent.async_process(self.u)
+        self.assertIsNone(menu.sessions[key].pending)
+        self.conv.async_converse.assert_awaited_once()
+        self.it.async_handle.assert_not_awaited()

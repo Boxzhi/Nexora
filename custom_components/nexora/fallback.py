@@ -17,13 +17,15 @@ HOUSEHOLD = {
     "switch.","light.","sensor.","binary_sensor.","climate.","cover.","lock.","camera.",
 }
 ROOMS = {"客厅","餐厅","主卧","次卧","阳台","厨房","玄关","卫生间","儿童房","过道","客餐厅"}
-# Unknown commands or referential follow-ups cannot safely infer a local target.
-COMMAND = re.compile(r"^(?:请|帮我|麻烦|能不能|可以|给我|把|将|给)?(?:打开|关闭|开启|关掉|开灯|关灯|启动|停止|暂停|恢复|设置|调节|调整|调高|调低|解锁|上锁|反锁|执行|控制|turn on|turn off|unlock|lock |set )")
-REFERENTIAL = re.compile(r"^(?:那|这)?(?:它|他|她|那个|这个|上一|刚才|其他|另一个|还有|多少|现在呢|呢)")
-GUARD_REPLY = "这条家庭查询或控制指令尚未匹配已注册的只读能力，无法确认实时状态。请明确设备、账户和查询项目，或发送 help。"
-AI_PROMPT = ("本通道用于普通问答。不得执行家庭设备控制、自动化或服务调用；"
-             "不得推测家庭实时数据、设备是否存在或设备状态。涉及家庭实时数据时，"
-             "请说明本通道无法验证，并建议通过 Nexora 本地查询。")
+# Recognize only likely real-time household questions. General education and
+# explicit device commands retain the configured fallback Agent's behavior.
+LIVE = re.compile(r"现在|当前|实时|今天|昨天|前天|本月|上月|这个月|上个月|今年|去年|余额|欠费|还剩|还有多少|多少钱|多少度|用量|费用|光照(?:度|强度)?|亮度|温度|湿度|电量|状态|多久|在家吗|有人吗|无人吗|开着吗|关了吗|锁了吗|坏了|故障|可用吗|在线吗|是不是|是否|有没有|有多亮")
+EDUCATION = re.compile(r"^(?:请问|请|帮我|给我|请帮我)?(?:介绍|解释|科普|讲解|什么是|如何|怎么|怎样|为什么|写|编写|设计|制定|推荐|比较|分析一下.*原理)")
+CONTROL = re.compile(r"^(?:(?:请|帮我|麻烦|能不能|可以|给我|把|将|给|你能|一下)\s*)*(?:打开|关闭|开启|关掉|开灯|关灯|启动|停止|暂停|恢复|设置|调节|调整|调高|调低|解锁|上锁|反锁|执行|控制|turn on|turn off|unlock|lock |set )")
+ENTITY = re.compile(r"(?:switch|light|sensor|binary_sensor|climate|cover|lock|camera)\.[a-z0-9_]+",re.I)
+GUARD_REPLY = "这条家庭实时查询尚未匹配已注册的查询能力，无法确认实际数据。请明确设备、账户和查询项目，或发送 help。"
+AI_PROMPT = ("涉及家庭实时数据时，仅依据可验证的数据来源回答；无法验证时请明确说明，"
+             "不要推测设备是否存在或实际状态。其他任务遵循原有代理配置及权限。")
 
 class FallbackGuard:
     def __init__(self, menu):
@@ -38,13 +40,19 @@ class FallbackGuard:
     def blocked(self,text):
         value=text.strip().casefold() if isinstance(text,str) else ""
         if not value:
-            return True
-        # Whitespace cannot disguise a household token or command.
+            return False
         compact=re.sub(r"\s+","",value)
-        return (any(term in value or term.replace(" ","") in compact for term in self.terms)
-                or COMMAND.search(value) is not None
-                or COMMAND.search(compact) is not None
-                or REFERENTIAL.search(compact) is not None)
+        if CONTROL.search(value) or CONTROL.search(compact):
+            return False
+        # Educational requests are not real-time reads unless explicitly
+        # referring to a concrete current household condition.
+        if (EDUCATION.search(compact) or re.search(r"(?:怎么|如何|怎样)(?:清洁|保养|省电|使用|安装|配置|设置|维修|工作)",compact)):
+            if not re.search(r"我家|家里|家中|当前|现在|实时|今天|刚才",compact):
+                return False
+        if ENTITY.fullmatch(value):
+            return True
+        household=any(term in value or term.replace(" ","") in compact for term in self.terms)
+        return household and LIVE.search(compact) is not None
 
 @dataclass
 class Session:

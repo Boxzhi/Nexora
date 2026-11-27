@@ -1,12 +1,11 @@
 """Route menu commands locally and preserve the existing conversation fallback."""
 import asyncio
 import logging
-import re
 from uuid import uuid4
 from .capability import Resolver
 from .binding_extractor import BindingExtractor
 from .executor import _slot_equal, _slots_match, execute_readonly
-from .router import Route, RouteDecision, decide, is_menu_message
+from .router import Route, RouteDecision, decide, from_reply
 from .semantic import SemanticIndex
 from .fallback import AIConversations, FallbackGuard, GUARD_REPLY, AI_PROMPT
 from .diagnostics import RouteDiagnostics
@@ -46,7 +45,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         return None
 
     async def _prepare_capabilities(self, u, available):
-        # Only menu interaction triggers a lazy mapping refresh. Never execute
+        # Menu or recognized light queries trigger a lazy mapping refresh. Never execute
         # intent scripts for capability detection, or perform supplier I/O.
         if not self.resolver.needs_refresh(u.language):
             return
@@ -72,70 +71,6 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             except Exception:
                 _LOGGER.debug("Nexora capability mapping deferred",exc_info=True)
             self.resolver.replace_targets(u.language,targets)
-
-    menu_protocol_version = 1
-    context_protocol_version = 1
-    semantic_protocol_version = 1
-
-    def is_semantic_message(self, text):
-        return self.semantic.match(text) is not None
-
-    async def async_process_semantic(self, u):
-        if not self.is_semantic_message(u.text):
-            return self._reply(u, u.conversation_id or uuid4().hex, "查询能力已变化，请发送 help。")
-        return await self._async_process(u, menu_only=True)
-
-    def is_menu_message(self, text):
-        if is_menu_message(self.menu, text):
-            return True
-        if not isinstance(text, str):
-            return False
-        return self.menu.followups.is_followup_message(text.strip().casefold())
-
-    def begin_fast_context(self, conversation_id):
-        """Reserve a transport query for a non-user HA Context() session."""
-        key=(None,None,None,conversation_id)
-        token=self.menu.followups.begin(key)
-        self.menu.followups.clear(key)
-        return token
-
-    def finish_fast_context(self, conversation_id, token, intent_type, slots):
-        """Capture only an exact registered, available fixed utility capability.
-
-        Called by a trusted transport only after a successful strict native query.
-        No response text is parsed and no intent is executed here.
-        """
-        key=(None,None,None,conversation_id)
-        if not self.menu.followups.is_current(key,token) or intent_type!="LuxeUtilityQuery":
-            return False
-        if self._handler(intent_type) is None:
-            return False
-        candidates=[cap for cap in self.menu.capabilities.values()
-                    if cap["intent"]==intent_type and not cap.get("parameter")
-                    and _slots_match(slots,cap["slots"],cap.get("native_slots",{}))
-                    and self.menu._available(cap["id"],lambda c:True)]
-        if len(candidates)!=1:
-            return False
-        return self.menu.followups.complete(key,token,candidates[0]["id"])
-
-    async def async_process_menu(self, u):
-        """Local-only entrypoint for an ordered transport menu lane."""
-        if not self.is_menu_message(u.text):
-            return self._reply(u, u.conversation_id or uuid4().hex, "非菜单指令，请重新发送 help。")
-        return await self._async_process(u, menu_only=True)
-
-    async def async_process(self, u):
-        return await self._async_process(u)
-
-    guard_protocol_version = 1
-
-    def is_guarded_message(self,text):
-        return self.fallback_guard.blocked(text)
-
-    async def async_process_guarded(self,u):
-        # Re-run local routing in case a verified capability is now available.
-        # A persisted guarded turn may never fall back to a tool-enabled agent.
-        return await self._async_process(u,menu_only=True,guard_only=True)
 
     def _record(self,route,status,started):
         elapsed=self.route_diagnostics.record(route,status,started)
@@ -195,10 +130,10 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         finally:
             self.ai_sessions.release(key)
 
-    async def _native_registered_query(self,u,visible,today):
+    async def _native_registered_query(self,u,visible,today,available):
         """Preserve exact registered native queries, without executing actions.
 
-        Native recognition is only attempted for unresolved household input.
+        Native recognition follows explicit menu and context handling.
         The result must uniquely identify a registered capability, and the
         canonical query is independently validated by the read-only executor.
         """
@@ -224,6 +159,8 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             if result is None or result.unmatched_entities or result.intent.name not in INTENTS:
                 return None
             slots={item.name:item.value for item in result.entities_list}
+            if result.intent.name=="LuxeLightQuery" and "luxe_light_id" in slots:
+                await self._prepare_capabilities(u,available)
             matches=[]
             for cap in candidates:
                 if cap["intent"]!=result.intent.name:
@@ -268,52 +205,53 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         except Exception:
             return None
 
-    async def _async_process(self, u, *, menu_only=False, guard_only=False):
+    async def async_process(self,u):
+        """Standard HA Conversation Agent entry; no transport-specific protocols."""
         started=self.route_diagnostics.clock()
-        cid = u.conversation_id or uuid4().hex
-        key = (u.context.user_id, u.device_id, u.satellite_id, cid)
-        # An unrelated AI turn must not clear or advance local business state,
-        # including when its transport worker starts after a later local turn.
-        semantic_match = self.semantic.match(u.text)
-        if (not menu_only and not self.is_menu_message(u.text)
-                and semantic_match is None and not self.fallback_guard.blocked(u.text)):
-            return await self._async_fallback(u,cid,key,started)
-        generation = self.menu.followups.begin(key)
-        handlers = [h for h in intent.async_get(self.hass) if type(h) is ScriptIntentHandler and "speech" in h.config and not any(k in h.config for k in ("action", "reprompt", "card"))]
-        available = {h.intent_type for h in handlers}
-        changed = self.resolver.extractor.refresh(handlers)
+        cid=u.conversation_id or uuid4().hex
+        key=(u.context.user_id,u.device_id,u.satellite_id,cid)
+        generation=self.menu.followups.begin(key)
+        handlers=[h for h in intent.async_get(self.hass)
+                  if type(h) is ScriptIntentHandler and "speech" in h.config
+                  and not any(k in h.config for k in ("action","reprompt","card"))]
+        available={h.intent_type for h in handlers}
+        changed=self.resolver.extractor.refresh(handlers)
         if "LuxeLightQuery" in changed:
             self.resolver.targets.clear()
             self.resolver.modes.clear()
             self.resolver.invalidate()
-        from .menu import HELP, BACK, NEXT, PREV, TRANSLATE, PATH_RE
-        t=u.text.strip().casefold().translate(TRANSLATE)
-        needs_native = (semantic_match is not None and semantic_match.capability is not None
-                        and self.menu.capabilities[semantic_match.capability].get("native_slots"))
-        if needs_native or t in HELP|BACK|NEXT|PREV or t in self.menu.aliases or PATH_RE.fullmatch(t):
+        from .menu import HELP,BACK,NEXT,PREV,TRANSLATE,PATH_RE
+        text=u.text.strip().casefold().translate(TRANSLATE)
+        if text in HELP|BACK|NEXT|PREV or text in self.menu.aliases or PATH_RE.fullmatch(text):
             await self._prepare_capabilities(u,available)
         get_state=getattr(getattr(self.hass,"states",None),"get",lambda _:None)
-        statuses={}
         def visible(cap):
-            cid=cap["id"]
-            if cid not in statuses:
-                statuses[cid]=cap["intent"] in available and self.resolver.status(cap,get_state)!="hidden"
-            return statuses[cid]
+            # Re-evaluate after a lazy light mapping refresh.
+            return cap["intent"] in available and self.resolver.status(cap,get_state)!="hidden"
         if not self.menu.followups.is_current(key,generation):
             return self._reply(u,cid,"查询会话已更新，请重新发送。")
-        decision = decide(self.menu, key, u.text, visible, today=dt_util.now().date(),
-                          semantic=self.semantic, semantic_match=semantic_match)
-        if decision.route is Route.FALLBACK and (guard_only or (not menu_only and self.fallback_guard.blocked(u.text))):
-            native_decision=await self._native_registered_query(u,visible,dt_util.now().date())
+        # Always visit the menu state machine: independent messages cancel old
+        # parameter prompts and clear stale business context before any await.
+        today=dt_util.now().date()
+        decision=decide(self.menu,key,u.text,visible,today=today)
+        if decision.route is Route.FALLBACK:
+            native=await self._native_registered_query(u,visible,today,available)
             if not self.menu.followups.is_current(key,generation):
                 return self._reply(u,cid,"查询会话已更新，请重新发送。")
-            if native_decision is not None:
-                decision=native_decision
+            if native is not None:
+                decision=native
+            else:
+                match=self.semantic.match(u.text)
+                if match is not None:
+                    if match.capability and self.menu.capabilities[match.capability].get("native_slots"):
+                        await self._prepare_capabilities(u,available)
+                    if not self.menu.followups.is_current(key,generation):
+                        return self._reply(u,cid,"查询会话已更新，请重新发送。")
+                    decision=from_reply(self.semantic.reply(match,visible),"local_semantic")
         if decision.route is Route.FALLBACK:
-            if menu_only:
-                self._record("guard" if guard_only else "local_menu","blocked",started)
-                return self._reply(u,cid,GUARD_REPLY if guard_only else "当前没有待输入的菜单参数，请发送 help。")
             self.menu.followups.clear(key)
+            # No local-state writes after this await; late AI replies cannot
+            # restore old prompts or business context.
             return await self._async_fallback(u,cid,key,started)
         reply = decision.reply
         route=decision.source

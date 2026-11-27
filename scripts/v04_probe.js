@@ -1,4 +1,4 @@
-// v0.4.0-preview: local read-only semantic/menu checks on the target HA.
+// v0.4.0-preview: standalone local read-only semantic/menu checks on the target HA.
 // Does not test ordinary AI or send control commands.
 (async()=>{
  const hass=document.querySelector("home-assistant")?.hass;
