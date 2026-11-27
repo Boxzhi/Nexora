@@ -97,7 +97,7 @@ def stop_supplements(plan,outcomes):
                 return True
         if k.family!="appliance" or k.metric!="status":
             continue
-        name=AC_NAMES.get(k.target,"洗衣机" if k.target=="w" else "")
+        name=AC_NAMES.get(k.target,{"w":"洗衣机","f":"餐厅风扇"}.get(k.target,""))
         if "device_off" in plan.stop_on and name and s in {
             name+"已关闭",name+"：已关闭",name+"已关机",name+"：已关机",
             name+"已关闭，无当前运行参数",name+"已关机，无当前运行参数",

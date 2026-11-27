@@ -93,5 +93,50 @@ def lights_layout(menu):
     b.leaf("lights.abnormal","lights","灯光异常",40,ids("lights.abnormal","offline","abnormal"),anchor="lights.abnormal.abnormal",alias="lights.abnormal")
     return b.rows
 
+def appliance_layout():
+    b=Layout()
+    b.group("appliance","","家电",300,"appliance")
+    p="appliance.washer"
+    b.group(p,"appliance","洗衣机",10,p)
+    b.leaf(p+".progress",p,"当前洗衣进度",10,ids(p,"status","power","program","phase","remaining"),
+        anchor=p+".status",supplements=ids(p,"program","phase","remaining"),stop_on=("device_off","cycle_not_running"))
+    b.leaf(p+".settings",p,"洗涤参数",20,ids(p,"temp","spin","rinse"))
+    b.leaf(p+".doors",p,"筒门及锁状态",30,ids(p,"door","lock","child"))
+    b.leaf(p+".detergents",p,"洗涤剂余量",40,ids(p,"detergent","softener"))
+    b.leaf(p+".consumption",p,"用水用电统计",50,ids(p,"water","energy","totalwater","totalenergy","cycles"))
+    b.leaf(p+".fault",p,"故障状态",60,ids(p,"fault"),anchor=p+".fault")
+    p="appliance.ac"
+    b.group(p,"appliance","空调",20,p)
+    a=p+".all"
+    b.leaf(a,p,"全部空调",10,ids(a,"status","count","temp","target"),anchor=a+".status",alias=a)
+    for target,name,order in (("master","主卧空调",20),("secondary","次卧空调",30)):
+        a=p+"."+target
+        b.group(a,p,name,order,a)
+        b.leaf(a+".overview",a,"运行状态",10,ids(a,"status","temp","mode","action","target"),
+            anchor=a+".status",supplements=ids(a,"mode","action","target"),stop_on=("device_off",))
+        b.leaf(a+".settings",a,"运行参数",20,ids(a,"status","target","fan","swing","preset"),
+            anchor=a+".status",supplements=ids(a,"target","fan","swing","preset"),stop_on=("device_off",))
+    p="appliance.bath"
+    b.group(p,"appliance","浴霸",30,p)
+    b.leaf(p+".overview",p,"当前运行状态",10,ids(p,"status","mode"),anchor=p+".status")
+    b.leaf(p+".heating",p,"取暖及温度",20,ids(p,"heat","heatlevel","temp","target"))
+    b.leaf(p+".ventilation",p,"通风及吹风",30,ids(p,"vent","ventlevel","blow","blowlevel"))
+    b.leaf(p+".sterilization",p,"杀菌状态",40,ids(p,"sterilize","steriletime"))
+    b.leaf(p+".timers",p,"延时关闭",50,ids(p,"lightremain","heatremain"))
+    b.leaf(p+".fault",p,"故障状态",60,ids(p,"fault"),anchor=p+".fault")
+    p="appliance.airer"
+    b.leaf(p,"appliance","晾衣机",40,ids(p,"status","position","limits","light","fault"),anchor=p+".status",alias=p)
+    p="appliance.fan"
+    b.leaf(p,"appliance","餐厅风扇",50,ids(p,"status","light","speed","mode","natural"),
+        anchor=p+".status",supplements=ids(p,"speed","mode","natural"),stop_on=("device_off",),alias=p)
+    p="appliance.purifier"
+    b.group(p,"appliance","净水器",60,p)
+    b.leaf(p+".overview",p,"当前运行状态",10,ids(p,"status","holiday","mode"),anchor=p+".status")
+    b.leaf(p+".filter_health",p,"滤芯健康",20,ids(p,"filters","days","replace"),anchor=p+".filters")
+    b.leaf(p+".water",p,"水质及水温",30,ids(p,"tds","temp"))
+    b.leaf(p+".recent",p,"最近制水记录",40,ids(p,"volume","duration"))
+    b.leaf(p+".fault",p,"故障状态",50,ids(p,"fault"),anchor=p+".fault")
+    return b.rows
+
 def build_layout(menu):
-    return utility_layout()+lights_layout(menu)
+    return utility_layout()+lights_layout(menu)+appliance_layout()
