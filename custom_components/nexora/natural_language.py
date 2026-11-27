@@ -136,8 +136,8 @@ UTILITY_RULES=(
     (r"(?:余额|数据)?(?:更新|刷新)(?:时间|了没|了吗|了没有|于何时|是什么时候|什么时候)","update",""),
 )
 LIGHT_RULES=(
-    (r"(?:是)?(?:还)?(?:亮着|开着)(?:的)?(?:吗|没|没有)|关(?:好|了)(?:吗|没|没有)|(?:有没有|还有没有)(?:开着|亮着|没关)的?灯?(?:具)?|(?:还有没有|有没有)灯(?:具)?(?:亮着|开着|没关)","","any_lights_on"),
-    (r"(?:(?:是不是|是否)(?:都|全)关(?:好|了)(?:吗|没)?|(?:都|全)关(?:好|了)(?:吗|没|没有))","all_off",""),
+    (r"(?:是)?(?:还)?(?:亮着|开着)(?:的)?(?:吗|没|没有)|(?:都|全)?关(?:好|了)(?:吗|没|没有)|(?:有没有|还有没有)(?:开着|亮着|没关)的?灯?(?:具)?|(?:还有没有|有没有)灯(?:具)?(?:亮着|开着|没关)|(?:是不是|是否)(?:都|全)关(?:好|了)(?:吗|没)?","","any_lights_on"),
+    (r"(?:(?:是不是|是否)全部关闭|全部关闭(?:了吗|吗|没|没有))","all_off",""),
     (r"(?:(?:是不是|是否)(?:都|全)(?:开|打开)(?:了)?(?:吗|没)?|(?:都|全)(?:开|打开)(?:了)?(?:吗|没|没有))","all_on",""),
     (r"(?:还有|有|开了|亮着|还亮着|还开着)?(?:多少|几)(?:组|盏|个)灯?(?:具)?(?:是)?(?:开着|亮着|没关)(?:的)?|(?:开着|亮着|开了|还亮着)(?:多少|几)(?:组|盏|个)灯?(?:具)?","count_on",""),
     (r"(?:还)?(?:有)?(?:哪些|什么|哪几(?:组|盏|个))灯?(?:具)?(?:是)?(?:亮着|开着|没关)(?:的)?|(?:开着|亮着)(?:的)?(?:有)?哪些","list_on",""),
@@ -313,6 +313,8 @@ class QueryParser:
                 if tail.startswith(word):
                     tail=modifiers(tail[len(word):])
                     break
+        if sub.family=="appliance" and sub.target=="w" and re.fullmatch(r"(?:电源状态|(?:是否|有没有|是不是)?开机(?:了)?(?:吗|没|没有)|是否开机|有没有开机)",tail):
+            return {("power","")}
         if sub.family=="appliance" and sub.target=="f" and re.fullmatch(r"风速(?:多少|是多少|几档)",tail):
             return {("speed","")}
         # Domain rules take precedence over legacy fragment aliases. This is
@@ -389,6 +391,8 @@ class QueryParser:
                 if (explicit or time!=TimeSpec()) and sub.family!="utility":
                     continue
                 for metric,goal in self._metrics(sub,tail):
+                    if sub.family=="utility" and sub.target=="e" and time==TimeSpec(period="year") and metric=="cost" and tail in {"是多少","多少","多少钱","多少元"}:
+                        metric="year_cost"
                     result.add(Frame(replace(sub,domain="utility") if sub.domain=="utility_all" else sub,metric,goal,account,time,explicit,correction,scope="all" if sub.domain=="utility_all" else ""))
         # Object-last form, with exact independent metric fragment and a known
         # target at the end, no unconstrained text deletion.

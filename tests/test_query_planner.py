@@ -94,7 +94,7 @@ class PlannerTests(unittest.TestCase):
             ("全屋环境温度是多少","temp_avg","all"),
             ("全屋环境湿度是多少","hum_avg","all"),
             ("全屋环境光照度是多少","lux_all","all"),
-            ("客厅灯是不是都关了","all_off","ke_ting"),
+            ("客厅灯是否全部关闭","all_off","ke_ting"),
             ("厨房灯是否全打开了","all_on","chu_fang"),
             ("主卧吸顶灯关了吗","single_state","lights.fixtures.master_ceiling"),
             ("门锁童锁状态","childlock","all"),
@@ -145,5 +145,13 @@ class PlannerTests(unittest.TestCase):
             if kind=="different":
                 details.append((cid,[k for k,_ in keys]))
         self.assertEqual(sum(counts.values()),443)
+        self.assertEqual(details,[],details)
         print("V052_REVERSE_AUDIT="+json.dumps({f+":"+k:v for (f,k),v in sorted(counts.items())}))
         print("V052_REVERSE_DIFFERENT="+json.dumps(details,ensure_ascii=False))
+
+    def test_snapshot_and_formal_bill_meanings_remain_distinct(self):
+        self.assertEqual(self.ids("今年电费是多少"),("utility.electric.j.basic.year_cost",))
+        self.assertEqual(self.ids("次住所的今年电费是多少"),("utility.electric.l.basic.year_cost",))
+        self.assertEqual(self.ids("电费今年账单费用多少"),("utility.electric.j.history.h_year_cost.h_year_cost_year",))
+        self.assertEqual(self.ids("洗衣机开机了吗"),("appliance.washer.power",))
+        self.assertEqual(self.ids("厨房的灯现在全关了吗"),("lights.rooms.chu_fang.list_on",))

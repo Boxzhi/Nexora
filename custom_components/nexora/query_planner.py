@@ -62,6 +62,8 @@ class QueryPlanner:
         metric=frame.metric
         if time.period=="invalid":
             raise ValueError("查询日期无效，请检查年月日。")
+        if target=="e" and metric in {"year_cost","year_usage"} and time in {TimeSpec(),TimeSpec(period="year")}:
+            return self._step(QueryKey("utility",target,metric,account=account))
         if metric=="payment_amount":
             if target=="g" and time==TimeSpec(period="year"):
                 return self._step(QueryKey("utility","g","year_pay",account=account))
