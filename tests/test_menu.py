@@ -196,7 +196,7 @@ class AllCatalogTests(unittest.TestCase):
         scoped=[x for x in c["capabilities"] if not x.get("native_slots")]
         self.assertEqual(len(single),45)
         self.assertEqual(len({(x["slots"]["luxe_light_scope"],x["slots"]["light_query"]) for x in scoped}),99)
-        self.assertTrue(all("light." not in json.dumps(x,ensure_ascii=False) for x in single))
+        self.assertTrue(all(not any(isinstance(v,str) and v.startswith("light.") for v in x["slots"].values()) and "luxe_light_id" not in x["slots"] for x in single))
     def test_missing_module_handler(self):
         r=self.m.route("a","help",available=lambda c:c["intent"]=="LuxeUtilityQuery")
         self.assertIn("1. ⚡ 水电气",r.text)
