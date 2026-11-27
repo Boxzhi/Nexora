@@ -44,7 +44,7 @@ APPLIANCE_DIMENSIONS = {
     "setpoint_temperature": "target",
     "temperature": "temp",
     "rotation_speed": "spin",
-    "count": "rinse cycles",
+    "count": "rinse cycles count",
     "water_consumption": "water totalwater",
     "water_production": "volume",
     "electric_consumption": "energy totalenergy",
