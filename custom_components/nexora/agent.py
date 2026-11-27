@@ -425,6 +425,11 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 self._record("guard","blocked",started)
                 return self._reply(u,cid,boundary.reply)
             match=self.semantic.match(u.text,today=today)
+            if (match is None and boundary.kind!="control" and index is not None
+                    and normalize(u.text) in getattr(index,"scope_required",())):
+                self.menu.followups.clear(key)
+                self._record("local_scene_language","reply",started)
+                return self._reply(u,cid,"请明确要查询的设备、账户或业务范围，也可以发送 help 选择对应场景。")
             if match is None and boundary.kind=="control":
                 self.menu.followups.clear(key)
                 return await self._async_fallback(u,cid,key,started)

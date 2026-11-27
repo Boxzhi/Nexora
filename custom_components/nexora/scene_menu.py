@@ -65,6 +65,9 @@ def install(menu,rows):
     replaced={r.alias_of for r in rows if r.parent==root}
     children[root]=tuple(sorted(children[root]+tuple(x for x in children["root"] if x.id not in replaced),key=lambda x:(x.order,x.id)))
     from .scene_language import SceneLanguageIndex
-    language=SceneLanguageIndex(items,specs)
+    navigation={key:cid for key,cid in menu.aliases.items()
+                if "scene."+cid.split(".",1)[0] not in items}
+    navigation.update(aliases)
+    language=SceneLanguageIndex(items,specs,menu=menu,navigation=navigation)
     menu.items,menu.children,menu.scenes,menu.scene_aliases=items,children,specs,aliases
     menu.scene_language=language

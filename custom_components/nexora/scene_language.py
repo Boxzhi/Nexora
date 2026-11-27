@@ -4,7 +4,8 @@ A phrase identifies a scene, not an intent or a device. Ambiguous labels are
 not executable; dates and visibility remain the existing planner's concern.
 """
 from collections import defaultdict
-from .semantic import normalize
+from .semantic import normalize, SemanticIndex
+from .menu import RESERVED
 
 EXPLICIT = {
     "scene.utility.summary.primary.overview": ("我家水电气账户概况", "主住所水电气账户概况", "水电气账户概况"),
@@ -64,8 +65,19 @@ def scoped_phrases(sid,names):
         else:
             yield leaf+"概况"
 
+# Unique labels can still omit a necessary business object or sound like
+# a control request. Keep these scoped, irrespective of visibility.
+_SCOPE_REQUIRED = frozenset((
+    "最近缴费记录", "年度缴费统计", "各阶梯详细数据", "用水用电统计",
+    "取暖及温度", "通风及吹风", "杀菌状态", "延时关闭", "水质及水温",
+))
+
+def _room_only(sid):
+    return (sid.startswith(("scene.home.env.", "scene.home.presence."))
+            and not sid.endswith(".whole"))
+
 class SceneLanguageIndex:
-    def __init__(self, items, scenes):
+    def __init__(self, items, scenes, *, menu=None, navigation=None):
         candidates = defaultdict(set)
         self.paths = {}
         for sid in scenes:
@@ -81,6 +93,45 @@ class SceneLanguageIndex:
                 key = normalize(phrase)
                 if key:
                     candidates[key].add(sid)
+        # Audit against the complete installed registry, not the visible
+        # subset: an offline/hidden device must not disambiguate a label.
+        labels = defaultdict(set)
+        for node_id,node in items.items():
+            if node_id.startswith("scene.") or (menu is not None and
+                    node_id != "root" and not node_id.startswith("scene") and
+                    "scene."+node_id.split(".",1)[0] not in items):
+                labels[normalize(node.name)].add(node_id)
+        nav = defaultdict(set)
+        for phrase,node_id in (navigation or {}).items():
+            nav[normalize(phrase)].add(node_id)
+        legacy = SemanticIndex(menu) if menu is not None else None
+        self.bare_status = {}
+        self.scope_required = set()
+        for sid,spec in scenes.items():
+            key = normalize(items[sid].name)
+            old = candidates.get(key,set())
+            if old == {sid}:
+                # Existing explicit, scoped mappings are not reinterpreted.
+                self.bare_status[sid] = "direct"
+                continue
+            if (not key or key in RESERVED or key.isdecimal() or
+                    len(labels[key]) != 1 or key in _SCOPE_REQUIRED or _room_only(sid)):
+                self.bare_status[sid] = "scope_required"
+                if key and key not in RESERVED and not key.isdecimal():
+                    self.scope_required.add(key)
+                continue
+            if old or (nav.get(key,set()) - {sid}):
+                self.bare_status[sid] = "existing_route"
+                continue
+            if legacy is not None:
+                choices = legacy.exact.get(key,set()) | legacy.aliases.get(key,set())
+                if key in legacy.clarifications or (choices and
+                        (len(spec.members)!=1 or choices!={spec.members[0]})):
+                    self.bare_status[sid] = "existing_route"
+                    continue
+            candidates[key].add(sid)
+            self.bare_status[sid] = "direct"
+        self.scope_required = frozenset(self.scope_required)
         self.exact = {k: next(iter(v)) for k,v in candidates.items() if len(v)==1}
         self.ambiguous = frozenset(k for k,v in candidates.items() if len(v)>1)
 
