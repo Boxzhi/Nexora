@@ -35,7 +35,7 @@ The public catalog mirrors the source Utility v1.1.0 metric set, not every synon
 
 ## v0.2.0 additions
 
-Optional module.icon is rendered before the module name in the root and in its own title; it is not part of aliases. English help/exit/back/next/prev and their Chinese equivalents are reserved.
+Optional module.icon is rendered before the module name in the root and in its own title; it is not part of aliases. English help/exit/back/next/prev and their Chinese equivalents are reserved. Choices use 1–20 per page; 0 goes back, 98/99 navigate previous/next pages. Dot-separated paths contain choice numbers only.
 
 The built-in Lights catalog uses the narrowly scoped native_slots: {luxe_light_id: light} field for single_state, brightness and temperature queries only. It requires a strict recognition result from the installed list, with the exact intent and all other fixed slots equal and exactly one light-domain entity slot. Other intents cannot use this facility. Local administrator-supplied lists are authoritative for the alias-to-entity mapping. No entity IDs are published. This is not a generic wildcard or a tool call.
 

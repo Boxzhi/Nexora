@@ -1,4 +1,4 @@
-// Nexora v0.3.1-preview: targeted live HA checks, no LLM or device control.
+// Nexora v0.4.0-preview: targeted live HA checks, no LLM or device control.
 (async()=>{
  const hass=document.querySelector("home-assistant")?.hass;
  if(!hass)throw Error("找不到 HA 前端");
@@ -38,9 +38,12 @@
   await check("88","无效选项");
   await check("0","水电气");
   await check("电费","电费");
-  await check("燃气阶梯","下一页");
-  await check("9","第三阶梯");
-  await check("上一页","下一页");
+  const tier=await check("燃气阶梯","第三阶梯");
+  tier.passed=tier.passed&&!/^99\. 下一页$/m.test(tier.speech);
+  const fixtures=await check("按灯具","15. 晾衣架灯");
+  fixtures.passed=fixtures.passed&&!/^9[89]\. /m.test(fixtures.speech);
+  await check("12","厨房筒灯");
+  await check("0","按灯具");
   await check("水费历史查询","月度用量");
   await check("EXIT","已退出");
   await check("1","没有有效菜单");
@@ -55,7 +58,7 @@
   await check("exit","已退出");
   report.passed=report.checks.every(x=>x.passed);
  }catch(e){report.error=e.message||String(e);}
- console.log("========== Nexora v0.3.1-preview 真实环境验收 ==========");
+ console.log("========== Nexora v0.4.0-preview 真实环境验收 ==========");
  console.log(JSON.stringify(report,null,2));
  console.log("========== 验收结束 ==========");
 })();

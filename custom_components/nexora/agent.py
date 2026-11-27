@@ -1,10 +1,14 @@
 """Route menu commands locally and preserve the existing conversation fallback."""
 import asyncio
 import logging
-import re
 from uuid import uuid4
 from .capability import Resolver
 from .binding_extractor import BindingExtractor
+from .executor import _slot_equal, _slots_match, execute_readonly
+from .router import Route, RouteDecision, decide, from_reply
+from .semantic import SemanticIndex
+from .fallback import AIConversations, FallbackGuard, GUARD_REPLY, AI_PROMPT
+from .diagnostics import RouteDiagnostics
 
 from homeassistant.components import conversation
 from homeassistant.components.intent_script.helpers import ScriptIntentHandler
@@ -13,30 +17,17 @@ from homeassistant.util import dt as dt_util
 
 _LOGGER = logging.getLogger(__name__)
 
-def _slot_equal(actual, expected):
-    if type(expected) is int:
-        return (type(actual) in (int, float) and actual == expected) or (type(actual) is str and actual == str(expected))
-    return type(actual) is str and actual == expected
-
-def _slots_match(recognized, expected, native_slots):
-    if set(recognized) != set(expected) | set(native_slots):
-        return False
-    if any(not _slot_equal(recognized[k], v) for k, v in expected.items()):
-        return False
-    # The target is resolved by the locally installed, strict native sentence
-    # lists, not by menu input or an LLM. Never accept another domain.
-    for key, domain in native_slots.items():
-        value = recognized[key]
-        if domain != "light" or key != "luxe_light_id" or type(value) is not str or not re.fullmatch(r"light\.[a-z0-9_]+", value):
-            return False
-    return True
-
 class NexoraAgent(conversation.AbstractConversationAgent):
     def __init__(self, hass, entry_id, menu, fallback, bindings=None):
         self.hass, self.entry_id, self.menu, self.fallback = hass, entry_id, menu, fallback
         self.resolver = Resolver(bindings)
         self.resolver.extractor = BindingExtractor()
         self._resolve_lock = asyncio.Lock()
+        self.semantic = SemanticIndex(menu)
+        self.fallback_guard = FallbackGuard(menu)
+        self.ai_sessions = AIConversations()
+        self.route_diagnostics = RouteDiagnostics()
+        self.ai_timeout = 60
 
     @property
     def supported_languages(self):
@@ -54,7 +45,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         return None
 
     async def _prepare_capabilities(self, u, available):
-        # Only menu interaction triggers a lazy mapping refresh. Never execute
+        # Menu or recognized light queries trigger a lazy mapping refresh. Never execute
         # intent scripts for capability detection, or perform supplier I/O.
         if not self.resolver.needs_refresh(u.language):
             return
@@ -81,72 +72,205 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 _LOGGER.debug("Nexora capability mapping deferred",exc_info=True)
             self.resolver.replace_targets(u.language,targets)
 
-    async def async_process(self, u):
-        cid = u.conversation_id or uuid4().hex
-        key = (u.context.user_id, u.device_id, u.satellite_id, cid)
-        handlers = [h for h in intent.async_get(self.hass) if type(h) is ScriptIntentHandler and "speech" in h.config and not any(k in h.config for k in ("action", "reprompt", "card"))]
-        available = {h.intent_type for h in handlers}
-        changed = self.resolver.extractor.refresh(handlers)
+    def _record(self,route,status,started):
+        elapsed=self.route_diagnostics.record(route,status,started)
+        _LOGGER.debug("Nexora route=%s status=%s elapsed_ms=%d",route,status,elapsed)
+
+    def diagnostics_snapshot(self):
+        return self.route_diagnostics.snapshot()
+
+    async def _async_fallback(self,u,cid,key,started):
+        if self.fallback_guard.blocked(u.text):
+            self._record("guard","blocked",started)
+            return self._reply(u,cid,GUARD_REPLY)
+        try:
+            agent=conversation.async_get_agent(self.hass,self.fallback)
+        except (KeyError,ValueError):
+            agent=None
+        if agent is None or agent is self or self.fallback==self.entry_id:
+            self._record("ai","unavailable",started)
+            return self._reply(u,cid,"备用对话代理配置错误。")
+        reserved,ai_cid=self.ai_sessions.reserve(key)
+        if not reserved:
+            self._record("ai","busy",started)
+            return self._reply(u,cid,"AI 对话正在处理，请稍后重试。")
+        try:
+            prompt="\n".join(filter(None,(u.extra_system_prompt,AI_PROMPT)))
+            async with asyncio.timeout(self.ai_timeout):
+                result=await conversation.async_converse(
+                    self.hass,text=u.text,conversation_id=ai_cid,context=u.context,
+                    language=u.language,agent_id=self.fallback,device_id=u.device_id,
+                    satellite_id=u.satellite_id,extra_system_prompt=prompt)
+            response=getattr(result,"response",None)
+            if response is None:
+                self.ai_sessions.fail(key)
+                self._record("ai","invalid_response",started)
+                return self._reply(u,cid,"AI 未返回有效回复，请稍后重试。")
+            if response.as_dict().get("response_type")=="error":
+                self.ai_sessions.fail(key)
+                self._record("ai","error",started)
+                return self._reply(u,cid,"AI 对话暂时不可用，请稍后重试。")
+            returned_id=getattr(result,"conversation_id",None)
+            self.ai_sessions.complete(key,returned_id if returned_id!=cid else None)
+            self._record("ai","completed",started)
+            return conversation.ConversationResult(response=response,conversation_id=cid,
+                                                   continue_conversation=getattr(result,"continue_conversation",False))
+        except TimeoutError:
+            self.ai_sessions.fail(key)
+            self._record("ai","timeout",started)
+            return self._reply(u,cid,"AI 对话超时，请稍后重试。")
+        except asyncio.CancelledError:
+            self.ai_sessions.fail(key)
+            self._record("ai","cancelled",started)
+            raise
+        except Exception:
+            self.ai_sessions.fail(key)
+            self._record("ai","error",started)
+            return self._reply(u,cid,"AI 对话暂时不可用，请稍后重试。")
+        finally:
+            self.ai_sessions.release(key)
+
+    async def _native_registered_query(self,u,visible,today,available):
+        """Preserve exact registered native queries, without executing actions.
+
+        Native recognition follows explicit menu and context handling.
+        The result must uniquely identify a registered capability, and the
+        canonical query is independently validated by the read-only executor.
+        """
+        from .menu import PARAMETERS, parse_parameter
+        # Fixed-slot native synonyms must not regress when AI fallback is guarded.
+        from .semantic import INTENTS
+        candidates=[c for c in self.menu.capabilities.values()
+                    if c.get("intent") in INTENTS and c.get("sentence")
+                    and (not c.get("parameter") or
+                         (c.get("parameter") in PARAMETERS and c.get("intent")=="LuxeUtilityQuery"))]
+        if not candidates:
+            return None
+        try:
+            native=conversation.async_get_agent(self.hass,"conversation.home_assistant")
+            recognize=getattr(native,"async_recognize_intent",None)
+            triggers=getattr(native,"_trigger_intents_config",None)
+            if not callable(recognize) or not isinstance(triggers,dict) or triggers.get("intents"):
+                return None
+            probe=conversation.ConversationInput(text=u.text,context=u.context,conversation_id=None,
+                device_id=u.device_id,satellite_id=u.satellite_id,language=u.language,agent_id="conversation.home_assistant")
+            async with asyncio.timeout(3):
+                result=await recognize(probe,strict_intents_only=True)
+            if result is None or result.unmatched_entities or result.intent.name not in INTENTS:
+                return None
+            slots={item.name:item.value for item in result.entities_list}
+            if result.intent.name=="LuxeLightQuery" and "luxe_light_id" in slots:
+                await self._prepare_capabilities(u,available)
+            matches=[]
+            for cap in candidates:
+                if cap["intent"]!=result.intent.name:
+                    continue
+                if not cap.get("parameter"):
+                    if not _slots_match(slots,cap["slots"],cap.get("native_slots",{})):
+                        continue
+                    if cap.get("native_slots"):
+                        # Match the original recognized entity, not merely its domain.
+                        if self.resolver.targets.get(cap["category"])!=slots.get("luxe_light_id"):
+                            continue
+                    matches.append((cap,{}))
+                    continue
+                fields=PARAMETERS[cap["parameter"]]
+                mapping=cap["parameter_slots"]
+                values=[]
+                for field in fields:
+                    value=slots.get(mapping[field])
+                    if type(value) is int:
+                        values.append(str(value))
+                    elif type(value) is str and value.isascii() and value.isdigit():
+                        values.append(value)
+                    else:
+                        break
+                if len(values)!=len(fields):
+                    continue
+                try:
+                    params=parse_parameter(cap["parameter"],"-".join(values),today,
+                        base_year=today.year-1 if cap.get("parameter_year_offset")==-1 else today.year)
+                except ValueError:
+                    continue
+                expected={**cap["slots"],**{mapping[k]:v for k,v in params.items()}}
+                if _slots_match(slots,expected,cap.get("native_slots",{})):
+                    matches.append((cap,params))
+            if len(matches)!=1:
+                return None
+            cap,params=matches[0]
+            if not self.menu._available(cap["id"],visible):
+                from .menu import Reply
+                return RouteDecision(Route.LOCAL_REPLY,Reply("该查询当前不可用，请发送 help。"),"local_native")
+            return RouteDecision(Route.LOCAL_QUERY,self.menu._query(cap["id"],params),"local_native")
+        except Exception:
+            return None
+
+    async def async_process(self,u):
+        """Standard HA Conversation Agent entry; no transport-specific protocols."""
+        started=self.route_diagnostics.clock()
+        cid=u.conversation_id or uuid4().hex
+        key=(u.context.user_id,u.device_id,u.satellite_id,cid)
+        generation=self.menu.followups.begin(key)
+        handlers=[h for h in intent.async_get(self.hass)
+                  if type(h) is ScriptIntentHandler and "speech" in h.config
+                  and not any(k in h.config for k in ("action","reprompt","card"))]
+        available={h.intent_type for h in handlers}
+        changed=self.resolver.extractor.refresh(handlers)
         if "LuxeLightQuery" in changed:
             self.resolver.targets.clear()
             self.resolver.modes.clear()
             self.resolver.invalidate()
-        from .menu import HELP, BACK, NEXT, PREV, TRANSLATE
-        t=u.text.strip().casefold().translate(TRANSLATE)
-        if t in HELP|BACK|NEXT|PREV or t in self.menu.aliases or re.fullmatch(r"[1-8](?:\.[1-8])*",t):
+        from .menu import HELP,BACK,NEXT,PREV,TRANSLATE,PATH_RE
+        text=u.text.strip().casefold().translate(TRANSLATE)
+        if text in HELP|BACK|NEXT|PREV or text in self.menu.aliases or PATH_RE.fullmatch(text):
             await self._prepare_capabilities(u,available)
         get_state=getattr(getattr(self.hass,"states",None),"get",lambda _:None)
-        statuses={}
         def visible(cap):
-            cid=cap["id"]
-            if cid not in statuses:
-                statuses[cid]=cap["intent"] in available and self.resolver.status(cap,get_state)!="hidden"
-            return statuses[cid]
-        reply = self.menu.route(key, u.text, visible, today=dt_util.now().date())
-        if reply is None:
+            # Re-evaluate after a lazy light mapping refresh.
+            return cap["intent"] in available and self.resolver.status(cap,get_state)!="hidden"
+        if not self.menu.followups.is_current(key,generation):
+            return self._reply(u,cid,"查询会话已更新，请重新发送。")
+        # Always visit the menu state machine: independent messages cancel old
+        # parameter prompts and clear stale business context before any await.
+        today=dt_util.now().date()
+        decision=decide(self.menu,key,u.text,visible,today=today)
+        if decision.route is Route.FALLBACK:
+            native=await self._native_registered_query(u,visible,today,available)
+            if not self.menu.followups.is_current(key,generation):
+                return self._reply(u,cid,"查询会话已更新，请重新发送。")
+            if native is not None:
+                decision=native
+            else:
+                match=self.semantic.match(u.text)
+                if match is not None:
+                    if match.capability and self.menu.capabilities[match.capability].get("native_slots"):
+                        await self._prepare_capabilities(u,available)
+                    if not self.menu.followups.is_current(key,generation):
+                        return self._reply(u,cid,"查询会话已更新，请重新发送。")
+                    decision=from_reply(self.semantic.reply(match,visible),"local_semantic")
+        if decision.route is Route.FALLBACK:
             self.menu.followups.clear(key)
-            try:
-                agent = conversation.async_get_agent(self.hass, self.fallback)
-            except (KeyError, ValueError):
-                agent = None
-            if agent is None or agent is self or self.fallback == self.entry_id:
-                return self._reply(u, cid, "备用对话代理配置错误。")
-            return await conversation.async_converse(self.hass, text=u.text, conversation_id=u.conversation_id, context=u.context, language=u.language, agent_id=self.fallback, device_id=u.device_id, satellite_id=u.satellite_id, extra_system_prompt=u.extra_system_prompt)
-        if reply.capability is None:
+            # No local-state writes after this await; late AI replies cannot
+            # restore old prompts or business context.
+            return await self._async_fallback(u,cid,key,started)
+        reply = decision.reply
+        route=decision.source
+        if decision.route is Route.LOCAL_REPLY:
+            self._record(route,"reply",started)
             return self._reply(u, cid, reply.text)
         self.menu.followups.clear(key)
         cap = self.menu.capabilities[reply.capability]
-        handler = self._handler(cap["intent"])
-        if handler is None:
-            return self._reply(u, cid, "只读查询配置不可用，请检查意图库。")
-        try:
-            async with asyncio.timeout(5):
-                # Fail closed if HA recognition APIs or sentence-trigger registry differ.
-                native = conversation.async_get_agent(self.hass, "conversation.home_assistant")
-                recognize = getattr(native, "async_recognize_intent", None)
-                triggers = getattr(native, "_trigger_intents_config", None)
-                if not callable(recognize) or not isinstance(triggers, dict) or triggers.get("intents"):
-                    return self._reply(u, cid, "本地严格识别不可用，请检查 HA 版本或句式触发器。")
-                probe = conversation.ConversationInput(text=reply.sentence, context=u.context, conversation_id=None, device_id=u.device_id, satellite_id=u.satellite_id, language=u.language, agent_id="conversation.home_assistant")
-                result = await recognize(probe, strict_intents_only=True)
-                if result is None or result.unmatched_entities or result.intent.name != cap["intent"]:
-                    return self._reply(u, cid, "该问句与已安装意图库不匹配，请检查版本。")
-                recognized = {item.name: item.value for item in result.entities_list}
-                expected = reply.slots
-                if not _slots_match(recognized, expected, cap.get("native_slots", {})) or self._handler(cap["intent"]) is not handler:
-                    return self._reply(u, cid, "查询参数与已安装意图库不一致，请检查版本。")
-                if cap.get("native_slots"):
-                    mapped=self.resolver.targets.get(cap["category"])
-                    if mapped is not None and mapped!=recognized["luxe_light_id"]:
-                        self.resolver.invalidate()
-                        return self._reply(u,cid,"该查询目标已变化，请发送 help 刷新菜单。")
-                if self.resolver.status(cap,get_state)=="hidden":
-                    return self._reply(u,cid,"该查询已不可用，请发送 help 刷新菜单。")
-                # No await between handler identity validation and dispatch.
-                response = await intent.async_handle(self.hass, "conversation", cap["intent"], {k:{"value":v,"text":str(v)} for k,v in recognized.items()}, reply.sentence, u.context, u.language, assistant="conversation", conversation_agent_id="conversation.home_assistant")
-        except Exception:
-            _LOGGER.debug("Nexora local query failed", exc_info=True)
-            return self._reply(u, cid, "本地查询暂时失败，请稍后重试。")
-        if response.as_dict().get("response_type")=="action_done":
-            self.menu.followups.remember(key,reply.capability)
+        execution = await execute_readonly(
+            hass=self.hass, conversation_api=conversation, intent_api=intent,
+            handler_for=self._handler, resolver=self.resolver, cap=cap,
+            reply=reply, u=u, get_state=get_state, logger=_LOGGER,
+        )
+        if execution.error is not None:
+            self._record(route,"error",started)
+            return self._reply(u, cid, execution.error)
+        response = execution.response
+        ok=response.as_dict().get("response_type")=="action_done"
+        if ok:
+            self.menu.followups.complete(key,generation,reply.capability)
+        self._record(route,"completed" if ok else "error",started)
         return conversation.ConversationResult(response=response, conversation_id=cid)

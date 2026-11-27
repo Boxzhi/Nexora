@@ -27,8 +27,8 @@ class Tests(unittest.TestCase):
     def select_id(self,node,cap,k="a"):
         children=self.m.children[node]
         i=next(i for i,x in enumerate(children) if x.id==cap)
-        self.m._render(k,node,lambda c:True,i//8)
-        return self.route(str(i%8+1),k)
+        self.m._render(k,node,lambda c:True,i//mod.PAGE_SIZE)
+        return self.route(str(i%mod.PAGE_SIZE+1),k)
     def test_all_metrics(self):
         pairs={(x["slots"]["utility_kind"],x["slots"]["utility_metric"]) for x in CAT["capabilities"]}
         self.assertEqual(len(pairs),63)
@@ -92,10 +92,11 @@ class Tests(unittest.TestCase):
         self.route("help")
         self.assertIn("不可用",self.route("1",available=lambda _:False).text)
     def test_page(self):
-        self.route("燃气阶梯")
-        self.assertIn("9. 下一页",self.route("上一页").text)
-        self.assertIn("第三阶梯",self.route("9").text)
-        self.assertIn("9. 下一页",self.route("上一页").text)
+        r=self.route("燃气阶梯")
+        self.assertIn("第三阶梯",r.text)
+        self.assertNotIn("99. 下一页",r.text)
+        expected=self.m.sessions["a"].shown[8]
+        self.assertEqual(self.route("9").capability,expected)
     def test_date(self):
         node="utility.electric.j.history.day"
         self.assertIn("YYYY-MM-DD",self.select_id(node,node+".h_day_explicit").text)
@@ -179,9 +180,10 @@ class AllCatalogTests(unittest.TestCase):
             self.assertIn("已退出",self.m.route("a",cmd).text)
             self.assertIn("没有有效",self.m.route("a","1").text)
     def test_page_aliases(self):
-        self.m.route("a","燃气阶梯")
-        self.assertIn("第三阶梯",self.m.route("a","NEXT").text)
-        self.assertIn("9. 下一页",self.m.route("a","prev").text)
+        initial=self.m.route("a","燃气阶梯").text
+        self.assertIn("第三阶梯",initial)
+        self.assertEqual(self.m.route("a","NEXT").text,initial)
+        self.assertEqual(self.m.route("a","prev").text,initial)
         self.assertIn("燃气费",self.m.route("a","BACK").text)
     def test_counts(self):
         self.assertEqual({c["module"]["id"]:len(c["capabilities"]) for c in self.catalogs},{"utility":136,"lights":144,"appliance":78,"home":85})
@@ -290,5 +292,160 @@ class V03Tests(unittest.TestCase):
     def test_context_does_not_infer_other_unit(self):
         self.m.followups.remember("a","utility.water.balance")
         self.assertIsNone(self.route("上个月用了多少度"))
+
+    def test_fast_context_generation_and_metric_switch(self):
+        f=self.m.followups
+        cap=next(c for c in self.m.capabilities.values()
+                 if c["slots"]=={"utility_kind":"e","utility_metric":"h_month_usage",
+                                  "luxe_utility_property":"j","utility_period":"current"})
+        old=f.begin("a")
+        newer=f.begin("a")
+        self.assertFalse(f.complete("a",old,cap["id"]))
+        self.assertTrue(f.complete("a",newer,cap["id"]))
+        q=self.route("上个月呢")
+        self.assertEqual(q.slots["utility_period"],"previous")
+        f.remember("a",q.capability)
+        q=self.route("费用呢")
+        self.assertEqual(q.slots["utility_metric"],"h_month_cost")
+        self.assertEqual(q.slots["utility_period"],"previous")
+        f.remember("a",q.capability)
+        q=self.route("另一个账户呢")
+        self.assertEqual(q.slots["luxe_utility_property"],"l")
+        self.assertEqual(q.slots["utility_period"],"previous")
+        self.assertEqual(q.slots["utility_metric"],"h_month_cost")
+
+    def test_context_clarification_accepts_specific_bare_metric(self):
+        f=self.m.followups
+        f.remember("a","utility.water.balance")
+        self.assertIn("用量还是费用",self.route("上个月呢").text)
+        self.assertTrue(f.is_followup_message("用水量"))
+        q=self.route("用水量")
+        self.assertEqual(q.slots["utility_metric"],"history_usage")
+        self.assertEqual(q.slots["utility_period"],"previous")
+        f.remember("a",q.capability)
+        self.assertTrue(f.is_followup_message("费用"))
+        self.assertEqual(self.route("费用").slots["utility_metric"],"history_cost")
+
+
+class SemanticTests(unittest.TestCase):
+    def setUp(self):
+        from importlib import import_module
+        SemanticIndex=import_module(mod.__package__+".semantic").SemanticIndex
+        self.menu=mod.Menu([json.loads(p.read_text()) for p in sorted((BASE/"catalogs").glob("*.json"))],settings=SET)
+        self.index=SemanticIndex(self.menu)
+    def test_all_four_modules(self):
+        for text,cid in {
+            "阳台光照度":"home.presence.balcony.lux_balcony",
+            "阳台光照强度是多少":"home.presence.balcony.lux_balcony",
+            "请问阳台的光照度是多少？":"home.presence.balcony.lux_balcony",
+            "主卧的温度":"home.env.master.temp_master",
+            "客厅吸顶灯的亮度":"lights.fixtures.living_ceiling.brightness",
+            "洗衣机还剩多久":"appliance.washer.remaining",
+            "净水器当前状态":"appliance.purifier.status",
+            "水费还有多少钱":"utility.water.balance",
+            "电费余额是多少":"utility.electric.j.basic.balance",
+            "第二账户的电费余额":"utility.electric.l.basic.balance",
+        }.items():
+            with self.subTest(text=text):
+                self.assertEqual(self.index.match(text).capability,cid)
+    def test_ambiguous_brightness_and_hidden_capability(self):
+        for text in ("阳台有多亮","阳台亮度是多少"):
+            self.assertIn("还是",self.index.match(text).clarification)
+        match=self.index.match("爷爷在家吗")
+        self.assertEqual(match.capability,"home.family.person_grandfather")
+        self.assertIn("不可用",self.index.reply(match,lambda c:False).text)
+    def test_reject_controls_negation_compound_and_unknown(self):
+        for text in ("打开客厅灯","把客厅吸顶灯亮度调到50%","阳台光照度不要查",
+                     "阳台光照度是多少然后开灯","主卧温度和水费余额",
+                     "昨天阳台光照度","不存在的房间光照度","2024年3月电费是多少"):
+            with self.subTest(text=text):
+                self.assertIsNone(self.index.match(text))
+        self.assertEqual(self.index.match("阳台无人多久了").capability,"home.presence.balcony.duration_absent_balcony")
+
+
+class Pagination20Tests(unittest.TestCase):
+    def make_menu(self,n):
+        catalog={"schema_version":1,"module":{"id":"paging","name":"分页测试","order":1},
+                 "categories":[{"id":"paging.group","name":"查询组","order":1}],
+                 "capabilities":[{"id":f"paging.group.q{i}","category":"paging.group",
+                                  "name":f"项目{i}","order":i,"intent":"TestQuery",
+                                  "sentence":f"测试项目{i}","slots":{"index":i},"read_only":True}
+                                  for i in range(1,n+1)]}
+        return mod.Menu([catalog])
+
+    def test_exact_20_and_multidigit_selection(self):
+        for n in (8,9,15,19,20):
+            with self.subTest(n=n):
+                m=self.make_menu(n)
+                r=m.route("a","查询组")
+                self.assertIn(f"{n}. 项目{n}",r.text)
+                self.assertNotIn("98. 上一页",r.text)
+                self.assertNotIn("99. 下一页",r.text)
+                self.assertEqual(m.route("a",str(n)).slots["index"],n)
+                self.assertIn("无效选项",m.route("a",str(n+1)).text)
+                self.assertIn("无效选项",m.route("a","01").text)
+
+    def test_three_pages_numeric_navigation_and_aliases(self):
+        m=self.make_menu(41)
+        first=m.route("a","查询组").text
+        self.assertIn("20. 项目20",first)
+        self.assertIn("99. 下一页",first)
+        self.assertNotIn("98. 上一页",first)
+        second=m.route("a","99").text
+        self.assertIn("1. 项目21",second)
+        self.assertIn("20. 项目40",second)
+        self.assertIn("98. 上一页",second)
+        self.assertIn("99. 下一页",second)
+        third=m.route("a","下一页").text
+        self.assertIn("1. 项目41",third)
+        self.assertNotIn("99. 下一页",third)
+        self.assertEqual(m.route("a","99").text,third)
+        self.assertEqual(m.route("a","98").text,second)
+        self.assertEqual(m.route("a","PREV").text,first)
+        self.assertEqual(m.route("a","98").text,first)
+        self.assertEqual(m.route("a","NEXT").text,second)
+        self.assertEqual(m.route("a","上一页").text,first)
+        self.assertEqual(m.route("a","9").slots["index"],9)
+        self.assertEqual(m.route("a","0").text.splitlines()[0],"分页测试")
+
+    def test_multi_digit_path_and_atomic_rollback(self):
+        m=self.make_menu(20)
+        m.route("a","help")
+        self.assertEqual(m.route("a","1.1.20").slots["index"],20)
+        m.route("a","help")
+        for path in ("1.1.99","1.1.98","1.1.21","1.1.01","1.1.12.1"):
+            original=m.sessions["a"]
+            self.assertIn("无效数字路径",m.route("a",path).text)
+            self.assertEqual(m.sessions["a"],original)
+
+    def test_filtering_before_pagination_and_snapshot(self):
+        m=self.make_menu(21)
+        visible=lambda c:c["slots"]["index"]!=3
+        r=m.route("a","查询组",visible)
+        self.assertNotIn("99. 下一页",r.text)
+        self.assertIn("20. 项目21",r.text)
+        self.assertEqual(m.route("a","20",visible).slots["index"],21)
+        self.assertIn("不可用",m.route("a","20",lambda c:c["slots"]["index"]!=21).text)
+
+    def test_existing_lights_washer_bath_all_fit_one_page(self):
+        m=mod.Menu([json.loads(p.read_text()) for p in sorted((BASE/"catalogs").glob("*.json"))],settings=SET)
+        for name,n in (("按灯具",15),("洗衣机",19),("浴霸",16)):
+            r=m.route("a",name)
+            self.assertEqual(len(m.sessions["a"].shown),n)
+            self.assertNotIn("99. 下一页",r.text)
+            self.assertNotIn("98. 上一页",r.text)
+        m.route("a","按灯具")
+        self.assertIn("厨房筒灯",m.route("a","12").text)
+        m.route("a","按灯具")
+        self.assertIn("厨房筒灯",m.route("a","１２").text)
+
+    def test_date_parameter_has_priority_over_numeric_choices_and_pages(self):
+        m=mod.Menu([CAT],settings=SET)
+        m.route("a","help")
+        self.assertIn("YYYY-MM-DD",m.route("a","1.1.1.2.1.4").text)
+        for command in ("98","99","12"):
+            self.assertIn("输入无效",m.route("a",command).text)
+            self.assertIsNotNone(m.sessions["a"].pending)
+        self.assertEqual(m.route("a","2024-01-02",today=date(2026,11,27)).slots["luxe_utility_day"],2)
 
 if __name__=="__main__":unittest.main()
