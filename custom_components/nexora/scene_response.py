@@ -5,6 +5,7 @@ change data coverage. Unfamiliar, conflicting and incomplete replies retain
 their original wording, and failures remain attributed to the member.
 """
 import re
+from .reply_format import render_section
 
 GOOD={"ok","partial_data","data_gap","state_limit","capability_limit"}
 MONEY=r"-?\d+(?:\.\d+)?元"
@@ -207,4 +208,4 @@ def compose_menu(plan,run,label,normalize):
     # Multi-field scenes get a readable title and stable result order.
     if len(rows)==1 and not plan.supplements and rows[0][1]!="error" and not scene.startswith("scene.lights.fixtures."):
         return rows[0][2],completed
-    return heading+"\n\n"+"\n".join(lines or ["没有可用的查询结果。"]),completed
+    return render_section(heading,lines),completed

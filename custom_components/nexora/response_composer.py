@@ -1,6 +1,7 @@
 """Render actual read-only outcomes; never reconstruct facts from guessed values."""
 from dataclasses import dataclass
 import re
+from .reply_format import format_known, render_lines
 
 @dataclass(frozen=True)
 class Composed:
@@ -24,11 +25,7 @@ def normalize_speech(k, speech):
         value=value.replace("燃气燃气账户余额","燃气账户余额",1)
     if (k.family,k.target,k.metric)==("appliance","b","heatremain"):
         value=value.replace("米家浴霸浴霸延时关闭：","米家浴霸延时关闭：",1)
-    if (k.family,k.target,k.metric)==("home","all","overview"):
-        # Keep every original sentence and qualification, only add paragraph
-        # boundaries at known section starts.
-        value=re.sub(r"(?<=。)(?=(?:入户门锁：|\d+组灯光中，|已监测家电运行：|\d+个有效监测区域平均温度：|未确认到异常，但部分项目无法核实；))","\n",value)
-    return _format_quantities(value)
+    return format_known(k,_format_quantities(value))
 
 def _clean(outcome):
     return normalize_speech(outcome.step.key,outcome.speech)
@@ -154,4 +151,4 @@ def compose(plan,run,label):
                 append(label(step)+"："+value)
             else:
                 append(value)
-    return Composed("\n".join(lines) or "没有可用的查询结果。",primary_ok)
+    return Composed(render_lines(lines) or "没有可用的查询结果。",primary_ok)
