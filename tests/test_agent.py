@@ -96,10 +96,20 @@ class Tests(IsolatedAsyncioTestCase):
         self.it.async_handle.assert_not_awaited()
     async def test_fallback_context(self):
         self.menu.route=lambda *a,**kw:None
-        self.conv.async_converse=AsyncMock(return_value="fallback response")
-        self.assertEqual(await self.agent.async_process(self.u),"fallback response")
-        self.assertEqual(self.conv.async_converse.call_args.kwargs["conversation_id"],"test")
-        self.assertEqual(self.conv.async_converse.call_args.kwargs["extra_system_prompt"],"p")
+        self.u.text="你好"
+        response=Response("zh-CN")
+        response.async_set_speech("你好")
+        self.conv.async_converse=AsyncMock(return_value=SimpleNamespace(response=response,conversation_id="ai-session"))
+        r=await self.agent.async_process(self.u)
+        self.assertEqual(r.conversation_id,"test")
+        self.assertIsNone(self.conv.async_converse.call_args.kwargs["conversation_id"])
+        self.assertIn("p",self.conv.async_converse.call_args.kwargs["extra_system_prompt"])
+        self.assertIn("不得推测",self.conv.async_converse.call_args.kwargs["extra_system_prompt"])
+        await self.agent.async_process(self.u)
+        self.assertEqual(self.conv.async_converse.call_args.kwargs["conversation_id"],"ai-session")
+        self.u.conversation_id="other"
+        await self.agent.async_process(self.u)
+        self.assertIsNone(self.conv.async_converse.call_args.kwargs["conversation_id"])
     def test_numeric_slots(self):
         self.assertTrue(self.a._slot_equal(2024.0,2024))
         self.assertFalse(self.a._slot_equal(True,1))
@@ -170,8 +180,11 @@ class Tests(IsolatedAsyncioTestCase):
 
     async def test_fallback_only_on_unmatched_route(self):
         self.menu.route=lambda *a,**kw:None
-        self.conv.async_converse=AsyncMock(return_value="fallback")
-        self.assertEqual(await self.agent.async_process(self.u),"fallback")
+        self.u.text="你好"
+        response=Response("zh-CN")
+        response.async_set_speech("fallback")
+        self.conv.async_converse=AsyncMock(return_value=SimpleNamespace(response=response,conversation_id="ai"))
+        self.assertEqual((await self.agent.async_process(self.u)).response.speech,"fallback")
         self.conv.async_converse.assert_awaited_once()
         self.it.async_handle.assert_not_awaited()
 
@@ -274,4 +287,97 @@ class Tests(IsolatedAsyncioTestCase):
         r=await self.agent.async_process_semantic(self.u)
         self.assertIn("查询能力已变化",r.response.speech)
         self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_unmatched_home_query_and_controls_blocked_before_ai(self):
+        self.menu.route=lambda *a,**kw:None
+        for text in ("阳台光照传感器是不是坏了","帮我打开客厅灯","我家还剩多少钱","关掉空调","sensor.foo","它呢"):
+            self.u.text=text
+            r=await self.agent.async_process(self.u)
+            self.assertIn("无法确认",r.response.speech)
+        self.conv.async_converse.assert_not_awaited()
+        self.it.async_handle.assert_not_awaited()
+        self.assertEqual(self.agent.diagnostics_snapshot()["guard:blocked"]["count"],6)
+
+    async def test_ai_timeout_releases_session_and_never_retries(self):
+        self.menu.route=lambda *a,**kw:None
+        self.u.text="讲个故事"
+        self.agent.ai_timeout=0.01
+        async def slow(*args,**kw):
+            await asyncio.sleep(10)
+        self.conv.async_converse=AsyncMock(side_effect=slow)
+        r=await self.agent.async_process(self.u)
+        self.assertIn("超时",r.response.speech)
+        self.conv.async_converse.assert_awaited_once()
+        self.assertFalse(self.agent.ai_sessions.active)
+        self.assertFalse(self.agent.ai_sessions.sessions)
+        self.assertEqual(self.agent.diagnostics_snapshot()["ai:timeout"]["count"],1)
+
+    async def test_ai_error_never_replays(self):
+        self.menu.route=lambda *a,**kw:None
+        self.u.text="讲个故事"
+        self.conv.async_converse=AsyncMock(side_effect=RuntimeError("test"))
+        r=await self.agent.async_process(self.u)
+        self.assertIn("暂时不可用",r.response.speech)
+        self.conv.async_converse.assert_awaited_once()
+        self.assertFalse(self.agent.ai_sessions.active)
+
+    async def test_ai_busy_does_not_block_menu_or_overwrite_local_context(self):
+        self.menu.route=lambda *a,**kw:None if a[1]=="讲个故事" else SimpleNamespace(capability="water",sentence="水费余额是多少",slots=self.slots,text="")
+        self.u.text="讲个故事"
+        started=asyncio.Event()
+        release=asyncio.Event()
+        async def slow(*args,**kw):
+            started.set()
+            await release.wait()
+            return SimpleNamespace(response=Response("zh-CN"),conversation_id="ai")
+        self.conv.async_converse=AsyncMock(side_effect=slow)
+        task=asyncio.create_task(self.agent.async_process(self.u))
+        await started.wait()
+        try:
+            r=await self.agent.async_process(self.u)
+            self.assertIn("正在处理",r.response.speech)
+            self.u.text="1"
+            remembered=[]
+            self.menu.followups.remember=lambda *args:remembered.append(args)
+            await self.agent.async_process(self.u)
+            self.assertEqual(len(remembered),1)
+        finally:
+            release.set()
+            await task
+        self.assertEqual(len(remembered),1)
+        self.conv.async_converse.assert_awaited_once()
+
+    async def test_persisted_guard_request_cannot_fall_back(self):
+        self.menu.route=lambda *a,**kw:None
+        self.u.text="你好"
+        r=await self.agent.async_process_guarded(self.u)
+        self.assertIn("无法确认",r.response.speech)
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_ordinary_ai_turn_never_touches_business_context(self):
+        from unittest.mock import Mock
+        self.u.text="讲个故事"
+        self.menu.followups.begin=Mock()
+        self.menu.followups.clear=Mock()
+        self.menu.route=Mock(side_effect=AssertionError("local state touched"))
+        self.conv.async_converse=AsyncMock(return_value=SimpleNamespace(response=Response("zh-CN"),conversation_id="ai"))
+        await self.agent.async_process(self.u)
+        self.menu.followups.begin.assert_not_called()
+        self.menu.followups.clear.assert_not_called()
+        self.menu.route.assert_not_called()
+
+    async def test_guard_preserves_registered_exact_parameter_query(self):
+        self.menu.route=lambda *a,**kw:None
+        self.u.text="2024年3月1日用了多少度电"
+        cap={"id":"water","intent":"LuxeUtilityQuery","parameter":"date",
+             "parameter_slots":{"year":"y","month":"m","day":"d"},
+             "slots":{"utility_kind":"e","utility_metric":"h_day"}}
+        self.menu.capabilities={"water":cap}
+        self.slots={**cap["slots"],"y":2024,"m":3,"d":1}
+        self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in self.slots.items()]
+        self.menu._available=lambda cid,visible:visible(cap)
+        self.menu._query=lambda cid,p:SimpleNamespace(capability=cid,sentence=self.u.text,slots=self.slots)
+        await self.agent.async_process(self.u)
+        self.it.async_handle.assert_awaited_once()
         self.conv.async_converse.assert_not_awaited()

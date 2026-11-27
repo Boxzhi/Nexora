@@ -16,18 +16,21 @@ class Route(str, Enum):
 class RouteDecision:
     route: Route
     reply: Any = None
+    source: str = "local_menu"
 
 
 def decide(menu, key, text, visible, *, today, semantic=None, semantic_match=None):
     """Preserve the existing menu/follow-up precedence and state transitions."""
+    source="local_menu"
     reply = menu.route(key, text, visible, today=today)
     if reply is None and semantic is not None and semantic_match is not None:
         reply = semantic.reply(semantic_match, visible)
+        source="local_semantic"
     if reply is None:
         return RouteDecision(Route.FALLBACK)
     if reply.capability is None:
-        return RouteDecision(Route.LOCAL_REPLY, reply)
-    return RouteDecision(Route.LOCAL_QUERY, reply)
+        return RouteDecision(Route.LOCAL_REPLY, reply, source)
+    return RouteDecision(Route.LOCAL_QUERY, reply, source)
 
 
 def is_menu_message(menu, text):

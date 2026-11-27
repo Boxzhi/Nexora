@@ -6,8 +6,10 @@ from uuid import uuid4
 from .capability import Resolver
 from .binding_extractor import BindingExtractor
 from .executor import _slot_equal, _slots_match, execute_readonly
-from .router import Route, decide, is_menu_message
+from .router import Route, RouteDecision, decide, is_menu_message
 from .semantic import SemanticIndex
+from .fallback import AIConversations, FallbackGuard, GUARD_REPLY, AI_PROMPT
+from .diagnostics import RouteDiagnostics
 
 from homeassistant.components import conversation
 from homeassistant.components.intent_script.helpers import ScriptIntentHandler
@@ -23,6 +25,10 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         self.resolver.extractor = BindingExtractor()
         self._resolve_lock = asyncio.Lock()
         self.semantic = SemanticIndex(menu)
+        self.fallback_guard = FallbackGuard(menu)
+        self.ai_sessions = AIConversations()
+        self.route_diagnostics = RouteDiagnostics()
+        self.ai_timeout = 60
 
     @property
     def supported_languages(self):
@@ -121,9 +127,142 @@ class NexoraAgent(conversation.AbstractConversationAgent):
     async def async_process(self, u):
         return await self._async_process(u)
 
-    async def _async_process(self, u, *, menu_only=False):
+    guard_protocol_version = 1
+
+    def is_guarded_message(self,text):
+        return self.fallback_guard.blocked(text)
+
+    async def async_process_guarded(self,u):
+        # Re-run local routing in case a verified capability is now available.
+        # A persisted guarded turn may never fall back to a tool-enabled agent.
+        return await self._async_process(u,menu_only=True,guard_only=True)
+
+    def _record(self,route,status,started):
+        elapsed=self.route_diagnostics.record(route,status,started)
+        _LOGGER.debug("Nexora route=%s status=%s elapsed_ms=%d",route,status,elapsed)
+
+    def diagnostics_snapshot(self):
+        return self.route_diagnostics.snapshot()
+
+    async def _async_fallback(self,u,cid,key,started):
+        if self.fallback_guard.blocked(u.text):
+            self._record("guard","blocked",started)
+            return self._reply(u,cid,GUARD_REPLY)
+        try:
+            agent=conversation.async_get_agent(self.hass,self.fallback)
+        except (KeyError,ValueError):
+            agent=None
+        if agent is None or agent is self or self.fallback==self.entry_id:
+            self._record("ai","unavailable",started)
+            return self._reply(u,cid,"备用对话代理配置错误。")
+        reserved,ai_cid=self.ai_sessions.reserve(key)
+        if not reserved:
+            self._record("ai","busy",started)
+            return self._reply(u,cid,"AI 对话正在处理，请稍后重试。")
+        try:
+            prompt="\n".join(filter(None,(u.extra_system_prompt,AI_PROMPT)))
+            async with asyncio.timeout(self.ai_timeout):
+                result=await conversation.async_converse(
+                    self.hass,text=u.text,conversation_id=ai_cid,context=u.context,
+                    language=u.language,agent_id=self.fallback,device_id=u.device_id,
+                    satellite_id=u.satellite_id,extra_system_prompt=prompt)
+            response=getattr(result,"response",None)
+            if response is None:
+                self.ai_sessions.fail(key)
+                self._record("ai","invalid_response",started)
+                return self._reply(u,cid,"AI 未返回有效回复，请稍后重试。")
+            if response.as_dict().get("response_type")=="error":
+                self.ai_sessions.fail(key)
+                self._record("ai","error",started)
+                return self._reply(u,cid,"AI 对话暂时不可用，请稍后重试。")
+            returned_id=getattr(result,"conversation_id",None)
+            self.ai_sessions.complete(key,returned_id if returned_id!=cid else None)
+            self._record("ai","completed",started)
+            return conversation.ConversationResult(response=response,conversation_id=cid,
+                                                   continue_conversation=getattr(result,"continue_conversation",False))
+        except TimeoutError:
+            self.ai_sessions.fail(key)
+            self._record("ai","timeout",started)
+            return self._reply(u,cid,"AI 对话超时，请稍后重试。")
+        except asyncio.CancelledError:
+            self.ai_sessions.fail(key)
+            self._record("ai","cancelled",started)
+            raise
+        except Exception:
+            self.ai_sessions.fail(key)
+            self._record("ai","error",started)
+            return self._reply(u,cid,"AI 对话暂时不可用，请稍后重试。")
+        finally:
+            self.ai_sessions.release(key)
+
+    async def _native_parameter_query(self,u,visible,today):
+        """Preserve exact registered parameterized queries, without executing actions.
+
+        Native recognition is only attempted for unresolved household input.
+        The result must uniquely identify a registered capability, and the
+        canonical query is independently validated by the read-only executor.
+        """
+        from .menu import PARAMETERS, parse_parameter
+        candidates=[c for c in self.menu.capabilities.values()
+                    if c.get("parameter") in PARAMETERS and c.get("intent")=="LuxeUtilityQuery"]
+        if not candidates:
+            return None
+        try:
+            native=conversation.async_get_agent(self.hass,"conversation.home_assistant")
+            recognize=getattr(native,"async_recognize_intent",None)
+            triggers=getattr(native,"_trigger_intents_config",None)
+            if not callable(recognize) or not isinstance(triggers,dict) or triggers.get("intents"):
+                return None
+            probe=conversation.ConversationInput(text=u.text,context=u.context,conversation_id=None,
+                device_id=u.device_id,satellite_id=u.satellite_id,language=u.language,agent_id="conversation.home_assistant")
+            async with asyncio.timeout(3):
+                result=await recognize(probe,strict_intents_only=True)
+            if result is None or result.unmatched_entities or result.intent.name!="LuxeUtilityQuery":
+                return None
+            slots={item.name:item.value for item in result.entities_list}
+            matches=[]
+            for cap in candidates:
+                fields=PARAMETERS[cap["parameter"]]
+                mapping=cap["parameter_slots"]
+                values=[]
+                for field in fields:
+                    value=slots.get(mapping[field])
+                    if type(value) is int:
+                        values.append(str(value))
+                    elif type(value) is str and value.isascii() and value.isdigit():
+                        values.append(value)
+                    else:
+                        break
+                if len(values)!=len(fields):
+                    continue
+                try:
+                    params=parse_parameter(cap["parameter"],"-".join(values),today,
+                        base_year=today.year-1 if cap.get("parameter_year_offset")==-1 else today.year)
+                except ValueError:
+                    continue
+                expected={**cap["slots"],**{mapping[k]:v for k,v in params.items()}}
+                if _slots_match(slots,expected,cap.get("native_slots",{})):
+                    matches.append((cap,params))
+            if len(matches)!=1:
+                return None
+            cap,params=matches[0]
+            if not self.menu._available(cap["id"],visible):
+                from .menu import Reply
+                return RouteDecision(Route.LOCAL_REPLY,Reply("该查询当前不可用，请发送 help。"),"local_native")
+            return RouteDecision(Route.LOCAL_QUERY,self.menu._query(cap["id"],params),"local_native")
+        except Exception:
+            return None
+
+    async def _async_process(self, u, *, menu_only=False, guard_only=False):
+        started=self.route_diagnostics.clock()
         cid = u.conversation_id or uuid4().hex
         key = (u.context.user_id, u.device_id, u.satellite_id, cid)
+        # An unrelated AI turn must not clear or advance local business state,
+        # including when its transport worker starts after a later local turn.
+        semantic_match = self.semantic.match(u.text)
+        if (not menu_only and not self.is_menu_message(u.text)
+                and semantic_match is None and not self.fallback_guard.blocked(u.text)):
+            return await self._async_fallback(u,cid,key,started)
         generation = self.menu.followups.begin(key)
         handlers = [h for h in intent.async_get(self.hass) if type(h) is ScriptIntentHandler and "speech" in h.config and not any(k in h.config for k in ("action", "reprompt", "card"))]
         available = {h.intent_type for h in handlers}
@@ -134,7 +273,6 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             self.resolver.invalidate()
         from .menu import HELP, BACK, NEXT, PREV, TRANSLATE
         t=u.text.strip().casefold().translate(TRANSLATE)
-        semantic_match = self.semantic.match(u.text)
         needs_native = (semantic_match is not None and semantic_match.capability is not None
                         and self.menu.capabilities[semantic_match.capability].get("native_slots"))
         if needs_native or t in HELP|BACK|NEXT|PREV or t in self.menu.aliases or re.fullmatch(r"[1-8](?:\.[1-8])*",t):
@@ -150,19 +288,22 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             return self._reply(u,cid,"查询会话已更新，请重新发送。")
         decision = decide(self.menu, key, u.text, visible, today=dt_util.now().date(),
                           semantic=self.semantic, semantic_match=semantic_match)
+        if decision.route is Route.FALLBACK and (guard_only or (not menu_only and self.fallback_guard.blocked(u.text))):
+            native_decision=await self._native_parameter_query(u,visible,dt_util.now().date())
+            if not self.menu.followups.is_current(key,generation):
+                return self._reply(u,cid,"查询会话已更新，请重新发送。")
+            if native_decision is not None:
+                decision=native_decision
         if decision.route is Route.FALLBACK:
             if menu_only:
-                return self._reply(u, cid, "当前没有待输入的菜单参数，请发送 help。")
+                self._record("guard" if guard_only else "local_menu","blocked",started)
+                return self._reply(u,cid,GUARD_REPLY if guard_only else "当前没有待输入的菜单参数，请发送 help。")
             self.menu.followups.clear(key)
-            try:
-                agent = conversation.async_get_agent(self.hass, self.fallback)
-            except (KeyError, ValueError):
-                agent = None
-            if agent is None or agent is self or self.fallback == self.entry_id:
-                return self._reply(u, cid, "备用对话代理配置错误。")
-            return await conversation.async_converse(self.hass, text=u.text, conversation_id=u.conversation_id, context=u.context, language=u.language, agent_id=self.fallback, device_id=u.device_id, satellite_id=u.satellite_id, extra_system_prompt=u.extra_system_prompt)
+            return await self._async_fallback(u,cid,key,started)
         reply = decision.reply
+        route=decision.source
         if decision.route is Route.LOCAL_REPLY:
+            self._record(route,"reply",started)
             return self._reply(u, cid, reply.text)
         self.menu.followups.clear(key)
         cap = self.menu.capabilities[reply.capability]
@@ -172,8 +313,11 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             reply=reply, u=u, get_state=get_state, logger=_LOGGER,
         )
         if execution.error is not None:
+            self._record(route,"error",started)
             return self._reply(u, cid, execution.error)
         response = execution.response
-        if response.as_dict().get("response_type")=="action_done":
+        ok=response.as_dict().get("response_type")=="action_done"
+        if ok:
             self.menu.followups.complete(key,generation,reply.capability)
+        self._record(route,"completed" if ok else "error",started)
         return conversation.ConversationResult(response=response, conversation_id=cid)
