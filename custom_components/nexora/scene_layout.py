@@ -76,5 +76,22 @@ def utility_layout():
         b.leaf(s+".data",s,"数据更新时间",20,ids(s,"updates"+suffix),anchor=s+".updates"+suffix)
     return b.rows
 
-def build_layout():
-    return utility_layout()
+def lights_layout(menu):
+    b=Layout()
+    b.group("lights","","灯光",200,"lights")
+    b.leaf("lights.all","lights","全屋照明概况",10,ids("lights.all","total","list_on","list_off")+ids("lights.abnormal","offline"),anchor="lights.all.list_on",alias="lights.all")
+    b.group("lights.rooms","lights","按房间查询",20,"lights.rooms")
+    for room in menu.children["lights.rooms"]:
+        p=room.id
+        b.group(p,"lights.rooms",room.name,room.order,p)
+        b.leaf(p+".overview",p,"照明状态",10,ids(p,"total","list_on","list_off","offline"),anchor=p+".list_on")
+        b.leaf(p+".issues",p,"灯光异常",20,ids(p,"offline","abnormal"),anchor=p+".abnormal")
+    b.group("lights.fixtures","lights","按灯具查询",30,"lights.fixtures")
+    for fixture in menu.children["lights.fixtures"]:
+        p=fixture.id
+        b.leaf(p,"lights.fixtures",fixture.name,fixture.order,ids(p,"single_state","brightness","temperature"),anchor=p+".single_state",alias=p)
+    b.leaf("lights.abnormal","lights","灯光异常",40,ids("lights.abnormal","offline","abnormal"),anchor="lights.abnormal.abnormal",alias="lights.abnormal")
+    return b.rows
+
+def build_layout(menu):
+    return utility_layout()+lights_layout(menu)
