@@ -27,13 +27,16 @@ def format_response(key,response):
     if not isinstance(speech,dict) or set(speech)!={"plain"}:
         return response
     plain=speech["plain"]
-    if not isinstance(plain,dict) or set(plain)!={"speech"}:
+    if not isinstance(plain,dict) or "speech" not in plain or not set(plain)<={"speech","extra_data"}:
         return response
     value=plain["speech"]
     if isinstance(value,str) and value.strip():
         cleaned=normalize_speech(key,value)
         if cleaned!=value:
-            response.async_set_speech(cleaned)
+            if "extra_data" in plain:
+                response.async_set_speech(cleaned,extra_data=plain["extra_data"])
+            else:
+                response.async_set_speech(cleaned)
     return response
 
 def compose(plan,run,label):

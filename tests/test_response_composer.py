@@ -75,12 +75,14 @@ class ResponseComposerTests(unittest.TestCase):
                     self.data["speech"]["ssml"]={"speech":"<speak>原文</speak>"}
             def as_dict(self):
                 return self.data
-            def async_set_speech(self,value):
-                self.data["speech"]["plain"]["speech"]=value
+            def async_set_speech(self,value,extra_data=None):
+                self.data["speech"]["plain"]={"speech":value,"extra_data":extra_data}
         r=Response()
+        r.data["speech"]["plain"]["extra_data"]={"marker":"preserve"}
         self.assertIs(rc.format_response(key,r),r)
         self.assertEqual(r.data["speech"]["plain"]["speech"],"华润燃气账户余额：83.36元。")
         self.assertEqual(r.data["data"],{"targets":[]})
+        self.assertEqual(r.data["speech"]["plain"]["extra_data"],{"marker":"preserve"})
         for r in (Response("error"),Response(extra=True)):
             rc.format_response(key,r)
             self.assertIn("燃气燃气",r.data["speech"]["plain"]["speech"])
