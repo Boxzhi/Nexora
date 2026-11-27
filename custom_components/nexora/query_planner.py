@@ -19,6 +19,7 @@ class Plan:
     stop_on: tuple = ()
     caveat: str = ""
     focus: Frame | None = None
+    title: str = ""
 
 @dataclass(frozen=True)
 class PlanningResult:
@@ -36,6 +37,26 @@ class QueryPlanner:
         self.registry=BusinessRegistry(menu.capabilities)
         self.policies=PolicyRegistry(self.registry)
         self.parser=QueryParser(menu,self.registry)
+
+    def menu_plan(self, scene_id, params, visible, context, today):
+        spec=self.menu.scenes[scene_id]
+        primary=[]
+        extra=[]
+        for cid in spec.members:
+            if not self.menu._available(cid,visible):
+                continue
+            item=self.registry.by_id[cid]
+            cap=self.menu.capabilities[cid]
+            if set(params)!=set(cap.get("parameter_slots",{})):
+                raise ValueError("inconsistent shared parameter")
+            step=Step(item.key,cid,tuple(sorted(params.items())))
+            (extra if cid in spec.supplements else primary).append(step)
+        if not primary:
+            raise ValueError("no visible primary")
+        focus=None
+        if context and spec.anchor in {s.capability for s in primary}:
+            focus=context.from_registered(spec.anchor,params,today)
+        return Plan(tuple(primary),tuple(extra),spec.stop_on,"",focus,self.menu.items[scene_id].name)
 
     def _step(self,key,params=()):
         item=self.registry.require(key)

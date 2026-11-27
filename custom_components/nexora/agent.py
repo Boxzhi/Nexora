@@ -341,7 +341,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 self.menu.followups.complete(key,generation,members[0].capability,dict(members[0].params),today)
             if self.query_context:
                 self.query_context.remember(key,plan.focus,today,scene=True,current=current())
-        self._record("local_planner","completed" if composed.primary_completed else "error",started)
+        self._record("local_menu_scene" if plan.title else "local_planner","completed" if composed.primary_completed else "error",started)
         return self._reply(u,cid,composed.text)
 
     async def async_process(self,u):
@@ -360,9 +360,10 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             self.resolver.targets.clear()
             self.resolver.modes.clear()
             self.resolver.invalidate()
-        from .menu import HELP,BACK,NEXT,PREV,TRANSLATE,PATH_RE
+        from .menu import HELP,DETAIL,BACK,NEXT,PREV,TRANSLATE,PATH_RE
         text=u.text.strip().casefold().translate(TRANSLATE)
-        if text in HELP|BACK|NEXT|PREV or text in self.menu.aliases or PATH_RE.fullmatch(text) or self.menu.followups.is_followup_message(text.rstrip("？?。！!").strip()):
+        alias=text in self.menu.aliases or text in getattr(self.menu,"scene_aliases",{})
+        if text in HELP|DETAIL|BACK|NEXT|PREV or alias or PATH_RE.fullmatch(text) or self.menu.followups.is_followup_message(text.rstrip("？?。！!").strip()):
             await self._prepare_capabilities(u,available)
         get_state=getattr(getattr(self.hass,"states",None),"get",lambda _:None)
         def visible(cap):
@@ -376,7 +377,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         if prior and self.query_context:
             session=self.menu.sessions.get(key)
             from .menu import EXIT
-            if not (session and session.pending) and text not in HELP|EXIT|BACK|NEXT|PREV and not text.isdecimal() and text not in self.menu.aliases and not PATH_RE.fullmatch(text):
+            if not (session and session.pending) and text not in HELP|DETAIL|EXIT|BACK|NEXT|PREV and not text.isdecimal() and not alias and not PATH_RE.fullmatch(text):
                 boundary=self._boundary(u.text,today)
                 if boundary.kind not in {"cancelled","compound","control"}:
                     inherited=self.query_context.resolve(u.text,prior,today)
@@ -387,6 +388,16 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                         self._record("local_planner","reply",started)
                         return self._reply(u,cid,inherited.message)
         decision=decide(self.menu,key,u.text,visible,today=today)
+        if decision.route is Route.LOCAL_SCENE:
+            if self.planner is None:
+                return self._reply(u,cid,"组合查询暂不可用，请发送 detail 使用完整菜单。")
+            try:
+                plan=self.planner.menu_plan(decision.reply.scene,dict(decision.reply.params),visible,
+                    self.query_context,today)
+            except (ValueError,KeyError):
+                self._record("local_menu_scene","error",started)
+                return self._reply(u,cid,"组合查询当前不可用，请发送 help。")
+            return await self._execute_query_plan(plan,u,cid,key,generation,today,available,visible,get_state,started)
         if decision.route is Route.FALLBACK:
             boundary=self._boundary(u.text,today)
             # Do not pass cancelled reads or compound query/control requests to

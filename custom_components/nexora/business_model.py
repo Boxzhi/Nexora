@@ -254,6 +254,7 @@ CROSS_SCOPE = MappingProxyType({
     PolicyKey("home","阳台","brightness_unspecified"): frozenset({("lights","yang_tai")}),
 })
 MAX_SCENE_QUERIES = 4
+MAX_MENU_QUERIES = 12
 STOP_CONDITIONS = frozenset({"no_lights_on","device_off","all_devices_off","cycle_not_running"})
 
 class PolicyRegistry:

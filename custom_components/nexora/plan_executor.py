@@ -7,7 +7,7 @@ import asyncio
 from dataclasses import dataclass
 import re
 
-from .business_model import MAX_SCENE_QUERIES, STOP_CONDITIONS
+from .business_model import MAX_SCENE_QUERIES, MAX_MENU_QUERIES, STOP_CONDITIONS
 
 @dataclass(frozen=True)
 class Outcome:
@@ -123,7 +123,7 @@ async def run_plan(plan,dispatch,current,*,timeout=12,concurrency=2):
     supplements. Timeout and failed members are not forwarded to AI.
     """
     members=plan.primary+plan.supplements
-    if (not plan.primary or len(members)>MAX_SCENE_QUERIES or len(set(members))!=len(members)
+    if (not plan.primary or len(members)>(MAX_MENU_QUERIES if getattr(plan,"title","") else MAX_SCENE_QUERIES) or len(set(members))!=len(members)
             or not set(plan.stop_on)<=STOP_CONDITIONS or not 1<=concurrency<=2 or timeout<=0):
         raise ValueError("Invalid read-only plan")
     results={}

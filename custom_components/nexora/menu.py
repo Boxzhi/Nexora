@@ -18,7 +18,8 @@ PREV = {"98", "prev", "上一页"}
 CHOICE = r"(?:[1-9]|1[0-9]|20)"
 CHOICE_RE = re.compile(CHOICE)
 PATH_RE = re.compile(rf"{CHOICE}(?:\.{CHOICE})*")
-RESERVED = HELP | EXIT | BACK | NEXT | PREV
+DETAIL = {"detail", "完整菜单"}
+RESERVED = HELP | EXIT | BACK | NEXT | PREV | DETAIL
 FOOTER = "回复数字选择，help 返回主菜单，exit 退出菜单。"
 PARAMETERS = {
     "month": ("month",),
@@ -56,6 +57,8 @@ class Reply:
     capability: str | None = None
     sentence: str = ""
     slots: dict | None = None
+    scene: str | None = None
+    params: tuple = ()
 
 def parse_parameter(kind, text, today, base_year=None):
     """Parse only an explicitly requested parameter; reject invalid/future dates."""
@@ -83,6 +86,8 @@ class Menu:
             self._register(catalog)
         self.followups = Followups(self, clock, max_sessions=max_sessions)
         self._add_shortcuts()
+        self.scenes = {}
+        self.scene_aliases = {}
         self.children = {key: tuple(sorted((x for x in self.items.values() if x.parent == key), key=lambda x: (x.order, x.id))) for key in self.items}
 
     def _add(self, item):
@@ -171,6 +176,26 @@ class Menu:
             if key not in RESERVED and not key.isdecimal() and sum(y.kind == "menu" and y.name.strip().casefold() == key for y in self.items.values()) == 1:
                 self.aliases.setdefault(key, x.id)
 
+    def install_scene_layout(self, rows):
+        """Separate presentation nodes; original items/capabilities stay intact."""
+        from .scene_menu import install
+        install(self, rows)
+
+    def navigation_alias(self, text, session=None):
+        if self.scenes and (session is None or session.node.startswith("scene")):
+            return self.scene_aliases.get(text,self.aliases.get(text))
+        return self.aliases.get(text)
+
+    def _parameter_cap(self, item_id):
+        if item_id in self.scenes:
+            return self.capabilities[self.scenes[item_id].members[0]]
+        return self.capabilities[item_id]
+
+    def _selected(self, item_id, params):
+        if item_id in self.scenes:
+            return Reply(scene=item_id,params=tuple(sorted(params.items())))
+        return self._query(item_id,params)
+
     def _prune(self):
         now = self.clock()
         for key, session in list(self.sessions.items()):
@@ -179,6 +204,8 @@ class Menu:
 
     def _available(self, item_id, available):
         item = self.items[item_id]
+        if item.kind == "scene":
+            return any(self._available(cid,available) for cid in self.scenes[item_id].members)
         if item.kind == "query":
             cap = self.capabilities[item_id]
             if "{secondary}" in cap["sentence"] and not self.settings["secondary"]:
@@ -204,7 +231,7 @@ class Menu:
             lines.append("98. 上一页")
         if (page+1)*PAGE_SIZE < len(items):
             lines.append("99. 下一页")
-        if node != "root":
+        if node not in {"root","scene"}:
             lines.append("0. 返回上一级")
         return Reply("\n".join(lines + ["", FOOTER]))
 
@@ -220,9 +247,9 @@ class Menu:
         t = text.strip().casefold().translate(TRANSLATE)
         s = self.sessions.get(key)
         spoken=t.rstrip("？?。！!").strip()
-        if t in HELP:
+        if t in HELP | DETAIL:
             self.followups.clear(key)
-            return self._render(key, "root", available)
+            return self._render(key, "scene" if self.scenes and t in HELP else "root", available)
         if t in EXIT:
             self.sessions.pop(key, None)
             self.followups.clear(key)
@@ -233,9 +260,9 @@ class Menu:
                 if not self._available(result.capability,available):
                     return Reply("该查询当前不可用，请发送 help。")
                 return self._query(result.capability,dict(result.params))
-        if t in self.aliases:
+        node=self.navigation_alias(t,s)
+        if node is not None:
             self.followups.clear(key)
-            node = self.aliases[t]
             if not self._available(node, available):
                 return Reply("该分类暂无已配置的查询能力，请发送 help。")
             return self._render(key, node, available)
@@ -253,15 +280,15 @@ class Menu:
             if not self._available(cap_id, available):
                 return self._render(key, s.node, available, s.page)
             try:
-                cap = self.capabilities[cap_id]
+                cap = self._parameter_cap(cap_id)
                 current = today or date.today()
                 base_year = current.year - 1 if cap.get("parameter_year_offset") == -1 else current.year
                 params = parse_parameter(cap["parameter"], t, current, base_year=base_year)
             except ValueError:
-                return Reply("输入无效，请输入" + PROMPTS[self.capabilities[cap_id]["parameter"]] + "，或发送0返回。")
+                return Reply("输入无效，请输入" + PROMPTS[self._parameter_cap(cap_id)["parameter"]] + "，或发送0返回。")
             s.pending = None
             s.expires = self.clock()+self.ttl
-            return self._query(cap_id, params)
+            return self._selected(cap_id, params)
         if re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", t):
             return self._path(key, t, available, today)
         if t not in BACK | NEXT | PREV and not (t.isascii() and t.isdigit()):
@@ -295,11 +322,11 @@ class Menu:
             return self._render(key, cap_id, available)
         self.followups.clear(key)
         s.expires = self.clock()+self.ttl
-        param = self.capabilities[cap_id].get("parameter")
+        param = self._parameter_cap(cap_id).get("parameter")
         if param:
             s.pending = cap_id
             return Reply("请输入" + PROMPTS[param] + "，或发送0返回。")
-        return self._query(cap_id, {})
+        return self._selected(cap_id, {})
 
     def _path(self, key, text, available, today):
         """Traverse the displayed snapshot first; validate the rest atomically."""
