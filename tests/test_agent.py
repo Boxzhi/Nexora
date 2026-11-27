@@ -60,7 +60,8 @@ class Tests(IsolatedAsyncioTestCase):
         self.native=SimpleNamespace(_trigger_intents_config={"intents":{}},async_recognize_intent=AsyncMock(return_value=self.result))
         self.fallback=object()
         self.conv.async_get_agent=lambda hass,aid:self.native if aid=="conversation.home_assistant" else self.fallback
-        self.menu=SimpleNamespace(aliases={},followups=SimpleNamespace(clear=lambda *a:None,remember=lambda *a:None),capabilities={"water":{"id":"water","intent":"LuxeUtilityQuery"}},route=lambda *a,**kw:SimpleNamespace(capability="water",sentence="水费余额是多少",slots=self.slots,text=""))
+        self.menu=SimpleNamespace(aliases={},followups=SimpleNamespace(clear=lambda *a:None,remember=lambda *a:None,begin=lambda *a:object(),is_current=lambda *a:True,is_followup_message=lambda text:False),capabilities={"water":{"id":"water","intent":"LuxeUtilityQuery"}},route=lambda *a,**kw:SimpleNamespace(capability="water",sentence="水费余额是多少",slots=self.slots,text=""))
+        self.menu.followups.complete=lambda key,token,cap: self.menu.followups.remember(key,cap)
         self.agent=self.a.NexoraAgent(object(),"entry",self.menu,"fallback")
         self.u=SimpleNamespace(text="1",conversation_id="test",context=SimpleNamespace(user_id="u"),device_id=None,satellite_id=None,language="zh-CN",extra_system_prompt="p")
         self.agent.resolver.replace_targets("zh-CN",{})
@@ -211,3 +212,31 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertIn("非菜单指令",r.response.speech)
         self.conv.async_converse.assert_not_awaited()
         self.it.async_handle.assert_not_awaited()
+
+    def test_capture_fast_context_exact_slots_only(self):
+        from importlib import import_module
+        Followups=import_module("nexora_adapter_test.followup").Followups
+        self.menu.settings={"primary_label":"主账户","secondary_label":"第二账户","secondary":""}
+        self.menu._available=lambda *args:True
+        self.menu.capabilities["water"]["slots"]=self.slots
+        self.menu.followups=Followups(self.menu,lambda:0)
+        cid="wechat:test:a"
+        token=self.agent.begin_fast_context(cid)
+        self.assertFalse(self.agent.finish_fast_context(cid,token,"LuxeUtilityQuery",{**self.slots,"extra":"x"}))
+        self.assertTrue(self.agent.finish_fast_context(cid,token,"LuxeUtilityQuery",self.slots))
+        self.assertEqual(self.menu.followups.contexts[(None,None,None,cid)].capability,"water")
+        newer=self.agent.begin_fast_context(cid)
+        self.assertFalse(self.agent.finish_fast_context(cid,token,"LuxeUtilityQuery",self.slots))
+        self.assertFalse(self.agent.finish_fast_context(cid,newer,"Other",self.slots))
+        self.assertNotIn((None,None,None,cid),self.menu.followups.contexts)
+
+    def test_context_followup_protocol(self):
+        from importlib import import_module
+        Followups=import_module("nexora_adapter_test.followup").Followups
+        self.menu.settings={"primary_label":"主账户","secondary_label":"第二账户","secondary":"other"}
+        self.menu.followups=Followups(self.menu,lambda:0)
+        self.assertTrue(self.agent.is_menu_message("上个月呢"))
+        self.assertTrue(self.agent.is_menu_message("费用呢"))
+        self.assertTrue(self.agent.is_menu_message("另一个账户呢"))
+        self.assertFalse(self.agent.is_menu_message("阳台有人吗"))
+        self.assertIn("失效",self.menu.followups.route("missing","费用呢",lambda c:True))

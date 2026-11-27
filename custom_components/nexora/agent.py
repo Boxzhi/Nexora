@@ -66,9 +66,40 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             self.resolver.replace_targets(u.language,targets)
 
     menu_protocol_version = 1
+    context_protocol_version = 1
 
     def is_menu_message(self, text):
-        return is_menu_message(self.menu, text)
+        if is_menu_message(self.menu, text):
+            return True
+        if not isinstance(text, str):
+            return False
+        return self.menu.followups.is_followup_message(text.strip().casefold())
+
+    def begin_fast_context(self, conversation_id):
+        """Reserve a transport query for a non-user HA Context() session."""
+        key=(None,None,None,conversation_id)
+        token=self.menu.followups.begin(key)
+        self.menu.followups.clear(key)
+        return token
+
+    def finish_fast_context(self, conversation_id, token, intent_type, slots):
+        """Capture only an exact registered, available fixed utility capability.
+
+        Called by a trusted transport only after a successful strict native query.
+        No response text is parsed and no intent is executed here.
+        """
+        key=(None,None,None,conversation_id)
+        if not self.menu.followups.is_current(key,token) or intent_type!="LuxeUtilityQuery":
+            return False
+        if self._handler(intent_type) is None:
+            return False
+        candidates=[cap for cap in self.menu.capabilities.values()
+                    if cap["intent"]==intent_type and not cap.get("parameter")
+                    and _slots_match(slots,cap["slots"],cap.get("native_slots",{}))
+                    and self.menu._available(cap["id"],lambda c:True)]
+        if len(candidates)!=1:
+            return False
+        return self.menu.followups.complete(key,token,candidates[0]["id"])
 
     async def async_process_menu(self, u):
         """Local-only entrypoint for an ordered transport menu lane."""
@@ -82,6 +113,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
     async def _async_process(self, u, *, menu_only=False):
         cid = u.conversation_id or uuid4().hex
         key = (u.context.user_id, u.device_id, u.satellite_id, cid)
+        generation = self.menu.followups.begin(key)
         handlers = [h for h in intent.async_get(self.hass) if type(h) is ScriptIntentHandler and "speech" in h.config and not any(k in h.config for k in ("action", "reprompt", "card"))]
         available = {h.intent_type for h in handlers}
         changed = self.resolver.extractor.refresh(handlers)
@@ -100,6 +132,8 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             if cid not in statuses:
                 statuses[cid]=cap["intent"] in available and self.resolver.status(cap,get_state)!="hidden"
             return statuses[cid]
+        if not self.menu.followups.is_current(key,generation):
+            return self._reply(u,cid,"查询会话已更新，请重新发送。")
         decision = decide(self.menu, key, u.text, visible, today=dt_util.now().date())
         if decision.route is Route.FALLBACK:
             if menu_only:
@@ -126,5 +160,5 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             return self._reply(u, cid, execution.error)
         response = execution.response
         if response.as_dict().get("response_type")=="action_done":
-            self.menu.followups.remember(key,reply.capability)
+            self.menu.followups.complete(key,generation,reply.capability)
         return conversation.ConversationResult(response=response, conversation_id=cid)
