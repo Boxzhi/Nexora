@@ -189,12 +189,36 @@ def _device(plan,rows):
         return plan.title,[text for _,_,text in rows]
     leaf=plan.title.rsplit(" · ",1)[-1]
     heading=name if plan.menu_scene in {"scene.appliance.airer","scene.appliance.fan"} else name+" · "+leaf
-    lines=[]
+    fields={}
     for step,kind,text in rows:
         if kind in GOOD and text.startswith(name):
+            fields[step.key.metric]=text[len(name):].lstrip("：:")
+    same_power=(plan.menu_scene=="scene.appliance.washer.progress" and
+                fields.get("status")==fields.get("power") and
+                fields.get("status") in {"已关机。","已开机。"})
+    airer_status=None
+    if plan.menu_scene=="scene.appliance.airer":
+        a=re.fullmatch(r"([^，。\n]+)，最近上报位置(\d+(?:\.\d+)?)%。",fields.get("status",""))
+        b=re.fullmatch(r"最近上报位置：(\d+(?:\.\d+)?)%。",fields.get("position",""))
+        if a and b and a[2]==b[1]:
+            airer_status=a[1]+"。"
+    lines=[]
+    for step,kind,text in rows:
+        metric=step.key.metric
+        if kind in GOOD and text.startswith(name):
             text=text[len(name):].lstrip("：:")
-        # The same exact device-state limitation can be shared by several
-        # metrics. Never remove an independently attributed error.
+            if same_power and metric=="power":
+                continue
+            if airer_status and metric=="status":
+                text=airer_status
+            if metric=="heatremain" and text.startswith("延时关闭："):
+                # The source labels this as device delay-off, not explicitly
+                # a heating-only timer. Do not infer a narrower function.
+                text="浴霸"+text
+            if metric=="status" and step.key.target=="b":
+                m=re.fullmatch(r"(照明[^，。]+)，(暖风[^，。]+)，(换气[^，。]+)，(吹风[^，。]+)。",text)
+                if m:
+                    text="\n".join(m.groups())
         if kind=="state_limit" and text in lines:
             continue
         lines.append(text)
