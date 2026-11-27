@@ -61,7 +61,7 @@ class Tests(IsolatedAsyncioTestCase):
         self.fallback=object()
         self.conv.async_get_agent=lambda hass,aid:self.native if aid=="conversation.home_assistant" else self.fallback
         self.menu=SimpleNamespace(aliases={},followups=SimpleNamespace(clear=lambda *a:None,remember=lambda *a:None,begin=lambda *a:object(),is_current=lambda *a:True,is_followup_message=lambda text:False),capabilities={"water":{"id":"water","intent":"LuxeUtilityQuery"}},route=lambda *a,**kw:SimpleNamespace(capability="water",sentence="水费余额是多少",slots=self.slots,text=""))
-        self.menu.followups.complete=lambda key,token,cap: self.menu.followups.remember(key,cap)
+        self.menu.followups.complete=lambda key,token,cap,*args: self.menu.followups.remember(key,cap)
         self.agent=self.a.NexoraAgent(object(),"entry",self.menu,"fallback")
         self.u=SimpleNamespace(text="1",conversation_id="test",context=SimpleNamespace(user_id="u"),device_id=None,satellite_id=None,language="zh-CN",extra_system_prompt="p")
         self.agent.resolver.replace_targets("zh-CN",{})

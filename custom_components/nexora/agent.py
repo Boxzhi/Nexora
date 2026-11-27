@@ -240,6 +240,8 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             # if the native recognizer would otherwise pick an interpretation.
             if match is not None and match.clarification is not None:
                 decision=from_reply(self.semantic.reply(match,visible),"local_semantic")
+                if match.options:
+                    self.menu.followups.remember_clarification(key,generation,match.options)
             else:
                 native=await self._native_registered_query(u,visible,today,available)
                 if not self.menu.followups.is_current(key,generation):
@@ -283,6 +285,10 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         response = execution.response
         ok=response.as_dict().get("response_type")=="action_done"
         if ok:
-            self.menu.followups.complete(key,generation,reply.capability)
+            if cap.get("parameter"):
+                params={k:reply.slots[v] for k,v in cap["parameter_slots"].items()}
+                self.menu.followups.complete(key,generation,reply.capability,params,today)
+            else:
+                self.menu.followups.complete(key,generation,reply.capability)
         self._record(route,"completed" if ok else "error",started)
         return conversation.ConversationResult(response=response, conversation_id=cid)
