@@ -350,7 +350,7 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertEqual(self.conv.async_converse.await_count,7)
         self.it.async_handle.assert_not_awaited()
 
-    async def test_native_priority_over_semantic_alias(self):
+    async def test_native_semantic_conflict_is_terminal(self):
         from importlib import import_module
         SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
         self.menu.route=lambda *a,**kw:None
@@ -363,9 +363,13 @@ class Tests(IsolatedAsyncioTestCase):
         self.agent.semantic=SemanticIndex(self.menu)
         self.u.text="水费余额"
         self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in other.items()]
-        await self.agent.async_process(self.u)
-        self.assertEqual(self.it.async_handle.call_args.args[3]["utility_kind"]["value"],"g")
+        r=await self.agent.async_process(self.u)
+        self.assertIn("参数不一致",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
         self.conv.async_converse.assert_not_awaited()
+        self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in self.slots.items()]
+        await self.agent.async_process(self.u)
+        self.it.async_handle.assert_awaited_once()
         self.assertEqual(self.agent.diagnostics_snapshot()["local_native:completed"]["count"],1)
 
     async def test_native_non_household_synonym_is_not_sent_to_ai(self):
@@ -541,3 +545,28 @@ class Tests(IsolatedAsyncioTestCase):
             self.assertEqual(slots["luxe_appliance_query"]["value"],metric)
         self.assertEqual(self.it.async_handle.await_count,3)
         self.conv.async_converse.assert_not_awaited()
+
+    async def test_cancelled_mixed_and_unmatched_read_never_reach_fallback(self):
+        self.menu.route=lambda *a,**kw:None
+        self.native.async_recognize_intent.return_value=None
+        for text,expected in (("不要查燃气剩多少","已取消"),("燃气余额多少然后关灯","分别发送"),
+                              ("关掉客厅灯再查燃气余额","分别发送"),("空调还剩多少","无法确认"),
+                              ("灯亮着没","无法确认"),("滤芯还能撑几天","无法确认"),
+                              ("调的几度","补充查询对象")):
+            with self.subTest(text=text):
+                self.u.text=text
+                r=await self.agent.async_process(self.u)
+                self.assertIn(expected,r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_explicit_control_uses_original_fallback_text(self):
+        self.menu.route=lambda *a,**kw:None
+        self.conv.async_converse=AsyncMock(return_value=SimpleNamespace(response=Response("zh-CN"),conversation_id="ai"))
+        for text in ("关闭客厅灯","把主卧空调调到26度","打开阳台灯"):
+            self.u.text=text
+            await self.agent.async_process(self.u)
+            self.assertEqual(self.conv.async_converse.call_args.kwargs["text"],text)
+        self.assertEqual(self.conv.async_converse.await_count,3)
+        self.native.async_recognize_intent.assert_not_awaited()
+        self.it.async_handle.assert_not_awaited()
