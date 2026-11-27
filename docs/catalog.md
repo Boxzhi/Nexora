@@ -32,3 +32,9 @@ capabilities:
 The example is illustrative; install a matching speech-only Intent Script and sentence definitions before it becomes executable. Availability is based on registered handler shape, not provider freshness; strict recognition and complete slot equality are checked immediately before execution. HA private recognition APIs and configured sentence triggers can disable execution; failures never route to a tool-enabled agent.
 
 The public catalog mirrors the source Utility v1.1.0 metric set, not every synonym or unsupported property combination. Water monthly history supports current/previous and this/last year month selection, not arbitrary year/month. No supplier refresh, data copies or actions. Native speech templates remain the source of truth.
+
+## v0.2.0 additions
+
+Optional module.icon is rendered before the module name in the root and in its own title; it is not part of aliases. English help/exit/back/next/prev and their Chinese equivalents are reserved.
+
+The built-in Lights catalog uses the narrowly scoped native_slots: {luxe_light_id: light} field for single_state, brightness and temperature queries only. It requires a strict recognition result from the installed list, with the exact intent and all other fixed slots equal and exactly one light-domain entity slot. Other intents cannot use this facility. Local administrator-supplied lists are authoritative for the alias-to-entity mapping. No entity IDs are published. This is not a generic wildcard or a tool call.

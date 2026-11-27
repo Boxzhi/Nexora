@@ -30,7 +30,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(len(pairs),63)
         self.assertEqual(len({x["id"] for x in CAT["capabilities"]}),len(CAT["capabilities"]))
     def test_help(self):
-        self.assertIn("1. 水电气",self.route("help").text)
+        self.assertIn("1. ⚡ 水电气",self.route("help").text)
         self.assertIn("电费",self.route("1").text)
     def test_water(self):
         self.route("水费")
@@ -156,5 +156,64 @@ class Tests(unittest.TestCase):
         self.select_id(node,node+".history_usage_year")
         self.assertIsNone(self.route("详细介绍一下峰谷电价"))
         self.assertIsNone(self.m.sessions["a"].pending)
+
+class AllCatalogTests(unittest.TestCase):
+    def setUp(self):
+        self.catalogs=[json.loads(p.read_text()) for p in sorted((BASE/"catalogs").glob("*.json"))]
+        self.m=mod.Menu(self.catalogs,settings=SET)
+    def test_root_exact(self):
+        expected="Nexora · 智能家庭助手\n\n1. ⚡ 水电气\n2. 💡 灯光\n3. 🔌 家电\n4. 🏠 全屋状态\n\n"+mod.FOOTER
+        self.assertEqual(self.m.route("a","help").text,expected)
+        self.assertEqual(self.m.route("a","帮助").text,expected)
+        self.assertEqual(self.m.route("a","HELP").text,expected)
+    def test_child_icon_and_plain_alias(self):
+        self.assertTrue(self.m.route("a","灯光").text.startswith("💡 灯光\n"))
+        self.assertTrue(self.m.route("a","1").text.startswith("全屋灯光\n"))
+    def test_exit_aliases(self):
+        for cmd in ("exit","EXIT","退出"):
+            self.m.route("a","help")
+            self.assertIn("已退出",self.m.route("a",cmd).text)
+            self.assertIn("没有有效",self.m.route("a","1").text)
+    def test_page_aliases(self):
+        self.m.route("a","燃气阶梯")
+        self.assertIn("第三阶梯",self.m.route("a","NEXT").text)
+        self.assertIn("9. 下一页",self.m.route("a","prev").text)
+        self.assertIn("燃气费",self.m.route("a","BACK").text)
+    def test_counts(self):
+        self.assertEqual({c["module"]["id"]:len(c["capabilities"]) for c in self.catalogs},{"utility":136,"lights":144,"appliance":78,"home":85})
+        self.assertEqual(len(self.m.capabilities),443)
+    def test_source_fingerprint(self):
+        for c in self.catalogs:
+            mid=c["module"]["id"]
+            if mid not in {"home","appliance"}:continue
+            rows=sorted(json.dumps([x["intent"],x["sentence"],dict(sorted(x["slots"].items()))],ensure_ascii=False,separators=(",",":")) for x in c["capabilities"])
+            h=2166136261
+            for char in "\n".join(rows):h=((h^ord(char))*16777619)&0xffffffff
+            self.assertEqual(h,{"home":0xa6ce1596,"appliance":0x797ed3e2}[mid])
+    def test_light_combinations(self):
+        c=next(x for x in self.catalogs if x["module"]["id"]=="lights")
+        single=[x for x in c["capabilities"] if x.get("native_slots")]
+        scoped=[x for x in c["capabilities"] if not x.get("native_slots")]
+        self.assertEqual(len(single),45)
+        self.assertEqual(len({(x["slots"]["luxe_light_scope"],x["slots"]["light_query"]) for x in scoped}),99)
+        self.assertTrue(all("light." not in json.dumps(x,ensure_ascii=False) for x in single))
+    def test_missing_module_handler(self):
+        r=self.m.route("a","help",available=lambda c:c["intent"]=="LuxeUtilityQuery")
+        self.assertIn("1. ⚡ 水电气",r.text)
+        self.assertNotIn("灯光",r.text)
+    def test_native_slot_guard(self):
+        c=copy.deepcopy(next(x for x in self.catalogs if x["module"]["id"]=="lights"))
+        x=next(x for x in c["capabilities"] if x.get("native_slots"))
+        x["native_slots"]={"anything":"light"}
+        with self.assertRaises(ValueError):mod.Menu([c])
+    def test_all_leaves(self):
+        values={"month":{"month":3},"year":{"year":2024},"year_month":{"year":2024,"month":3},"date":{"year":2024,"month":3,"day":5},"month_day":{"month":3,"day":5},None:{}}
+        for cap in self.m.capabilities.values():
+            q=self.m._query(cap["id"],values[cap.get("parameter")])
+            self.assertTrue(q.sentence and "{" not in q.sentence)
+            self.assertTrue(all(q.slots[k]==v for k,v in cap["slots"].items()))
+    def test_reserved_alias(self):
+        c=copy.deepcopy(self.catalogs[0]);c["module"]["aliases"]=["exit"]
+        with self.assertRaises(ValueError):mod.Menu([c])
 
 if __name__=="__main__":unittest.main()

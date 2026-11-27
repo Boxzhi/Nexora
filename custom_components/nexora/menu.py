@@ -6,10 +6,13 @@ from string import Formatter
 from time import monotonic
 from typing import Any
 
-RESERVED = {"help", "帮助", "使用指南", "你能做什么", "0", "返回", "上一级", "9", "下一页", "上一页", "退出", "关闭菜单"}
 HELP = {"help", "帮助", "使用指南", "你能做什么"}
-EXIT = {"退出", "关闭菜单"}
-BACK = {"0", "返回", "上一级"}
+EXIT = {"exit", "退出", "关闭菜单"}
+BACK = {"0", "back", "返回", "上一级"}
+NEXT = {"9", "next", "下一页"}
+PREV = {"prev", "上一页"}
+RESERVED = HELP | EXIT | BACK | NEXT | PREV
+FOOTER = "回复数字选择，help 返回主菜单，exit 退出菜单。"
 PARAMETERS = {
     "month": ("month",),
     "year": ("year",),
@@ -30,6 +33,7 @@ class Item:
     order: int
     kind: str
     aliases: tuple = ()
+    icon: str = ""
 
 @dataclass
 class Session:
@@ -64,7 +68,7 @@ class Menu:
     def __init__(self, catalogs, settings=None, clock=monotonic, ttl=600, max_sessions=256):
         self.clock, self.ttl, self.max_sessions = clock, ttl, max_sessions
         self.settings = {"primary_label": "主账户", "secondary_label": "第二账户", "secondary": "", **(settings or {})}
-        self.items = {"root": Item("root", "智能家庭助手 · 查询帮助", "", 0, "menu")}
+        self.items = {"root": Item("root", "Nexora · 智能家庭助手", "", 0, "menu")}
         self.capabilities, self.aliases, self.sessions = {}, {}, {}
         if ttl <= 0 or max_sessions < 1:
             raise ValueError("Invalid session bounds")
@@ -98,7 +102,10 @@ class Menu:
             raise ValueError("Unsupported schema")
         module = catalog["module"]
         mid = module["id"]
-        self._add(Item(mid, self._label(module["name"]), "root", module["order"], "menu", (module["name"], *module.get("aliases", []))))
+        icon = module.get("icon", "")
+        if not isinstance(icon, str) or len(icon) > 16 or any(ch.isspace() or not ch.isprintable() for ch in icon):
+            raise ValueError("Invalid module icon")
+        self._add(Item(mid, self._label(module["name"]), "root", module["order"], "menu", (module["name"], *module.get("aliases", [])), icon))
         pending = list(catalog["categories"])
         while pending:
             ready = [x for x in pending if x.get("parent", mid) in self.items]
@@ -118,6 +125,13 @@ class Menu:
             slots = x["slots"]
             if not isinstance(slots, dict) or not all(SLOT.fullmatch(k) and type(v) in (str, int) for k, v in slots.items()):
                 raise ValueError("Invalid slots")
+            native_slots = x.get("native_slots", {})
+            # Only the existing single-light query may resolve a local entity ID
+            # from a strict recognition result. No generic wildcard slots.
+            if native_slots and (native_slots != {"luxe_light_id": "light"} or x["intent"] != "LuxeLightQuery" or slots.get("light_query") not in {"single_state", "brightness", "temperature"} or "luxe_light_id" in slots or x.get("parameter")):
+                raise ValueError("Invalid native slot binding")
+            if not isinstance(native_slots, dict):
+                raise ValueError("Invalid native slots")
             param = x.get("parameter")
             if x.get("parameter_year_offset", 0) not in (0, -1):
                 raise ValueError("Invalid parameter year offset")
@@ -170,10 +184,11 @@ class Menu:
         if key not in self.sessions and len(self.sessions) >= self.max_sessions:
             self.sessions.pop(min(self.sessions, key=lambda k:self.sessions[k].expires))
         self.sessions[key] = Session(node, page, self.clock()+self.ttl, shown)
-        lines = [self.items[node].name, ""]
+        current = self.items[node]
+        lines = [f"{current.icon} {current.name}" if current.icon else current.name, ""]
         for i, item_id in enumerate(shown, 1):
             item = self.items[item_id]
-            lines.append(f"{i}. {item.name}")
+            lines.append(f"{i}. {item.icon} {item.name}" if item.icon else f"{i}. {item.name}")
             if item.kind == "query":
                 cap = self.capabilities[item_id]
                 if not cap.get("parameter"):
@@ -185,10 +200,10 @@ class Menu:
         if (page+1)*8 < len(items):
             lines.append("9. 下一页")
         if page:
-            lines.append("发送“上一页”返回上一页")
+            lines.append("发送 prev 返回上一页")
         if node != "root":
             lines.append("0. 返回上一级")
-        return Reply("\n".join(lines + ["", "回复数字选择，help 返回主菜单，退出关闭菜单。"]))
+        return Reply("\n".join(lines + ["", FOOTER]))
 
     def _query(self, cap_id, params):
         cap = self.capabilities[cap_id]
@@ -211,7 +226,7 @@ class Menu:
         if s and s.pending:
             if t in BACK:
                 return self._render(key, s.node, available, s.page)
-            if not re.fullmatch(r"[0-9-]+", t) and t not in {"下一页", "上一页"}:
+            if not re.fullmatch(r"[0-9-]+", t) and t not in NEXT | PREV:
                 # A complete independent question remains usable during a date prompt.
                 s.pending = None
                 return None
@@ -228,14 +243,14 @@ class Menu:
             s.pending = None
             s.expires = self.clock()+self.ttl
             return self._query(cap_id, params)
-        if t not in BACK | {"9", "下一页", "上一页"} and not (t.isascii() and t.isdigit()):
+        if t not in BACK | NEXT | PREV and not (t.isascii() and t.isdigit()):
             return None
         if not s:
             return Reply("当前没有有效菜单，请发送 help。")
         if t in BACK:
             return self._render(key, self.items[s.node].parent or "root", available)
-        if t in {"9", "下一页", "上一页"}:
-            return self._render(key, s.node, available, s.page + (-1 if t == "上一页" else 1))
+        if t in NEXT | PREV:
+            return self._render(key, s.node, available, s.page + (-1 if t in PREV else 1))
         if len(t)!=1 or t not in "12345678" or int(t)>len(s.shown):
             return Reply("无效选项，请发送当前菜单中的数字，或发送 help。")
         cap_id = s.shown[int(t)-1]

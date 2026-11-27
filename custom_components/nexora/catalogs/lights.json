@@ -1,0 +1,2150 @@
+{
+  "schema_version": 1,
+  "module": {
+    "id": "lights",
+    "name": "灯光",
+    "icon": "💡",
+    "order": 200,
+    "version": "1.1.0"
+  },
+  "categories": [
+    {
+      "id": "lights.all",
+      "name": "全屋灯光",
+      "parent": "lights",
+      "order": 10
+    },
+    {
+      "id": "lights.rooms",
+      "name": "按房间",
+      "parent": "lights",
+      "order": 20
+    },
+    {
+      "id": "lights.fixtures",
+      "name": "按灯具",
+      "parent": "lights",
+      "order": 30
+    },
+    {
+      "id": "lights.abnormal",
+      "name": "灯光异常",
+      "parent": "lights",
+      "order": 40
+    },
+    {
+      "id": "lights.rooms.ke_ting",
+      "name": "客厅",
+      "parent": "lights.rooms",
+      "order": 1
+    },
+    {
+      "id": "lights.rooms.can_ting",
+      "name": "餐厅",
+      "parent": "lights.rooms",
+      "order": 2
+    },
+    {
+      "id": "lights.rooms.zhu_wo",
+      "name": "主卧",
+      "parent": "lights.rooms",
+      "order": 3
+    },
+    {
+      "id": "lights.rooms.ci_wo",
+      "name": "次卧",
+      "parent": "lights.rooms",
+      "order": 4
+    },
+    {
+      "id": "lights.rooms.er_tong_fang",
+      "name": "儿童房",
+      "parent": "lights.rooms",
+      "order": 5
+    },
+    {
+      "id": "lights.rooms.xuan_guan",
+      "name": "玄关",
+      "parent": "lights.rooms",
+      "order": 6
+    },
+    {
+      "id": "lights.rooms.guo_dao",
+      "name": "过道",
+      "parent": "lights.rooms",
+      "order": 7
+    },
+    {
+      "id": "lights.rooms.chu_fang",
+      "name": "厨房",
+      "parent": "lights.rooms",
+      "order": 8
+    },
+    {
+      "id": "lights.rooms.wei_sheng_jian",
+      "name": "卫生间",
+      "parent": "lights.rooms",
+      "order": 9
+    },
+    {
+      "id": "lights.rooms.yang_tai",
+      "name": "阳台",
+      "parent": "lights.rooms",
+      "order": 10
+    },
+    {
+      "id": "lights.fixtures.living_ceiling",
+      "name": "客厅吸顶灯",
+      "parent": "lights.fixtures",
+      "order": 1
+    },
+    {
+      "id": "lights.fixtures.living_spot",
+      "name": "客厅射灯",
+      "parent": "lights.fixtures",
+      "order": 2
+    },
+    {
+      "id": "lights.fixtures.living_strip",
+      "name": "客厅灯带",
+      "parent": "lights.fixtures",
+      "order": 3
+    },
+    {
+      "id": "lights.fixtures.dining_fan",
+      "name": "餐厅风扇灯",
+      "parent": "lights.fixtures",
+      "order": 4
+    },
+    {
+      "id": "lights.fixtures.dining_strip",
+      "name": "餐边柜灯带",
+      "parent": "lights.fixtures",
+      "order": 5
+    },
+    {
+      "id": "lights.fixtures.master_ceiling",
+      "name": "主卧吸顶灯",
+      "parent": "lights.fixtures",
+      "order": 6
+    },
+    {
+      "id": "lights.fixtures.secondary_ceiling",
+      "name": "次卧吸顶灯",
+      "parent": "lights.fixtures",
+      "order": 7
+    },
+    {
+      "id": "lights.fixtures.child_ceiling",
+      "name": "儿童房吸顶灯",
+      "parent": "lights.fixtures",
+      "order": 8
+    },
+    {
+      "id": "lights.fixtures.entry_downlight",
+      "name": "玄关筒灯",
+      "parent": "lights.fixtures",
+      "order": 9
+    },
+    {
+      "id": "lights.fixtures.shoe_strip",
+      "name": "鞋柜灯带",
+      "parent": "lights.fixtures",
+      "order": 10
+    },
+    {
+      "id": "lights.fixtures.hall_downlight",
+      "name": "过道筒灯",
+      "parent": "lights.fixtures",
+      "order": 11
+    },
+    {
+      "id": "lights.fixtures.kitchen_downlight",
+      "name": "厨房筒灯",
+      "parent": "lights.fixtures",
+      "order": 12
+    },
+    {
+      "id": "lights.fixtures.bath_panel",
+      "name": "人体存在平板灯",
+      "parent": "lights.fixtures",
+      "order": 13
+    },
+    {
+      "id": "lights.fixtures.bath_heater",
+      "name": "智能浴霸S1灯",
+      "parent": "lights.fixtures",
+      "order": 14
+    },
+    {
+      "id": "lights.fixtures.airer",
+      "name": "晾衣架灯",
+      "parent": "lights.fixtures",
+      "order": 15
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "lights.all.list_on",
+      "category": "lights.all",
+      "name": "开启的灯具",
+      "order": 1,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "全屋有哪些灯开着",
+      "slots": {
+        "light_query": "list_on",
+        "luxe_light_scope": "all"
+      }
+    },
+    {
+      "id": "lights.all.count_on",
+      "category": "lights.all",
+      "name": "开启数量",
+      "order": 2,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "全屋开了几组灯",
+      "slots": {
+        "light_query": "count_on",
+        "luxe_light_scope": "all"
+      }
+    },
+    {
+      "id": "lights.all.list_off",
+      "category": "lights.all",
+      "name": "关闭的灯具",
+      "order": 3,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "全屋有哪些灯是关着的",
+      "slots": {
+        "light_query": "list_off",
+        "luxe_light_scope": "all"
+      }
+    },
+    {
+      "id": "lights.all.count_off",
+      "category": "lights.all",
+      "name": "关闭数量",
+      "order": 4,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "全屋关了几组灯",
+      "slots": {
+        "light_query": "count_off",
+        "luxe_light_scope": "all"
+      }
+    },
+    {
+      "id": "lights.all.total",
+      "category": "lights.all",
+      "name": "灯具总数",
+      "order": 5,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "全屋有多少组灯",
+      "slots": {
+        "light_query": "total",
+        "luxe_light_scope": "all"
+      }
+    },
+    {
+      "id": "lights.all.all_off",
+      "category": "lights.all",
+      "name": "是否全部关闭",
+      "order": 6,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "全屋灯都关了吗",
+      "slots": {
+        "light_query": "all_off",
+        "luxe_light_scope": "all"
+      }
+    },
+    {
+      "id": "lights.all.all_on",
+      "category": "lights.all",
+      "name": "是否全部开启",
+      "order": 7,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "全屋灯都开了吗",
+      "slots": {
+        "light_query": "all_on",
+        "luxe_light_scope": "all"
+      }
+    },
+    {
+      "id": "lights.abnormal.offline",
+      "category": "lights.abnormal",
+      "name": "离线灯具",
+      "order": 8,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "全屋有没有灯具离线",
+      "slots": {
+        "light_query": "offline",
+        "luxe_light_scope": "all"
+      }
+    },
+    {
+      "id": "lights.abnormal.abnormal",
+      "category": "lights.abnormal",
+      "name": "异常灯具",
+      "order": 9,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "全屋有没有灯具状态异常",
+      "slots": {
+        "light_query": "abnormal",
+        "luxe_light_scope": "all"
+      }
+    },
+    {
+      "id": "lights.rooms.ke_ting.list_on",
+      "category": "lights.rooms.ke_ting",
+      "name": "开启的灯具",
+      "order": 10,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅有哪些灯开着",
+      "slots": {
+        "light_query": "list_on",
+        "luxe_light_scope": "ke_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.ke_ting.count_on",
+      "category": "lights.rooms.ke_ting",
+      "name": "开启数量",
+      "order": 11,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅开了几组灯",
+      "slots": {
+        "light_query": "count_on",
+        "luxe_light_scope": "ke_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.ke_ting.list_off",
+      "category": "lights.rooms.ke_ting",
+      "name": "关闭的灯具",
+      "order": 12,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅有哪些灯是关着的",
+      "slots": {
+        "light_query": "list_off",
+        "luxe_light_scope": "ke_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.ke_ting.count_off",
+      "category": "lights.rooms.ke_ting",
+      "name": "关闭数量",
+      "order": 13,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅关了几组灯",
+      "slots": {
+        "light_query": "count_off",
+        "luxe_light_scope": "ke_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.ke_ting.total",
+      "category": "lights.rooms.ke_ting",
+      "name": "灯具总数",
+      "order": 14,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅有多少组灯",
+      "slots": {
+        "light_query": "total",
+        "luxe_light_scope": "ke_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.ke_ting.all_off",
+      "category": "lights.rooms.ke_ting",
+      "name": "是否全部关闭",
+      "order": 15,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅灯都关了吗",
+      "slots": {
+        "light_query": "all_off",
+        "luxe_light_scope": "ke_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.ke_ting.all_on",
+      "category": "lights.rooms.ke_ting",
+      "name": "是否全部开启",
+      "order": 16,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅灯都开了吗",
+      "slots": {
+        "light_query": "all_on",
+        "luxe_light_scope": "ke_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.ke_ting.offline",
+      "category": "lights.rooms.ke_ting",
+      "name": "离线灯具",
+      "order": 17,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅有没有灯具离线",
+      "slots": {
+        "light_query": "offline",
+        "luxe_light_scope": "ke_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.ke_ting.abnormal",
+      "category": "lights.rooms.ke_ting",
+      "name": "异常灯具",
+      "order": 18,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅有没有灯具状态异常",
+      "slots": {
+        "light_query": "abnormal",
+        "luxe_light_scope": "ke_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.can_ting.list_on",
+      "category": "lights.rooms.can_ting",
+      "name": "开启的灯具",
+      "order": 19,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐厅有哪些灯开着",
+      "slots": {
+        "light_query": "list_on",
+        "luxe_light_scope": "can_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.can_ting.count_on",
+      "category": "lights.rooms.can_ting",
+      "name": "开启数量",
+      "order": 20,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐厅开了几组灯",
+      "slots": {
+        "light_query": "count_on",
+        "luxe_light_scope": "can_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.can_ting.list_off",
+      "category": "lights.rooms.can_ting",
+      "name": "关闭的灯具",
+      "order": 21,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐厅有哪些灯是关着的",
+      "slots": {
+        "light_query": "list_off",
+        "luxe_light_scope": "can_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.can_ting.count_off",
+      "category": "lights.rooms.can_ting",
+      "name": "关闭数量",
+      "order": 22,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐厅关了几组灯",
+      "slots": {
+        "light_query": "count_off",
+        "luxe_light_scope": "can_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.can_ting.total",
+      "category": "lights.rooms.can_ting",
+      "name": "灯具总数",
+      "order": 23,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐厅有多少组灯",
+      "slots": {
+        "light_query": "total",
+        "luxe_light_scope": "can_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.can_ting.all_off",
+      "category": "lights.rooms.can_ting",
+      "name": "是否全部关闭",
+      "order": 24,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐厅灯都关了吗",
+      "slots": {
+        "light_query": "all_off",
+        "luxe_light_scope": "can_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.can_ting.all_on",
+      "category": "lights.rooms.can_ting",
+      "name": "是否全部开启",
+      "order": 25,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐厅灯都开了吗",
+      "slots": {
+        "light_query": "all_on",
+        "luxe_light_scope": "can_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.can_ting.offline",
+      "category": "lights.rooms.can_ting",
+      "name": "离线灯具",
+      "order": 26,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐厅有没有灯具离线",
+      "slots": {
+        "light_query": "offline",
+        "luxe_light_scope": "can_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.can_ting.abnormal",
+      "category": "lights.rooms.can_ting",
+      "name": "异常灯具",
+      "order": 27,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐厅有没有灯具状态异常",
+      "slots": {
+        "light_query": "abnormal",
+        "luxe_light_scope": "can_ting"
+      }
+    },
+    {
+      "id": "lights.rooms.zhu_wo.list_on",
+      "category": "lights.rooms.zhu_wo",
+      "name": "开启的灯具",
+      "order": 28,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "主卧有哪些灯开着",
+      "slots": {
+        "light_query": "list_on",
+        "luxe_light_scope": "zhu_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.zhu_wo.count_on",
+      "category": "lights.rooms.zhu_wo",
+      "name": "开启数量",
+      "order": 29,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "主卧开了几组灯",
+      "slots": {
+        "light_query": "count_on",
+        "luxe_light_scope": "zhu_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.zhu_wo.list_off",
+      "category": "lights.rooms.zhu_wo",
+      "name": "关闭的灯具",
+      "order": 30,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "主卧有哪些灯是关着的",
+      "slots": {
+        "light_query": "list_off",
+        "luxe_light_scope": "zhu_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.zhu_wo.count_off",
+      "category": "lights.rooms.zhu_wo",
+      "name": "关闭数量",
+      "order": 31,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "主卧关了几组灯",
+      "slots": {
+        "light_query": "count_off",
+        "luxe_light_scope": "zhu_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.zhu_wo.total",
+      "category": "lights.rooms.zhu_wo",
+      "name": "灯具总数",
+      "order": 32,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "主卧有多少组灯",
+      "slots": {
+        "light_query": "total",
+        "luxe_light_scope": "zhu_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.zhu_wo.all_off",
+      "category": "lights.rooms.zhu_wo",
+      "name": "是否全部关闭",
+      "order": 33,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "主卧灯都关了吗",
+      "slots": {
+        "light_query": "all_off",
+        "luxe_light_scope": "zhu_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.zhu_wo.all_on",
+      "category": "lights.rooms.zhu_wo",
+      "name": "是否全部开启",
+      "order": 34,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "主卧灯都开了吗",
+      "slots": {
+        "light_query": "all_on",
+        "luxe_light_scope": "zhu_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.zhu_wo.offline",
+      "category": "lights.rooms.zhu_wo",
+      "name": "离线灯具",
+      "order": 35,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "主卧有没有灯具离线",
+      "slots": {
+        "light_query": "offline",
+        "luxe_light_scope": "zhu_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.zhu_wo.abnormal",
+      "category": "lights.rooms.zhu_wo",
+      "name": "异常灯具",
+      "order": 36,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "主卧有没有灯具状态异常",
+      "slots": {
+        "light_query": "abnormal",
+        "luxe_light_scope": "zhu_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.ci_wo.list_on",
+      "category": "lights.rooms.ci_wo",
+      "name": "开启的灯具",
+      "order": 37,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "次卧有哪些灯开着",
+      "slots": {
+        "light_query": "list_on",
+        "luxe_light_scope": "ci_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.ci_wo.count_on",
+      "category": "lights.rooms.ci_wo",
+      "name": "开启数量",
+      "order": 38,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "次卧开了几组灯",
+      "slots": {
+        "light_query": "count_on",
+        "luxe_light_scope": "ci_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.ci_wo.list_off",
+      "category": "lights.rooms.ci_wo",
+      "name": "关闭的灯具",
+      "order": 39,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "次卧有哪些灯是关着的",
+      "slots": {
+        "light_query": "list_off",
+        "luxe_light_scope": "ci_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.ci_wo.count_off",
+      "category": "lights.rooms.ci_wo",
+      "name": "关闭数量",
+      "order": 40,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "次卧关了几组灯",
+      "slots": {
+        "light_query": "count_off",
+        "luxe_light_scope": "ci_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.ci_wo.total",
+      "category": "lights.rooms.ci_wo",
+      "name": "灯具总数",
+      "order": 41,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "次卧有多少组灯",
+      "slots": {
+        "light_query": "total",
+        "luxe_light_scope": "ci_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.ci_wo.all_off",
+      "category": "lights.rooms.ci_wo",
+      "name": "是否全部关闭",
+      "order": 42,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "次卧灯都关了吗",
+      "slots": {
+        "light_query": "all_off",
+        "luxe_light_scope": "ci_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.ci_wo.all_on",
+      "category": "lights.rooms.ci_wo",
+      "name": "是否全部开启",
+      "order": 43,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "次卧灯都开了吗",
+      "slots": {
+        "light_query": "all_on",
+        "luxe_light_scope": "ci_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.ci_wo.offline",
+      "category": "lights.rooms.ci_wo",
+      "name": "离线灯具",
+      "order": 44,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "次卧有没有灯具离线",
+      "slots": {
+        "light_query": "offline",
+        "luxe_light_scope": "ci_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.ci_wo.abnormal",
+      "category": "lights.rooms.ci_wo",
+      "name": "异常灯具",
+      "order": 45,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "次卧有没有灯具状态异常",
+      "slots": {
+        "light_query": "abnormal",
+        "luxe_light_scope": "ci_wo"
+      }
+    },
+    {
+      "id": "lights.rooms.er_tong_fang.list_on",
+      "category": "lights.rooms.er_tong_fang",
+      "name": "开启的灯具",
+      "order": 46,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "儿童房有哪些灯开着",
+      "slots": {
+        "light_query": "list_on",
+        "luxe_light_scope": "er_tong_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.er_tong_fang.count_on",
+      "category": "lights.rooms.er_tong_fang",
+      "name": "开启数量",
+      "order": 47,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "儿童房开了几组灯",
+      "slots": {
+        "light_query": "count_on",
+        "luxe_light_scope": "er_tong_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.er_tong_fang.list_off",
+      "category": "lights.rooms.er_tong_fang",
+      "name": "关闭的灯具",
+      "order": 48,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "儿童房有哪些灯是关着的",
+      "slots": {
+        "light_query": "list_off",
+        "luxe_light_scope": "er_tong_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.er_tong_fang.count_off",
+      "category": "lights.rooms.er_tong_fang",
+      "name": "关闭数量",
+      "order": 49,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "儿童房关了几组灯",
+      "slots": {
+        "light_query": "count_off",
+        "luxe_light_scope": "er_tong_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.er_tong_fang.total",
+      "category": "lights.rooms.er_tong_fang",
+      "name": "灯具总数",
+      "order": 50,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "儿童房有多少组灯",
+      "slots": {
+        "light_query": "total",
+        "luxe_light_scope": "er_tong_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.er_tong_fang.all_off",
+      "category": "lights.rooms.er_tong_fang",
+      "name": "是否全部关闭",
+      "order": 51,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "儿童房灯都关了吗",
+      "slots": {
+        "light_query": "all_off",
+        "luxe_light_scope": "er_tong_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.er_tong_fang.all_on",
+      "category": "lights.rooms.er_tong_fang",
+      "name": "是否全部开启",
+      "order": 52,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "儿童房灯都开了吗",
+      "slots": {
+        "light_query": "all_on",
+        "luxe_light_scope": "er_tong_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.er_tong_fang.offline",
+      "category": "lights.rooms.er_tong_fang",
+      "name": "离线灯具",
+      "order": 53,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "儿童房有没有灯具离线",
+      "slots": {
+        "light_query": "offline",
+        "luxe_light_scope": "er_tong_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.er_tong_fang.abnormal",
+      "category": "lights.rooms.er_tong_fang",
+      "name": "异常灯具",
+      "order": 54,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "儿童房有没有灯具状态异常",
+      "slots": {
+        "light_query": "abnormal",
+        "luxe_light_scope": "er_tong_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.xuan_guan.list_on",
+      "category": "lights.rooms.xuan_guan",
+      "name": "开启的灯具",
+      "order": 55,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "玄关有哪些灯开着",
+      "slots": {
+        "light_query": "list_on",
+        "luxe_light_scope": "xuan_guan"
+      }
+    },
+    {
+      "id": "lights.rooms.xuan_guan.count_on",
+      "category": "lights.rooms.xuan_guan",
+      "name": "开启数量",
+      "order": 56,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "玄关开了几组灯",
+      "slots": {
+        "light_query": "count_on",
+        "luxe_light_scope": "xuan_guan"
+      }
+    },
+    {
+      "id": "lights.rooms.xuan_guan.list_off",
+      "category": "lights.rooms.xuan_guan",
+      "name": "关闭的灯具",
+      "order": 57,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "玄关有哪些灯是关着的",
+      "slots": {
+        "light_query": "list_off",
+        "luxe_light_scope": "xuan_guan"
+      }
+    },
+    {
+      "id": "lights.rooms.xuan_guan.count_off",
+      "category": "lights.rooms.xuan_guan",
+      "name": "关闭数量",
+      "order": 58,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "玄关关了几组灯",
+      "slots": {
+        "light_query": "count_off",
+        "luxe_light_scope": "xuan_guan"
+      }
+    },
+    {
+      "id": "lights.rooms.xuan_guan.total",
+      "category": "lights.rooms.xuan_guan",
+      "name": "灯具总数",
+      "order": 59,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "玄关有多少组灯",
+      "slots": {
+        "light_query": "total",
+        "luxe_light_scope": "xuan_guan"
+      }
+    },
+    {
+      "id": "lights.rooms.xuan_guan.all_off",
+      "category": "lights.rooms.xuan_guan",
+      "name": "是否全部关闭",
+      "order": 60,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "玄关灯都关了吗",
+      "slots": {
+        "light_query": "all_off",
+        "luxe_light_scope": "xuan_guan"
+      }
+    },
+    {
+      "id": "lights.rooms.xuan_guan.all_on",
+      "category": "lights.rooms.xuan_guan",
+      "name": "是否全部开启",
+      "order": 61,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "玄关灯都开了吗",
+      "slots": {
+        "light_query": "all_on",
+        "luxe_light_scope": "xuan_guan"
+      }
+    },
+    {
+      "id": "lights.rooms.xuan_guan.offline",
+      "category": "lights.rooms.xuan_guan",
+      "name": "离线灯具",
+      "order": 62,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "玄关有没有灯具离线",
+      "slots": {
+        "light_query": "offline",
+        "luxe_light_scope": "xuan_guan"
+      }
+    },
+    {
+      "id": "lights.rooms.xuan_guan.abnormal",
+      "category": "lights.rooms.xuan_guan",
+      "name": "异常灯具",
+      "order": 63,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "玄关有没有灯具状态异常",
+      "slots": {
+        "light_query": "abnormal",
+        "luxe_light_scope": "xuan_guan"
+      }
+    },
+    {
+      "id": "lights.rooms.guo_dao.list_on",
+      "category": "lights.rooms.guo_dao",
+      "name": "开启的灯具",
+      "order": 64,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "过道有哪些灯开着",
+      "slots": {
+        "light_query": "list_on",
+        "luxe_light_scope": "guo_dao"
+      }
+    },
+    {
+      "id": "lights.rooms.guo_dao.count_on",
+      "category": "lights.rooms.guo_dao",
+      "name": "开启数量",
+      "order": 65,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "过道开了几组灯",
+      "slots": {
+        "light_query": "count_on",
+        "luxe_light_scope": "guo_dao"
+      }
+    },
+    {
+      "id": "lights.rooms.guo_dao.list_off",
+      "category": "lights.rooms.guo_dao",
+      "name": "关闭的灯具",
+      "order": 66,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "过道有哪些灯是关着的",
+      "slots": {
+        "light_query": "list_off",
+        "luxe_light_scope": "guo_dao"
+      }
+    },
+    {
+      "id": "lights.rooms.guo_dao.count_off",
+      "category": "lights.rooms.guo_dao",
+      "name": "关闭数量",
+      "order": 67,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "过道关了几组灯",
+      "slots": {
+        "light_query": "count_off",
+        "luxe_light_scope": "guo_dao"
+      }
+    },
+    {
+      "id": "lights.rooms.guo_dao.total",
+      "category": "lights.rooms.guo_dao",
+      "name": "灯具总数",
+      "order": 68,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "过道有多少组灯",
+      "slots": {
+        "light_query": "total",
+        "luxe_light_scope": "guo_dao"
+      }
+    },
+    {
+      "id": "lights.rooms.guo_dao.all_off",
+      "category": "lights.rooms.guo_dao",
+      "name": "是否全部关闭",
+      "order": 69,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "过道灯都关了吗",
+      "slots": {
+        "light_query": "all_off",
+        "luxe_light_scope": "guo_dao"
+      }
+    },
+    {
+      "id": "lights.rooms.guo_dao.all_on",
+      "category": "lights.rooms.guo_dao",
+      "name": "是否全部开启",
+      "order": 70,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "过道灯都开了吗",
+      "slots": {
+        "light_query": "all_on",
+        "luxe_light_scope": "guo_dao"
+      }
+    },
+    {
+      "id": "lights.rooms.guo_dao.offline",
+      "category": "lights.rooms.guo_dao",
+      "name": "离线灯具",
+      "order": 71,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "过道有没有灯具离线",
+      "slots": {
+        "light_query": "offline",
+        "luxe_light_scope": "guo_dao"
+      }
+    },
+    {
+      "id": "lights.rooms.guo_dao.abnormal",
+      "category": "lights.rooms.guo_dao",
+      "name": "异常灯具",
+      "order": 72,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "过道有没有灯具状态异常",
+      "slots": {
+        "light_query": "abnormal",
+        "luxe_light_scope": "guo_dao"
+      }
+    },
+    {
+      "id": "lights.rooms.chu_fang.list_on",
+      "category": "lights.rooms.chu_fang",
+      "name": "开启的灯具",
+      "order": 73,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "厨房有哪些灯开着",
+      "slots": {
+        "light_query": "list_on",
+        "luxe_light_scope": "chu_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.chu_fang.count_on",
+      "category": "lights.rooms.chu_fang",
+      "name": "开启数量",
+      "order": 74,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "厨房开了几组灯",
+      "slots": {
+        "light_query": "count_on",
+        "luxe_light_scope": "chu_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.chu_fang.list_off",
+      "category": "lights.rooms.chu_fang",
+      "name": "关闭的灯具",
+      "order": 75,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "厨房有哪些灯是关着的",
+      "slots": {
+        "light_query": "list_off",
+        "luxe_light_scope": "chu_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.chu_fang.count_off",
+      "category": "lights.rooms.chu_fang",
+      "name": "关闭数量",
+      "order": 76,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "厨房关了几组灯",
+      "slots": {
+        "light_query": "count_off",
+        "luxe_light_scope": "chu_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.chu_fang.total",
+      "category": "lights.rooms.chu_fang",
+      "name": "灯具总数",
+      "order": 77,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "厨房有多少组灯",
+      "slots": {
+        "light_query": "total",
+        "luxe_light_scope": "chu_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.chu_fang.all_off",
+      "category": "lights.rooms.chu_fang",
+      "name": "是否全部关闭",
+      "order": 78,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "厨房灯都关了吗",
+      "slots": {
+        "light_query": "all_off",
+        "luxe_light_scope": "chu_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.chu_fang.all_on",
+      "category": "lights.rooms.chu_fang",
+      "name": "是否全部开启",
+      "order": 79,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "厨房灯都开了吗",
+      "slots": {
+        "light_query": "all_on",
+        "luxe_light_scope": "chu_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.chu_fang.offline",
+      "category": "lights.rooms.chu_fang",
+      "name": "离线灯具",
+      "order": 80,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "厨房有没有灯具离线",
+      "slots": {
+        "light_query": "offline",
+        "luxe_light_scope": "chu_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.chu_fang.abnormal",
+      "category": "lights.rooms.chu_fang",
+      "name": "异常灯具",
+      "order": 81,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "厨房有没有灯具状态异常",
+      "slots": {
+        "light_query": "abnormal",
+        "luxe_light_scope": "chu_fang"
+      }
+    },
+    {
+      "id": "lights.rooms.wei_sheng_jian.list_on",
+      "category": "lights.rooms.wei_sheng_jian",
+      "name": "开启的灯具",
+      "order": 82,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "卫生间有哪些灯开着",
+      "slots": {
+        "light_query": "list_on",
+        "luxe_light_scope": "wei_sheng_jian"
+      }
+    },
+    {
+      "id": "lights.rooms.wei_sheng_jian.count_on",
+      "category": "lights.rooms.wei_sheng_jian",
+      "name": "开启数量",
+      "order": 83,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "卫生间开了几组灯",
+      "slots": {
+        "light_query": "count_on",
+        "luxe_light_scope": "wei_sheng_jian"
+      }
+    },
+    {
+      "id": "lights.rooms.wei_sheng_jian.list_off",
+      "category": "lights.rooms.wei_sheng_jian",
+      "name": "关闭的灯具",
+      "order": 84,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "卫生间有哪些灯是关着的",
+      "slots": {
+        "light_query": "list_off",
+        "luxe_light_scope": "wei_sheng_jian"
+      }
+    },
+    {
+      "id": "lights.rooms.wei_sheng_jian.count_off",
+      "category": "lights.rooms.wei_sheng_jian",
+      "name": "关闭数量",
+      "order": 85,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "卫生间关了几组灯",
+      "slots": {
+        "light_query": "count_off",
+        "luxe_light_scope": "wei_sheng_jian"
+      }
+    },
+    {
+      "id": "lights.rooms.wei_sheng_jian.total",
+      "category": "lights.rooms.wei_sheng_jian",
+      "name": "灯具总数",
+      "order": 86,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "卫生间有多少组灯",
+      "slots": {
+        "light_query": "total",
+        "luxe_light_scope": "wei_sheng_jian"
+      }
+    },
+    {
+      "id": "lights.rooms.wei_sheng_jian.all_off",
+      "category": "lights.rooms.wei_sheng_jian",
+      "name": "是否全部关闭",
+      "order": 87,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "卫生间灯都关了吗",
+      "slots": {
+        "light_query": "all_off",
+        "luxe_light_scope": "wei_sheng_jian"
+      }
+    },
+    {
+      "id": "lights.rooms.wei_sheng_jian.all_on",
+      "category": "lights.rooms.wei_sheng_jian",
+      "name": "是否全部开启",
+      "order": 88,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "卫生间灯都开了吗",
+      "slots": {
+        "light_query": "all_on",
+        "luxe_light_scope": "wei_sheng_jian"
+      }
+    },
+    {
+      "id": "lights.rooms.wei_sheng_jian.offline",
+      "category": "lights.rooms.wei_sheng_jian",
+      "name": "离线灯具",
+      "order": 89,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "卫生间有没有灯具离线",
+      "slots": {
+        "light_query": "offline",
+        "luxe_light_scope": "wei_sheng_jian"
+      }
+    },
+    {
+      "id": "lights.rooms.wei_sheng_jian.abnormal",
+      "category": "lights.rooms.wei_sheng_jian",
+      "name": "异常灯具",
+      "order": 90,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "卫生间有没有灯具状态异常",
+      "slots": {
+        "light_query": "abnormal",
+        "luxe_light_scope": "wei_sheng_jian"
+      }
+    },
+    {
+      "id": "lights.rooms.yang_tai.list_on",
+      "category": "lights.rooms.yang_tai",
+      "name": "开启的灯具",
+      "order": 91,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "阳台有哪些灯开着",
+      "slots": {
+        "light_query": "list_on",
+        "luxe_light_scope": "yang_tai"
+      }
+    },
+    {
+      "id": "lights.rooms.yang_tai.count_on",
+      "category": "lights.rooms.yang_tai",
+      "name": "开启数量",
+      "order": 92,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "阳台开了几组灯",
+      "slots": {
+        "light_query": "count_on",
+        "luxe_light_scope": "yang_tai"
+      }
+    },
+    {
+      "id": "lights.rooms.yang_tai.list_off",
+      "category": "lights.rooms.yang_tai",
+      "name": "关闭的灯具",
+      "order": 93,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "阳台有哪些灯是关着的",
+      "slots": {
+        "light_query": "list_off",
+        "luxe_light_scope": "yang_tai"
+      }
+    },
+    {
+      "id": "lights.rooms.yang_tai.count_off",
+      "category": "lights.rooms.yang_tai",
+      "name": "关闭数量",
+      "order": 94,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "阳台关了几组灯",
+      "slots": {
+        "light_query": "count_off",
+        "luxe_light_scope": "yang_tai"
+      }
+    },
+    {
+      "id": "lights.rooms.yang_tai.total",
+      "category": "lights.rooms.yang_tai",
+      "name": "灯具总数",
+      "order": 95,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "阳台有多少组灯",
+      "slots": {
+        "light_query": "total",
+        "luxe_light_scope": "yang_tai"
+      }
+    },
+    {
+      "id": "lights.rooms.yang_tai.all_off",
+      "category": "lights.rooms.yang_tai",
+      "name": "是否全部关闭",
+      "order": 96,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "阳台灯都关了吗",
+      "slots": {
+        "light_query": "all_off",
+        "luxe_light_scope": "yang_tai"
+      }
+    },
+    {
+      "id": "lights.rooms.yang_tai.all_on",
+      "category": "lights.rooms.yang_tai",
+      "name": "是否全部开启",
+      "order": 97,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "阳台灯都开了吗",
+      "slots": {
+        "light_query": "all_on",
+        "luxe_light_scope": "yang_tai"
+      }
+    },
+    {
+      "id": "lights.rooms.yang_tai.offline",
+      "category": "lights.rooms.yang_tai",
+      "name": "离线灯具",
+      "order": 98,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "阳台有没有灯具离线",
+      "slots": {
+        "light_query": "offline",
+        "luxe_light_scope": "yang_tai"
+      }
+    },
+    {
+      "id": "lights.rooms.yang_tai.abnormal",
+      "category": "lights.rooms.yang_tai",
+      "name": "异常灯具",
+      "order": 99,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "阳台有没有灯具状态异常",
+      "slots": {
+        "light_query": "abnormal",
+        "luxe_light_scope": "yang_tai"
+      }
+    },
+    {
+      "id": "lights.fixtures.living_ceiling.single_state",
+      "category": "lights.fixtures.living_ceiling",
+      "name": "开关状态",
+      "order": 100,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅吸顶灯状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.living_ceiling.brightness",
+      "category": "lights.fixtures.living_ceiling",
+      "name": "亮度",
+      "order": 101,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅吸顶灯亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.living_ceiling.temperature",
+      "category": "lights.fixtures.living_ceiling",
+      "name": "色温",
+      "order": 102,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅吸顶灯色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.living_spot.single_state",
+      "category": "lights.fixtures.living_spot",
+      "name": "开关状态",
+      "order": 103,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅射灯状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.living_spot.brightness",
+      "category": "lights.fixtures.living_spot",
+      "name": "亮度",
+      "order": 104,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅射灯亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.living_spot.temperature",
+      "category": "lights.fixtures.living_spot",
+      "name": "色温",
+      "order": 105,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅射灯色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.living_strip.single_state",
+      "category": "lights.fixtures.living_strip",
+      "name": "开关状态",
+      "order": 106,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅灯带状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.living_strip.brightness",
+      "category": "lights.fixtures.living_strip",
+      "name": "亮度",
+      "order": 107,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅灯带亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.living_strip.temperature",
+      "category": "lights.fixtures.living_strip",
+      "name": "色温",
+      "order": 108,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "客厅灯带色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.dining_fan.single_state",
+      "category": "lights.fixtures.dining_fan",
+      "name": "开关状态",
+      "order": 109,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐厅风扇灯状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.dining_fan.brightness",
+      "category": "lights.fixtures.dining_fan",
+      "name": "亮度",
+      "order": 110,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐厅风扇灯亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.dining_fan.temperature",
+      "category": "lights.fixtures.dining_fan",
+      "name": "色温",
+      "order": 111,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐厅风扇灯色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.dining_strip.single_state",
+      "category": "lights.fixtures.dining_strip",
+      "name": "开关状态",
+      "order": 112,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐边柜灯带状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.dining_strip.brightness",
+      "category": "lights.fixtures.dining_strip",
+      "name": "亮度",
+      "order": 113,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐边柜灯带亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.dining_strip.temperature",
+      "category": "lights.fixtures.dining_strip",
+      "name": "色温",
+      "order": 114,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "餐边柜灯带色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.master_ceiling.single_state",
+      "category": "lights.fixtures.master_ceiling",
+      "name": "开关状态",
+      "order": 115,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "主卧吸顶灯状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.master_ceiling.brightness",
+      "category": "lights.fixtures.master_ceiling",
+      "name": "亮度",
+      "order": 116,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "主卧吸顶灯亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.master_ceiling.temperature",
+      "category": "lights.fixtures.master_ceiling",
+      "name": "色温",
+      "order": 117,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "主卧吸顶灯色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.secondary_ceiling.single_state",
+      "category": "lights.fixtures.secondary_ceiling",
+      "name": "开关状态",
+      "order": 118,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "次卧吸顶灯状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.secondary_ceiling.brightness",
+      "category": "lights.fixtures.secondary_ceiling",
+      "name": "亮度",
+      "order": 119,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "次卧吸顶灯亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.secondary_ceiling.temperature",
+      "category": "lights.fixtures.secondary_ceiling",
+      "name": "色温",
+      "order": 120,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "次卧吸顶灯色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.child_ceiling.single_state",
+      "category": "lights.fixtures.child_ceiling",
+      "name": "开关状态",
+      "order": 121,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "儿童房吸顶灯状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.child_ceiling.brightness",
+      "category": "lights.fixtures.child_ceiling",
+      "name": "亮度",
+      "order": 122,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "儿童房吸顶灯亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.child_ceiling.temperature",
+      "category": "lights.fixtures.child_ceiling",
+      "name": "色温",
+      "order": 123,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "儿童房吸顶灯色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.entry_downlight.single_state",
+      "category": "lights.fixtures.entry_downlight",
+      "name": "开关状态",
+      "order": 124,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "玄关筒灯状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.entry_downlight.brightness",
+      "category": "lights.fixtures.entry_downlight",
+      "name": "亮度",
+      "order": 125,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "玄关筒灯亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.entry_downlight.temperature",
+      "category": "lights.fixtures.entry_downlight",
+      "name": "色温",
+      "order": 126,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "玄关筒灯色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.shoe_strip.single_state",
+      "category": "lights.fixtures.shoe_strip",
+      "name": "开关状态",
+      "order": 127,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "鞋柜灯带状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.shoe_strip.brightness",
+      "category": "lights.fixtures.shoe_strip",
+      "name": "亮度",
+      "order": 128,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "鞋柜灯带亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.shoe_strip.temperature",
+      "category": "lights.fixtures.shoe_strip",
+      "name": "色温",
+      "order": 129,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "鞋柜灯带色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.hall_downlight.single_state",
+      "category": "lights.fixtures.hall_downlight",
+      "name": "开关状态",
+      "order": 130,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "过道筒灯状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.hall_downlight.brightness",
+      "category": "lights.fixtures.hall_downlight",
+      "name": "亮度",
+      "order": 131,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "过道筒灯亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.hall_downlight.temperature",
+      "category": "lights.fixtures.hall_downlight",
+      "name": "色温",
+      "order": 132,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "过道筒灯色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.kitchen_downlight.single_state",
+      "category": "lights.fixtures.kitchen_downlight",
+      "name": "开关状态",
+      "order": 133,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "厨房筒灯状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.kitchen_downlight.brightness",
+      "category": "lights.fixtures.kitchen_downlight",
+      "name": "亮度",
+      "order": 134,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "厨房筒灯亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.kitchen_downlight.temperature",
+      "category": "lights.fixtures.kitchen_downlight",
+      "name": "色温",
+      "order": 135,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "厨房筒灯色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.bath_panel.single_state",
+      "category": "lights.fixtures.bath_panel",
+      "name": "开关状态",
+      "order": 136,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "人体存在平板灯状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.bath_panel.brightness",
+      "category": "lights.fixtures.bath_panel",
+      "name": "亮度",
+      "order": 137,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "人体存在平板灯亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.bath_panel.temperature",
+      "category": "lights.fixtures.bath_panel",
+      "name": "色温",
+      "order": 138,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "人体存在平板灯色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.bath_heater.single_state",
+      "category": "lights.fixtures.bath_heater",
+      "name": "开关状态",
+      "order": 139,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "智能浴霸S1灯状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.bath_heater.brightness",
+      "category": "lights.fixtures.bath_heater",
+      "name": "亮度",
+      "order": 140,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "智能浴霸S1灯亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.bath_heater.temperature",
+      "category": "lights.fixtures.bath_heater",
+      "name": "色温",
+      "order": 141,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "智能浴霸S1灯色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.airer.single_state",
+      "category": "lights.fixtures.airer",
+      "name": "开关状态",
+      "order": 142,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "晾衣架灯状态如何",
+      "slots": {
+        "light_query": "single_state"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.airer.brightness",
+      "category": "lights.fixtures.airer",
+      "name": "亮度",
+      "order": 143,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "晾衣架灯亮度是多少",
+      "slots": {
+        "light_query": "brightness"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    },
+    {
+      "id": "lights.fixtures.airer.temperature",
+      "category": "lights.fixtures.airer",
+      "name": "色温",
+      "order": 144,
+      "intent": "LuxeLightQuery",
+      "read_only": true,
+      "sentence": "晾衣架灯色温是多少",
+      "slots": {
+        "light_query": "temperature"
+      },
+      "native_slots": {
+        "luxe_light_id": "light"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1085 @@
+{
+  "schema_version": 1,
+  "module": {
+    "id": "appliance",
+    "name": "家电",
+    "icon": "🔌",
+    "order": 300,
+    "version": "1.0.0"
+  },
+  "categories": [
+    {
+      "id": "appliance.ac",
+      "name": "空调",
+      "parent": "appliance",
+      "order": 20
+    },
+    {
+      "id": "appliance.washer",
+      "name": "洗衣机",
+      "parent": "appliance",
+      "order": 10
+    },
+    {
+      "id": "appliance.ac.master",
+      "name": "主卧空调",
+      "parent": "appliance.ac",
+      "order": 10
+    },
+    {
+      "id": "appliance.bath",
+      "name": "浴霸",
+      "parent": "appliance",
+      "order": 30
+    },
+    {
+      "id": "appliance.airer",
+      "name": "晾衣机",
+      "parent": "appliance",
+      "order": 40
+    },
+    {
+      "id": "appliance.fan",
+      "name": "餐厅风扇",
+      "parent": "appliance",
+      "order": 50,
+      "aliases": [
+        "风扇"
+      ]
+    },
+    {
+      "id": "appliance.purifier",
+      "name": "净水器",
+      "parent": "appliance",
+      "order": 60
+    },
+    {
+      "id": "appliance.ac.secondary",
+      "name": "次卧空调",
+      "parent": "appliance.ac",
+      "order": 20
+    },
+    {
+      "id": "appliance.ac.all",
+      "name": "全部空调",
+      "parent": "appliance.ac",
+      "order": 30
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "appliance.washer.status",
+      "category": "appliance.washer",
+      "name": "洗衣机现在状态如何",
+      "order": 1,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机现在状态如何",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "status"
+      }
+    },
+    {
+      "id": "appliance.washer.power",
+      "category": "appliance.washer",
+      "name": "洗衣机开机了吗",
+      "order": 2,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机开机了吗",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "power"
+      }
+    },
+    {
+      "id": "appliance.washer.program",
+      "category": "appliance.washer",
+      "name": "洗衣机当前是什么程序",
+      "order": 3,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机当前是什么程序",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "program"
+      }
+    },
+    {
+      "id": "appliance.washer.phase",
+      "category": "appliance.washer",
+      "name": "洗衣机洗到哪一步了",
+      "order": 4,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机洗到哪一步了",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "phase"
+      }
+    },
+    {
+      "id": "appliance.washer.remaining",
+      "category": "appliance.washer",
+      "name": "洗衣机还有多久洗完",
+      "order": 5,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机还有多久洗完",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "remaining"
+      }
+    },
+    {
+      "id": "appliance.washer.door",
+      "category": "appliance.washer",
+      "name": "洗衣机筒门关了吗",
+      "order": 6,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机筒门关了吗",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "door"
+      }
+    },
+    {
+      "id": "appliance.washer.lock",
+      "category": "appliance.washer",
+      "name": "洗衣机门锁锁了吗",
+      "order": 7,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机门锁锁了吗",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "lock"
+      }
+    },
+    {
+      "id": "appliance.washer.child",
+      "category": "appliance.washer",
+      "name": "洗衣机童锁开了吗",
+      "order": 8,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机童锁开了吗",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "child"
+      }
+    },
+    {
+      "id": "appliance.washer.fault",
+      "category": "appliance.washer",
+      "name": "洗衣机有故障吗",
+      "order": 9,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机有故障吗",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "fault"
+      }
+    },
+    {
+      "id": "appliance.washer.temp",
+      "category": "appliance.washer",
+      "name": "洗衣机洗涤水温是多少",
+      "order": 10,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机洗涤水温是多少",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "temp"
+      }
+    },
+    {
+      "id": "appliance.washer.spin",
+      "category": "appliance.washer",
+      "name": "洗衣机脱水转速是多少",
+      "order": 11,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机脱水转速是多少",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "spin"
+      }
+    },
+    {
+      "id": "appliance.washer.rinse",
+      "category": "appliance.washer",
+      "name": "洗衣机还要漂洗几次",
+      "order": 12,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机还要漂洗几次",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "rinse"
+      }
+    },
+    {
+      "id": "appliance.washer.detergent",
+      "category": "appliance.washer",
+      "name": "洗衣机洗衣液还有吗",
+      "order": 13,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机洗衣液还有吗",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "detergent"
+      }
+    },
+    {
+      "id": "appliance.washer.softener",
+      "category": "appliance.washer",
+      "name": "洗衣机柔顺剂还有吗",
+      "order": 14,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机柔顺剂还有吗",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "softener"
+      }
+    },
+    {
+      "id": "appliance.washer.water",
+      "category": "appliance.washer",
+      "name": "洗衣机本次用了多少水",
+      "order": 15,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机本次用了多少水",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "water"
+      }
+    },
+    {
+      "id": "appliance.washer.energy",
+      "category": "appliance.washer",
+      "name": "洗衣机本次用了多少电",
+      "order": 16,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机本次用了多少电",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "energy"
+      }
+    },
+    {
+      "id": "appliance.washer.totalwater",
+      "category": "appliance.washer",
+      "name": "洗衣机累计用水量",
+      "order": 17,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机累计用水量",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "totalwater"
+      }
+    },
+    {
+      "id": "appliance.washer.totalenergy",
+      "category": "appliance.washer",
+      "name": "洗衣机累计用电量",
+      "order": 18,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机累计用电量",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "totalenergy"
+      }
+    },
+    {
+      "id": "appliance.washer.cycles",
+      "category": "appliance.washer",
+      "name": "洗衣机一共洗了多少次",
+      "order": 19,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "洗衣机一共洗了多少次",
+      "slots": {
+        "luxe_appliance_device": "w",
+        "luxe_appliance_query": "cycles"
+      }
+    },
+    {
+      "id": "appliance.ac.master.status",
+      "category": "appliance.ac.master",
+      "name": "主卧空调现在状态如何",
+      "order": 20,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "主卧空调现在状态如何",
+      "slots": {
+        "luxe_appliance_device": "m",
+        "luxe_appliance_query": "status"
+      }
+    },
+    {
+      "id": "appliance.ac.master.mode",
+      "category": "appliance.ac.master",
+      "name": "主卧空调什么模式",
+      "order": 21,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "主卧空调什么模式",
+      "slots": {
+        "luxe_appliance_device": "m",
+        "luxe_appliance_query": "mode"
+      }
+    },
+    {
+      "id": "appliance.ac.master.action",
+      "category": "appliance.ac.master",
+      "name": "主卧空调正在制冷吗",
+      "order": 22,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "主卧空调正在制冷吗",
+      "slots": {
+        "luxe_appliance_device": "m",
+        "luxe_appliance_query": "action"
+      }
+    },
+    {
+      "id": "appliance.ac.master.target",
+      "category": "appliance.ac.master",
+      "name": "主卧空调设定温度是多少",
+      "order": 23,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "主卧空调设定温度是多少",
+      "slots": {
+        "luxe_appliance_device": "m",
+        "luxe_appliance_query": "target"
+      }
+    },
+    {
+      "id": "appliance.ac.master.temp",
+      "category": "appliance.ac.master",
+      "name": "主卧空调室温是多少",
+      "order": 24,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "主卧空调室温是多少",
+      "slots": {
+        "luxe_appliance_device": "m",
+        "luxe_appliance_query": "temp"
+      }
+    },
+    {
+      "id": "appliance.ac.master.fan",
+      "category": "appliance.ac.master",
+      "name": "主卧空调风速是多少",
+      "order": 25,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "主卧空调风速是多少",
+      "slots": {
+        "luxe_appliance_device": "m",
+        "luxe_appliance_query": "fan"
+      }
+    },
+    {
+      "id": "appliance.ac.master.swing",
+      "category": "appliance.ac.master",
+      "name": "主卧空调扫风开了吗",
+      "order": 26,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "主卧空调扫风开了吗",
+      "slots": {
+        "luxe_appliance_device": "m",
+        "luxe_appliance_query": "swing"
+      }
+    },
+    {
+      "id": "appliance.ac.master.preset",
+      "category": "appliance.ac.master",
+      "name": "主卧空调预设模式",
+      "order": 27,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "主卧空调预设模式",
+      "slots": {
+        "luxe_appliance_device": "m",
+        "luxe_appliance_query": "preset"
+      }
+    },
+    {
+      "id": "appliance.bath.status",
+      "category": "appliance.bath",
+      "name": "浴霸现在状态如何",
+      "order": 28,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸现在状态如何",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "status"
+      }
+    },
+    {
+      "id": "appliance.bath.heat",
+      "category": "appliance.bath",
+      "name": "浴霸暖风开了吗",
+      "order": 29,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸暖风开了吗",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "heat"
+      }
+    },
+    {
+      "id": "appliance.bath.vent",
+      "category": "appliance.bath",
+      "name": "浴霸换气开了吗",
+      "order": 30,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸换气开了吗",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "vent"
+      }
+    },
+    {
+      "id": "appliance.bath.blow",
+      "category": "appliance.bath",
+      "name": "浴霸吹风开了吗",
+      "order": 31,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸吹风开了吗",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "blow"
+      }
+    },
+    {
+      "id": "appliance.bath.light",
+      "category": "appliance.bath",
+      "name": "浴霸照明状态",
+      "order": 32,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸照明状态",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "light"
+      }
+    },
+    {
+      "id": "appliance.bath.heatlevel",
+      "category": "appliance.bath",
+      "name": "浴霸取暖档位",
+      "order": 33,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸取暖档位",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "heatlevel"
+      }
+    },
+    {
+      "id": "appliance.bath.ventlevel",
+      "category": "appliance.bath",
+      "name": "浴霸换气档位",
+      "order": 34,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸换气档位",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "ventlevel"
+      }
+    },
+    {
+      "id": "appliance.bath.blowlevel",
+      "category": "appliance.bath",
+      "name": "浴霸吹风档位",
+      "order": 35,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸吹风档位",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "blowlevel"
+      }
+    },
+    {
+      "id": "appliance.bath.temp",
+      "category": "appliance.bath",
+      "name": "浴霸当前温度是多少",
+      "order": 36,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸当前温度是多少",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "temp"
+      }
+    },
+    {
+      "id": "appliance.bath.target",
+      "category": "appliance.bath",
+      "name": "浴霸设定温度是多少",
+      "order": 37,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸设定温度是多少",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "target"
+      }
+    },
+    {
+      "id": "appliance.bath.mode",
+      "category": "appliance.bath",
+      "name": "浴霸当前模式",
+      "order": 38,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸当前模式",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "mode"
+      }
+    },
+    {
+      "id": "appliance.bath.fault",
+      "category": "appliance.bath",
+      "name": "浴霸有故障吗",
+      "order": 39,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸有故障吗",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "fault"
+      }
+    },
+    {
+      "id": "appliance.bath.sterilize",
+      "category": "appliance.bath",
+      "name": "浴霸杀菌状态",
+      "order": 40,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸杀菌状态",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "sterilize"
+      }
+    },
+    {
+      "id": "appliance.bath.steriletime",
+      "category": "appliance.bath",
+      "name": "浴霸杀菌还剩多久",
+      "order": 41,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸杀菌还剩多久",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "steriletime"
+      }
+    },
+    {
+      "id": "appliance.bath.lightremain",
+      "category": "appliance.bath",
+      "name": "浴霸照明延时还剩多久",
+      "order": 42,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸照明延时还剩多久",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "lightremain"
+      }
+    },
+    {
+      "id": "appliance.bath.heatremain",
+      "category": "appliance.bath",
+      "name": "浴霸延时关闭还剩多久",
+      "order": 43,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "浴霸延时关闭还剩多久",
+      "slots": {
+        "luxe_appliance_device": "b",
+        "luxe_appliance_query": "heatremain"
+      }
+    },
+    {
+      "id": "appliance.airer.status",
+      "category": "appliance.airer",
+      "name": "晾衣机现在状态如何",
+      "order": 44,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "晾衣机现在状态如何",
+      "slots": {
+        "luxe_appliance_device": "a",
+        "luxe_appliance_query": "status"
+      }
+    },
+    {
+      "id": "appliance.airer.position",
+      "category": "appliance.airer",
+      "name": "晾衣机当前位置是多少",
+      "order": 45,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "晾衣机当前位置是多少",
+      "slots": {
+        "luxe_appliance_device": "a",
+        "luxe_appliance_query": "position"
+      }
+    },
+    {
+      "id": "appliance.airer.limits",
+      "category": "appliance.airer",
+      "name": "晾衣机上下限位是多少",
+      "order": 46,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "晾衣机上下限位是多少",
+      "slots": {
+        "luxe_appliance_device": "a",
+        "luxe_appliance_query": "limits"
+      }
+    },
+    {
+      "id": "appliance.airer.light",
+      "category": "appliance.airer",
+      "name": "晾衣机照明状态",
+      "order": 47,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "晾衣机照明状态",
+      "slots": {
+        "luxe_appliance_device": "a",
+        "luxe_appliance_query": "light"
+      }
+    },
+    {
+      "id": "appliance.airer.fault",
+      "category": "appliance.airer",
+      "name": "晾衣机有故障吗",
+      "order": 48,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "晾衣机有故障吗",
+      "slots": {
+        "luxe_appliance_device": "a",
+        "luxe_appliance_query": "fault"
+      }
+    },
+    {
+      "id": "appliance.fan.status",
+      "category": "appliance.fan",
+      "name": "餐厅风扇现在状态如何",
+      "order": 49,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "餐厅风扇现在状态如何",
+      "slots": {
+        "luxe_appliance_device": "f",
+        "luxe_appliance_query": "status"
+      }
+    },
+    {
+      "id": "appliance.fan.speed",
+      "category": "appliance.fan",
+      "name": "餐厅风扇风速是多少",
+      "order": 50,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "餐厅风扇风速是多少",
+      "slots": {
+        "luxe_appliance_device": "f",
+        "luxe_appliance_query": "speed"
+      }
+    },
+    {
+      "id": "appliance.fan.mode",
+      "category": "appliance.fan",
+      "name": "餐厅风扇什么风模式",
+      "order": 51,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "餐厅风扇什么风模式",
+      "slots": {
+        "luxe_appliance_device": "f",
+        "luxe_appliance_query": "mode"
+      }
+    },
+    {
+      "id": "appliance.fan.natural",
+      "category": "appliance.fan",
+      "name": "餐厅风扇自然风是什么场景",
+      "order": 52,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "餐厅风扇自然风是什么场景",
+      "slots": {
+        "luxe_appliance_device": "f",
+        "luxe_appliance_query": "natural"
+      }
+    },
+    {
+      "id": "appliance.fan.light",
+      "category": "appliance.fan",
+      "name": "餐厅风扇照明状态",
+      "order": 53,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "餐厅风扇照明状态",
+      "slots": {
+        "luxe_appliance_device": "f",
+        "luxe_appliance_query": "light"
+      }
+    },
+    {
+      "id": "appliance.purifier.status",
+      "category": "appliance.purifier",
+      "name": "净水器现在状态如何",
+      "order": 54,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "净水器现在状态如何",
+      "slots": {
+        "luxe_appliance_device": "p",
+        "luxe_appliance_query": "status"
+      }
+    },
+    {
+      "id": "appliance.purifier.filters",
+      "category": "appliance.purifier",
+      "name": "净水器滤芯还剩多少",
+      "order": 55,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "净水器滤芯还剩多少",
+      "slots": {
+        "luxe_appliance_device": "p",
+        "luxe_appliance_query": "filters"
+      }
+    },
+    {
+      "id": "appliance.purifier.ppc",
+      "category": "appliance.purifier",
+      "name": "净水器PPC滤芯寿命",
+      "order": 56,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "净水器PPC滤芯寿命",
+      "slots": {
+        "luxe_appliance_device": "p",
+        "luxe_appliance_query": "ppc"
+      }
+    },
+    {
+      "id": "appliance.purifier.ro",
+      "category": "appliance.purifier",
+      "name": "净水器RO滤芯寿命",
+      "order": 57,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "净水器RO滤芯寿命",
+      "slots": {
+        "luxe_appliance_device": "p",
+        "luxe_appliance_query": "ro"
+      }
+    },
+    {
+      "id": "appliance.purifier.days",
+      "category": "appliance.purifier",
+      "name": "净水器滤芯还能用多久",
+      "order": 58,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "净水器滤芯还能用多久",
+      "slots": {
+        "luxe_appliance_device": "p",
+        "luxe_appliance_query": "days"
+      }
+    },
+    {
+      "id": "appliance.purifier.replace",
+      "category": "appliance.purifier",
+      "name": "净水器滤芯要换了吗",
+      "order": 59,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "净水器滤芯要换了吗",
+      "slots": {
+        "luxe_appliance_device": "p",
+        "luxe_appliance_query": "replace"
+      }
+    },
+    {
+      "id": "appliance.purifier.fault",
+      "category": "appliance.purifier",
+      "name": "净水器有故障吗",
+      "order": 60,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "净水器有故障吗",
+      "slots": {
+        "luxe_appliance_device": "p",
+        "luxe_appliance_query": "fault"
+      }
+    },
+    {
+      "id": "appliance.purifier.tds",
+      "category": "appliance.purifier",
+      "name": "净水器出水TDS是多少",
+      "order": 61,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "净水器出水TDS是多少",
+      "slots": {
+        "luxe_appliance_device": "p",
+        "luxe_appliance_query": "tds"
+      }
+    },
+    {
+      "id": "appliance.purifier.temp",
+      "category": "appliance.purifier",
+      "name": "净水器水温是多少",
+      "order": 62,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "净水器水温是多少",
+      "slots": {
+        "luxe_appliance_device": "p",
+        "luxe_appliance_query": "temp"
+      }
+    },
+    {
+      "id": "appliance.purifier.volume",
+      "category": "appliance.purifier",
+      "name": "净水器最近一次制水量",
+      "order": 63,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "净水器最近一次制水量",
+      "slots": {
+        "luxe_appliance_device": "p",
+        "luxe_appliance_query": "volume"
+      }
+    },
+    {
+      "id": "appliance.purifier.duration",
+      "category": "appliance.purifier",
+      "name": "净水器最近一次制水多久",
+      "order": 64,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "净水器最近一次制水多久",
+      "slots": {
+        "luxe_appliance_device": "p",
+        "luxe_appliance_query": "duration"
+      }
+    },
+    {
+      "id": "appliance.purifier.holiday",
+      "category": "appliance.purifier",
+      "name": "净水器假期模式开了吗",
+      "order": 65,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "净水器假期模式开了吗",
+      "slots": {
+        "luxe_appliance_device": "p",
+        "luxe_appliance_query": "holiday"
+      }
+    },
+    {
+      "id": "appliance.purifier.mode",
+      "category": "appliance.purifier",
+      "name": "净水器出水模式",
+      "order": 66,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "净水器出水模式",
+      "slots": {
+        "luxe_appliance_device": "p",
+        "luxe_appliance_query": "mode"
+      }
+    },
+    {
+      "id": "appliance.ac.secondary.status",
+      "category": "appliance.ac.secondary",
+      "name": "次卧空调现在状态如何",
+      "order": 67,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "次卧空调现在状态如何",
+      "slots": {
+        "luxe_appliance_device": "s",
+        "luxe_appliance_query": "status"
+      }
+    },
+    {
+      "id": "appliance.ac.secondary.mode",
+      "category": "appliance.ac.secondary",
+      "name": "次卧空调什么模式",
+      "order": 68,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "次卧空调什么模式",
+      "slots": {
+        "luxe_appliance_device": "s",
+        "luxe_appliance_query": "mode"
+      }
+    },
+    {
+      "id": "appliance.ac.secondary.action",
+      "category": "appliance.ac.secondary",
+      "name": "次卧空调正在制冷吗",
+      "order": 69,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "次卧空调正在制冷吗",
+      "slots": {
+        "luxe_appliance_device": "s",
+        "luxe_appliance_query": "action"
+      }
+    },
+    {
+      "id": "appliance.ac.secondary.target",
+      "category": "appliance.ac.secondary",
+      "name": "次卧空调设定温度是多少",
+      "order": 70,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "次卧空调设定温度是多少",
+      "slots": {
+        "luxe_appliance_device": "s",
+        "luxe_appliance_query": "target"
+      }
+    },
+    {
+      "id": "appliance.ac.secondary.temp",
+      "category": "appliance.ac.secondary",
+      "name": "次卧空调室温是多少",
+      "order": 71,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "次卧空调室温是多少",
+      "slots": {
+        "luxe_appliance_device": "s",
+        "luxe_appliance_query": "temp"
+      }
+    },
+    {
+      "id": "appliance.ac.secondary.fan",
+      "category": "appliance.ac.secondary",
+      "name": "次卧空调风速是多少",
+      "order": 72,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "次卧空调风速是多少",
+      "slots": {
+        "luxe_appliance_device": "s",
+        "luxe_appliance_query": "fan"
+      }
+    },
+    {
+      "id": "appliance.ac.secondary.swing",
+      "category": "appliance.ac.secondary",
+      "name": "次卧空调扫风开了吗",
+      "order": 73,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "次卧空调扫风开了吗",
+      "slots": {
+        "luxe_appliance_device": "s",
+        "luxe_appliance_query": "swing"
+      }
+    },
+    {
+      "id": "appliance.ac.secondary.preset",
+      "category": "appliance.ac.secondary",
+      "name": "次卧空调预设模式",
+      "order": 74,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "次卧空调预设模式",
+      "slots": {
+        "luxe_appliance_device": "s",
+        "luxe_appliance_query": "preset"
+      }
+    },
+    {
+      "id": "appliance.ac.all.status",
+      "category": "appliance.ac.all",
+      "name": "家里哪台空调开着",
+      "order": 75,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "家里哪台空调开着",
+      "slots": {
+        "luxe_appliance_device": "ac",
+        "luxe_appliance_query": "status"
+      }
+    },
+    {
+      "id": "appliance.ac.all.count",
+      "category": "appliance.ac.all",
+      "name": "空调开了几台",
+      "order": 76,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "空调开了几台",
+      "slots": {
+        "luxe_appliance_device": "ac",
+        "luxe_appliance_query": "count"
+      }
+    },
+    {
+      "id": "appliance.ac.all.temp",
+      "category": "appliance.ac.all",
+      "name": "两台空调的室温分别是多少",
+      "order": 77,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "两台空调的室温分别是多少",
+      "slots": {
+        "luxe_appliance_device": "ac",
+        "luxe_appliance_query": "temp"
+      }
+    },
+    {
+      "id": "appliance.ac.all.target",
+      "category": "appliance.ac.all",
+      "name": "两台空调的设定温度分别是多少",
+      "order": 78,
+      "intent": "LuxeApplianceQuery",
+      "read_only": true,
+      "sentence": "两台空调的设定温度分别是多少",
+      "slots": {
+        "luxe_appliance_device": "ac",
+        "luxe_appliance_query": "target"
+      }
+    }
+  ]
+}

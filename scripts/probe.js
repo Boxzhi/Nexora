@@ -1,4 +1,4 @@
-// Nexora v0.1.0-preview: targeted live HA checks, no LLM or device control.
+// Nexora v0.2.0-preview: targeted live HA checks, no LLM or device control.
 (async()=>{
  const hass=document.querySelector("home-assistant")?.hass;
  if(!hass)throw Error("找不到 HA 前端");
@@ -20,7 +20,12 @@
   const native=await call("水费余额是多少",cid,"conversation.home_assistant");
   if(native.response_type==="error"||!native.speech)throw Error("原生水费查询失败");
   report.native_reference=native.speech;
-  await check("help","水电气");
+  await check("help","1. ⚡ 水电气");
+  await check("帮助","4. 🏠 全屋状态");
+  await check("灯光","💡 灯光");
+  await check("家电","🔌 家电");
+  await check("全屋状态","🏠 全屋状态");
+  await check("HELP","2. 💡 灯光");
   await check("1","水费");
   await check("水费","账户余额");
   await check("1",native.speech);
@@ -33,11 +38,14 @@
   await check("9","第三阶梯");
   await check("上一页","下一页");
   await check("水费历史查询","月度用量");
+  await check("EXIT","已退出");
+  await check("1","没有有效菜单");
+  await check("帮助","水电气");
   await check("退出","已退出");
   await check("1","没有有效菜单");
   report.passed=report.checks.every(x=>x.passed);
  }catch(e){report.error=e.message||String(e);}
- console.log("========== Nexora v0.1.0-preview 真实环境验收 ==========");
+ console.log("========== Nexora v0.2.0-preview 真实环境验收 ==========");
  console.log(JSON.stringify(report,null,2));
  console.log("========== 验收结束 ==========");
 })();

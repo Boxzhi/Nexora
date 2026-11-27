@@ -1,6 +1,7 @@
 """Route menu commands locally and preserve the existing conversation fallback."""
 import asyncio
 import logging
+import re
 from uuid import uuid4
 
 from homeassistant.components import conversation
@@ -14,6 +15,19 @@ def _slot_equal(actual, expected):
     if type(expected) is int:
         return (type(actual) in (int, float) and actual == expected) or (type(actual) is str and actual == str(expected))
     return type(actual) is str and actual == expected
+
+def _slots_match(recognized, expected, native_slots):
+    if set(recognized) != set(expected) | set(native_slots):
+        return False
+    if any(not _slot_equal(recognized[k], v) for k, v in expected.items()):
+        return False
+    # The target is resolved by the locally installed, strict native sentence
+    # lists, not by menu input or an LLM. Never accept another domain.
+    for key, domain in native_slots.items():
+        value = recognized[key]
+        if domain != "light" or key != "luxe_light_id" or type(value) is not str or not re.fullmatch(r"light\.[a-z0-9_]+", value):
+            return False
+    return True
 
 class NexoraAgent(conversation.AbstractConversationAgent):
     def __init__(self, hass, entry_id, menu, fallback):
@@ -67,7 +81,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                     return self._reply(u, cid, "该问句与已安装意图库不匹配，请检查版本。")
                 recognized = {item.name: item.value for item in result.entities_list}
                 expected = reply.slots
-                if set(recognized) != set(expected) or any(not _slot_equal(recognized[k], v) for k,v in expected.items()) or self._handler(cap["intent"]) is not handler:
+                if not _slots_match(recognized, expected, cap.get("native_slots", {})) or self._handler(cap["intent"]) is not handler:
                     return self._reply(u, cid, "查询参数与已安装意图库不一致，请检查版本。")
                 # No await between handler identity validation and dispatch.
                 response = await intent.async_handle(self.hass, "conversation", cap["intent"], {k:{"value":v,"text":str(v)} for k,v in recognized.items()}, reply.sentence, u.context, u.language, assistant="conversation", conversation_agent_id="conversation.home_assistant")

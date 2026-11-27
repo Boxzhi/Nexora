@@ -96,3 +96,21 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertTrue(self.a._slot_equal(2024.0,2024))
         self.assertFalse(self.a._slot_equal(True,1))
         self.assertFalse(self.a._slot_equal("l","j"))
+
+    def test_native_light_slots(self):
+        expected={"light_query":"single_state"}
+        native={"luxe_light_id":"light"}
+        self.assertTrue(self.a._slots_match({**expected,"luxe_light_id":"light.example"},expected,native))
+        self.assertFalse(self.a._slots_match({**expected,"luxe_light_id":"switch.example"},expected,native))
+        self.assertFalse(self.a._slots_match({**expected,"luxe_light_id":"light.example","unexpected":"x"},expected,native))
+        self.assertFalse(self.a._slots_match({"light_query":"brightness","luxe_light_id":"light.example"},expected,native))
+        self.assertFalse(self.a._slots_match(expected,expected,native))
+    async def test_native_light_dispatch(self):
+        self.h=Handler("LuxeLightQuery")
+        self.menu.capabilities["water"]={"intent":"LuxeLightQuery","native_slots":{"luxe_light_id":"light"}}
+        self.slots={"light_query":"single_state"}
+        self.result.intent.name="LuxeLightQuery"
+        self.result.entities_list=[SimpleNamespace(name="light_query",value="single_state"),SimpleNamespace(name="luxe_light_id",value="light.example")]
+        await self.agent.async_process(self.u)
+        self.it.async_handle.assert_awaited_once()
+        self.assertEqual(self.it.async_handle.call_args.args[3]["luxe_light_id"]["value"],"light.example")

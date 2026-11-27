@@ -4,20 +4,28 @@ Extensible local intent and conversation engine for Home Assistant.
 
 [中文说明](README.zh-CN.md) · [Catalog protocol](docs/catalog.md)
 
-**0.1.0-preview** — development preview, not a stable release. Requires the existing read-only intent library; Nexora does not provide supplier data or control devices.
+**v0.2.0-preview** — development preview. Requires the corresponding existing read-only intent libraries; Nexora does not provide supplier data or control devices.
 
-- Opt-in conversation agent with a configurable fallback agent.
-- Numbered menus, nested navigation, paging, session isolation, and date parameters.
-- Built-in Utility v1.1.0 catalog covers 63 distinct utility-kind/metric pairs, including two electricity accounts, water, gas, and combined queries. Secondary account is opt-in.
-- Execution checks the installed speech-only Intent Script and strict native sentence/slot recognition. No LLM fallback on menu query failure.
-- Additional JSON/YAML catalogs under /config/nexora/catalogs/ are loaded at integration setup. No core menu edits required.
+## Built-in catalogs
+
+| Module | Source | Query choices |
+| --- | --- | ---: |
+| ⚡ Utility | 1.1.0 | 136 |
+| 💡 Lights | 1.1.0 | 144 |
+| 🔌 Appliance | 1.0.0 | 78 |
+| 🏠 Home | 1.0.1 | 85 |
+| Total | | 443 |
+
+Only modules with registered speech-only handlers appear. Secondary electricity account is opt-in. Lights resolve local entity IDs using the installed strict sentence lists; no household-specific entity IDs are bundled. Appliance and Home representatives match the original fixed slots and sentences. Catalogs describe query combinations, not every synonym.
+
+Send help (帮助), exit (退出), 0 / back (返回), 9 / next (下一页), or prev (上一页). English commands are case insensitive. Menu footers display help and exit only. Root icons are catalog metadata.
 
 ## Installation
 
-Add this repository in HACS as an Integration custom repository once a preview release is available (or download the source and copy custom_components/nexora). Restart Core once, add Nexora under Devices & Services, and enter the current fallback conversation agent ID and account labels/alias. Keep the original intent library installed. Test Nexora with conversation.process before switching the IM agent. Uninstall the old proof-of-concept integration separately; no migration is provided.
+Add this repository in HACS as an Integration custom repository when available, or copy custom_components/nexora from a fixed commit. Restart Core once. Existing Nexora config entries remain valid. Keep the corresponding original intent libraries installed. Test the agent before switching your IM provider. Additional JSON/YAML catalogs under /config/nexora/catalogs/ are loaded at entry setup/reload.
 
-## Limitations
+## Limits and safety
 
-Only Utility is included in this preview. Account aliases and matching must be supplied locally. The HA strict-recognition internals are targeted at Core 2026.11.3; other versions are not certified. Menu operations use the ordinary CN IM Hub lane and can wait behind an LLM request. No stateful natural-language follow-ups yet. Registry refresh requires integration reload; sessions are in memory and expire after ten minutes. No real HA validation of this preview has been completed at initial commit. See Actions for test status.
+The HA strict-recognition internals are targeted at Core 2026.11.3. Execute only speech-only Intent Scripts after native sentence/slot validation; no LLM fallback on failed menu query. Menu operations still use the ordinary CN IM Hub lane; natural-language contextual follow-ups and fast menu dispatch are future work. Data may be unavailable despite valid query execution. v0.2.0-preview requires fresh live validation; v0.1.0-preview Utility execution was verified in the target HA environment.
 
-Targeted live read-only probe: [scripts/probe.js](scripts/probe.js). Run in the Home Assistant browser console after adding the agent, before switching the IM agent.
+Targeted read-only probe: [scripts/probe.js](scripts/probe.js).

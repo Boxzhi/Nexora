@@ -1,0 +1,1239 @@
+{
+  "schema_version": 1,
+  "module": {
+    "id": "home",
+    "name": "全屋状态",
+    "icon": "🏠",
+    "order": 400,
+    "version": "1.0.1"
+  },
+  "categories": [
+    {
+      "id": "home.family",
+      "name": "家庭成员",
+      "parent": "home",
+      "order": 10
+    },
+    {
+      "id": "home.env",
+      "name": "环境温湿度",
+      "parent": "home",
+      "order": 20
+    },
+    {
+      "id": "home.presence",
+      "name": "人体感应及光照",
+      "parent": "home",
+      "order": 30
+    },
+    {
+      "id": "home.access",
+      "name": "门锁及窗帘",
+      "parent": "home",
+      "order": 40
+    },
+    {
+      "id": "home.devices",
+      "name": "其他设备",
+      "parent": "home",
+      "order": 50
+    },
+    {
+      "id": "home.battery",
+      "name": "电池及维护",
+      "parent": "home",
+      "order": 60
+    },
+    {
+      "id": "home.safety",
+      "name": "安全及异常",
+      "parent": "home",
+      "order": 70
+    },
+    {
+      "id": "home.overview",
+      "name": "全屋概况",
+      "parent": "home",
+      "order": 80
+    },
+    {
+      "id": "home.env.master",
+      "name": "主卧",
+      "parent": "home.env",
+      "order": 106
+    },
+    {
+      "id": "home.env.secondary",
+      "name": "次卧",
+      "parent": "home.env",
+      "order": 109
+    },
+    {
+      "id": "home.env.living_dining",
+      "name": "客餐厅",
+      "parent": "home.env",
+      "order": 112
+    },
+    {
+      "id": "home.env.bathroom",
+      "name": "卫生间",
+      "parent": "home.env",
+      "order": 115
+    },
+    {
+      "id": "home.presence.entry",
+      "name": "玄关",
+      "parent": "home.presence",
+      "order": 123
+    },
+    {
+      "id": "home.presence.living",
+      "name": "客厅",
+      "parent": "home.presence",
+      "order": 128
+    },
+    {
+      "id": "home.presence.balcony",
+      "name": "阳台",
+      "parent": "home.presence",
+      "order": 130
+    },
+    {
+      "id": "home.presence.kitchen",
+      "name": "厨房",
+      "parent": "home.presence",
+      "order": 135
+    },
+    {
+      "id": "home.presence.bathroom",
+      "name": "卫生间",
+      "parent": "home.presence",
+      "order": 137
+    },
+    {
+      "id": "home.access.door",
+      "name": "门锁及门窗",
+      "parent": "home.access",
+      "order": 10
+    },
+    {
+      "id": "home.battery.individual",
+      "name": "单个设备电量",
+      "parent": "home.battery",
+      "order": 1000
+    },
+    {
+      "id": "home.access.curtains",
+      "name": "窗帘",
+      "parent": "home.access",
+      "order": 20
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "home.family.family_all",
+      "category": "home.family",
+      "name": "现在家里有谁",
+      "order": 1,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "现在家里有谁",
+      "slots": {
+        "luxe_home_query": "family",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.family.family_count_all",
+      "category": "home.family",
+      "name": "家里现在有几个人",
+      "order": 2,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里现在有几个人",
+      "slots": {
+        "luxe_home_query": "family_count",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.family.person_father",
+      "category": "home.family",
+      "name": "爸爸在家吗",
+      "order": 3,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "爸爸在家吗",
+      "slots": {
+        "luxe_home_query": "person",
+        "luxe_home_target": "爸爸"
+      }
+    },
+    {
+      "id": "home.family.person_mother",
+      "category": "home.family",
+      "name": "妈妈在家吗",
+      "order": 4,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "妈妈在家吗",
+      "slots": {
+        "luxe_home_query": "person",
+        "luxe_home_target": "妈妈"
+      }
+    },
+    {
+      "id": "home.family.person_grandfather",
+      "category": "home.family",
+      "name": "爷爷在家吗",
+      "order": 5,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "爷爷在家吗",
+      "slots": {
+        "luxe_home_query": "person",
+        "luxe_home_target": "爷爷"
+      }
+    },
+    {
+      "id": "home.family.person_grandmother",
+      "category": "home.family",
+      "name": "奶奶在家吗",
+      "order": 6,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "奶奶在家吗",
+      "slots": {
+        "luxe_home_query": "person",
+        "luxe_home_target": "奶奶"
+      }
+    },
+    {
+      "id": "home.env.master.temp_master",
+      "category": "home.env.master",
+      "name": "主卧温度多少",
+      "order": 7,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "主卧温度多少",
+      "slots": {
+        "luxe_home_query": "temp",
+        "luxe_home_target": "主卧"
+      }
+    },
+    {
+      "id": "home.env.master.hum_master",
+      "category": "home.env.master",
+      "name": "主卧湿度多少",
+      "order": 8,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "主卧湿度多少",
+      "slots": {
+        "luxe_home_query": "hum",
+        "luxe_home_target": "主卧"
+      }
+    },
+    {
+      "id": "home.env.master.room_env_master",
+      "category": "home.env.master",
+      "name": "主卧温湿度",
+      "order": 9,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "主卧温湿度",
+      "slots": {
+        "luxe_home_query": "room_env",
+        "luxe_home_target": "主卧"
+      }
+    },
+    {
+      "id": "home.env.secondary.temp_secondary",
+      "category": "home.env.secondary",
+      "name": "次卧温度多少",
+      "order": 10,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "次卧温度多少",
+      "slots": {
+        "luxe_home_query": "temp",
+        "luxe_home_target": "次卧"
+      }
+    },
+    {
+      "id": "home.env.secondary.hum_secondary",
+      "category": "home.env.secondary",
+      "name": "次卧湿度多少",
+      "order": 11,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "次卧湿度多少",
+      "slots": {
+        "luxe_home_query": "hum",
+        "luxe_home_target": "次卧"
+      }
+    },
+    {
+      "id": "home.env.secondary.room_env_secondary",
+      "category": "home.env.secondary",
+      "name": "次卧温湿度",
+      "order": 12,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "次卧温湿度",
+      "slots": {
+        "luxe_home_query": "room_env",
+        "luxe_home_target": "次卧"
+      }
+    },
+    {
+      "id": "home.env.living_dining.temp_living_dining",
+      "category": "home.env.living_dining",
+      "name": "客餐厅温度多少",
+      "order": 13,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "客餐厅温度多少",
+      "slots": {
+        "luxe_home_query": "temp",
+        "luxe_home_target": "客餐厅"
+      }
+    },
+    {
+      "id": "home.env.living_dining.hum_living_dining",
+      "category": "home.env.living_dining",
+      "name": "客餐厅湿度多少",
+      "order": 14,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "客餐厅湿度多少",
+      "slots": {
+        "luxe_home_query": "hum",
+        "luxe_home_target": "客餐厅"
+      }
+    },
+    {
+      "id": "home.env.living_dining.room_env_living_dining",
+      "category": "home.env.living_dining",
+      "name": "客餐厅温湿度",
+      "order": 15,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "客餐厅温湿度",
+      "slots": {
+        "luxe_home_query": "room_env",
+        "luxe_home_target": "客餐厅"
+      }
+    },
+    {
+      "id": "home.env.bathroom.temp_bathroom",
+      "category": "home.env.bathroom",
+      "name": "卫生间温度多少",
+      "order": 16,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "卫生间温度多少",
+      "slots": {
+        "luxe_home_query": "temp",
+        "luxe_home_target": "卫生间"
+      }
+    },
+    {
+      "id": "home.env.env_all",
+      "category": "home.env",
+      "name": "家里的环境怎么样",
+      "order": 17,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里的环境怎么样",
+      "slots": {
+        "luxe_home_query": "env",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.env.temp_avg_all",
+      "category": "home.env",
+      "name": "家里平均温度",
+      "order": 18,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里平均温度",
+      "slots": {
+        "luxe_home_query": "temp_avg",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.env.temp_max_all",
+      "category": "home.env",
+      "name": "家里哪个房间最热",
+      "order": 19,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里哪个房间最热",
+      "slots": {
+        "luxe_home_query": "temp_max",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.env.temp_min_all",
+      "category": "home.env",
+      "name": "家里哪个房间最冷",
+      "order": 20,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里哪个房间最冷",
+      "slots": {
+        "luxe_home_query": "temp_min",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.env.hum_avg_all",
+      "category": "home.env",
+      "name": "家里平均湿度",
+      "order": 21,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里平均湿度",
+      "slots": {
+        "luxe_home_query": "hum_avg",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.env.hum_max_all",
+      "category": "home.env",
+      "name": "哪个房间湿度最高",
+      "order": 22,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "哪个房间湿度最高",
+      "slots": {
+        "luxe_home_query": "hum_max",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.env.hum_min_all",
+      "category": "home.env",
+      "name": "哪个房间湿度最低",
+      "order": 23,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "哪个房间湿度最低",
+      "slots": {
+        "luxe_home_query": "hum_min",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.presence.entry.presence_entry",
+      "category": "home.presence.entry",
+      "name": "玄关有人吗",
+      "order": 24,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "玄关有人吗",
+      "slots": {
+        "luxe_home_query": "presence",
+        "luxe_home_target": "玄关"
+      }
+    },
+    {
+      "id": "home.presence.entry.lux_entry",
+      "category": "home.presence.entry",
+      "name": "玄关光照度是多少",
+      "order": 25,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "玄关光照度是多少",
+      "slots": {
+        "luxe_home_query": "lux",
+        "luxe_home_target": "玄关"
+      }
+    },
+    {
+      "id": "home.presence.entry.duration_entry",
+      "category": "home.presence.entry",
+      "name": "玄关人体感应持续时间",
+      "order": 26,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "玄关人体感应持续时间",
+      "slots": {
+        "luxe_home_query": "duration",
+        "luxe_home_target": "玄关"
+      }
+    },
+    {
+      "id": "home.presence.entry.duration_present_entry",
+      "category": "home.presence.entry",
+      "name": "玄关有人多久了",
+      "order": 27,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "玄关有人多久了",
+      "slots": {
+        "luxe_home_query": "duration_present",
+        "luxe_home_target": "玄关"
+      }
+    },
+    {
+      "id": "home.presence.entry.duration_absent_entry",
+      "category": "home.presence.entry",
+      "name": "玄关无人多久了",
+      "order": 28,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "玄关无人多久了",
+      "slots": {
+        "luxe_home_query": "duration_absent",
+        "luxe_home_target": "玄关"
+      }
+    },
+    {
+      "id": "home.presence.living.presence_living",
+      "category": "home.presence.living",
+      "name": "客厅有人吗",
+      "order": 29,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "客厅有人吗",
+      "slots": {
+        "luxe_home_query": "presence",
+        "luxe_home_target": "客厅"
+      }
+    },
+    {
+      "id": "home.presence.living.lux_living",
+      "category": "home.presence.living",
+      "name": "客厅光照度是多少",
+      "order": 30,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "客厅光照度是多少",
+      "slots": {
+        "luxe_home_query": "lux",
+        "luxe_home_target": "客厅"
+      }
+    },
+    {
+      "id": "home.presence.balcony.presence_balcony",
+      "category": "home.presence.balcony",
+      "name": "阳台有人吗",
+      "order": 31,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "阳台有人吗",
+      "slots": {
+        "luxe_home_query": "presence",
+        "luxe_home_target": "阳台"
+      }
+    },
+    {
+      "id": "home.presence.balcony.lux_balcony",
+      "category": "home.presence.balcony",
+      "name": "阳台光照度是多少",
+      "order": 32,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "阳台光照度是多少",
+      "slots": {
+        "luxe_home_query": "lux",
+        "luxe_home_target": "阳台"
+      }
+    },
+    {
+      "id": "home.presence.balcony.duration_balcony",
+      "category": "home.presence.balcony",
+      "name": "阳台人体感应持续时间",
+      "order": 33,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "阳台人体感应持续时间",
+      "slots": {
+        "luxe_home_query": "duration",
+        "luxe_home_target": "阳台"
+      }
+    },
+    {
+      "id": "home.presence.balcony.duration_present_balcony",
+      "category": "home.presence.balcony",
+      "name": "阳台有人多久了",
+      "order": 34,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "阳台有人多久了",
+      "slots": {
+        "luxe_home_query": "duration_present",
+        "luxe_home_target": "阳台"
+      }
+    },
+    {
+      "id": "home.presence.balcony.duration_absent_balcony",
+      "category": "home.presence.balcony",
+      "name": "阳台无人多久了",
+      "order": 35,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "阳台无人多久了",
+      "slots": {
+        "luxe_home_query": "duration_absent",
+        "luxe_home_target": "阳台"
+      }
+    },
+    {
+      "id": "home.presence.kitchen.presence_kitchen",
+      "category": "home.presence.kitchen",
+      "name": "厨房有人吗",
+      "order": 36,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "厨房有人吗",
+      "slots": {
+        "luxe_home_query": "presence",
+        "luxe_home_target": "厨房"
+      }
+    },
+    {
+      "id": "home.presence.kitchen.lux_kitchen",
+      "category": "home.presence.kitchen",
+      "name": "厨房光照度是多少",
+      "order": 37,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "厨房光照度是多少",
+      "slots": {
+        "luxe_home_query": "lux",
+        "luxe_home_target": "厨房"
+      }
+    },
+    {
+      "id": "home.presence.bathroom.presence_bathroom",
+      "category": "home.presence.bathroom",
+      "name": "卫生间有人吗",
+      "order": 38,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "卫生间有人吗",
+      "slots": {
+        "luxe_home_query": "presence",
+        "luxe_home_target": "卫生间"
+      }
+    },
+    {
+      "id": "home.presence.bathroom.lux_bathroom",
+      "category": "home.presence.bathroom",
+      "name": "卫生间光照度是多少",
+      "order": 39,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "卫生间光照度是多少",
+      "slots": {
+        "luxe_home_query": "lux",
+        "luxe_home_target": "卫生间"
+      }
+    },
+    {
+      "id": "home.presence.bathroom.duration_bathroom",
+      "category": "home.presence.bathroom",
+      "name": "卫生间人体感应持续时间",
+      "order": 40,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "卫生间人体感应持续时间",
+      "slots": {
+        "luxe_home_query": "duration",
+        "luxe_home_target": "卫生间"
+      }
+    },
+    {
+      "id": "home.presence.bathroom.duration_present_bathroom",
+      "category": "home.presence.bathroom",
+      "name": "卫生间有人多久了",
+      "order": 41,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "卫生间有人多久了",
+      "slots": {
+        "luxe_home_query": "duration_present",
+        "luxe_home_target": "卫生间"
+      }
+    },
+    {
+      "id": "home.presence.bathroom.duration_absent_bathroom",
+      "category": "home.presence.bathroom",
+      "name": "卫生间无人多久了",
+      "order": 42,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "卫生间无人多久了",
+      "slots": {
+        "luxe_home_query": "duration_absent",
+        "luxe_home_target": "卫生间"
+      }
+    },
+    {
+      "id": "home.presence.presence_all_all",
+      "category": "home.presence",
+      "name": "哪些房间有人",
+      "order": 43,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "哪些房间有人",
+      "slots": {
+        "luxe_home_query": "presence_all",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.presence.lux_all_all",
+      "category": "home.presence",
+      "name": "全屋光照度",
+      "order": 44,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "全屋光照度",
+      "slots": {
+        "luxe_home_query": "lux_all",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.presence.lux_max_all",
+      "category": "home.presence",
+      "name": "家里哪里最亮",
+      "order": 45,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里哪里最亮",
+      "slots": {
+        "luxe_home_query": "lux_max",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.presence.lux_min_all",
+      "category": "home.presence",
+      "name": "家里哪里最暗",
+      "order": 46,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里哪里最暗",
+      "slots": {
+        "luxe_home_query": "lux_min",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.access.door.lock_all",
+      "category": "home.access.door",
+      "name": "入户门锁了吗",
+      "order": 47,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "入户门锁了吗",
+      "slots": {
+        "luxe_home_query": "lock",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.access.door.door_all",
+      "category": "home.access.door",
+      "name": "入户门关了吗",
+      "order": 48,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "入户门关了吗",
+      "slots": {
+        "luxe_home_query": "door",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.access.door.deadbolt_all",
+      "category": "home.access.door",
+      "name": "门反锁了吗",
+      "order": 49,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "门反锁了吗",
+      "slots": {
+        "luxe_home_query": "deadbolt",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.access.door.childlock_all",
+      "category": "home.access.door",
+      "name": "门锁童锁开了吗",
+      "order": 50,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "门锁童锁开了吗",
+      "slots": {
+        "luxe_home_query": "childlock",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.access.door.windows_all",
+      "category": "home.access.door",
+      "name": "家里窗户关了吗",
+      "order": 51,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里窗户关了吗",
+      "slots": {
+        "luxe_home_query": "windows",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.devices.lid_all",
+      "category": "home.devices",
+      "name": "马桶盖开着吗",
+      "order": 52,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "马桶盖开着吗",
+      "slots": {
+        "luxe_home_query": "lid",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.safety.water_kitchen",
+      "category": "home.safety",
+      "name": "厨房有没有漏水",
+      "order": 53,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "厨房有没有漏水",
+      "slots": {
+        "luxe_home_query": "water",
+        "luxe_home_target": "厨房"
+      }
+    },
+    {
+      "id": "home.safety.water_balcony",
+      "category": "home.safety",
+      "name": "阳台有没有漏水",
+      "order": 54,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "阳台有没有漏水",
+      "slots": {
+        "luxe_home_query": "water",
+        "luxe_home_target": "阳台"
+      }
+    },
+    {
+      "id": "home.safety.water_all_all",
+      "category": "home.safety",
+      "name": "家里有漏水吗",
+      "order": 55,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里有漏水吗",
+      "slots": {
+        "luxe_home_query": "water_all",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.battery.individual.battery_entry_presence",
+      "category": "home.battery.individual",
+      "name": "玄关人体传感器还有多少电",
+      "order": 56,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "玄关人体传感器还有多少电",
+      "slots": {
+        "luxe_home_query": "battery",
+        "luxe_home_target": "玄关人体传感器"
+      }
+    },
+    {
+      "id": "home.battery.individual.battery_living_presence",
+      "category": "home.battery.individual",
+      "name": "客厅人体传感器还有多少电",
+      "order": 57,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "客厅人体传感器还有多少电",
+      "slots": {
+        "luxe_home_query": "battery",
+        "luxe_home_target": "客厅人体传感器"
+      }
+    },
+    {
+      "id": "home.battery.individual.battery_balcony_presence",
+      "category": "home.battery.individual",
+      "name": "阳台人体传感器还有多少电",
+      "order": 58,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "阳台人体传感器还有多少电",
+      "slots": {
+        "luxe_home_query": "battery",
+        "luxe_home_target": "阳台人体传感器"
+      }
+    },
+    {
+      "id": "home.battery.individual.battery_kitchen_presence",
+      "category": "home.battery.individual",
+      "name": "厨房人体传感器还有多少电",
+      "order": 59,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "厨房人体传感器还有多少电",
+      "slots": {
+        "luxe_home_query": "battery",
+        "luxe_home_target": "厨房人体传感器"
+      }
+    },
+    {
+      "id": "home.battery.individual.battery_kitchen_leak",
+      "category": "home.battery.individual",
+      "name": "厨房水浸卫士还有多少电",
+      "order": 60,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "厨房水浸卫士还有多少电",
+      "slots": {
+        "luxe_home_query": "battery",
+        "luxe_home_target": "厨房水浸卫士"
+      }
+    },
+    {
+      "id": "home.battery.individual.battery_balcony_leak",
+      "category": "home.battery.individual",
+      "name": "阳台水浸传感器还有多少电",
+      "order": 61,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "阳台水浸传感器还有多少电",
+      "slots": {
+        "luxe_home_query": "battery",
+        "luxe_home_target": "阳台水浸传感器"
+      }
+    },
+    {
+      "id": "home.battery.individual.battery_toilet_lid",
+      "category": "home.battery.individual",
+      "name": "马桶盖传感器还有多少电",
+      "order": 62,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "马桶盖传感器还有多少电",
+      "slots": {
+        "luxe_home_query": "battery",
+        "luxe_home_target": "马桶盖传感器"
+      }
+    },
+    {
+      "id": "home.battery.individual.battery_master_climate",
+      "category": "home.battery.individual",
+      "name": "主卧温湿度计还有多少电",
+      "order": 63,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "主卧温湿度计还有多少电",
+      "slots": {
+        "luxe_home_query": "battery",
+        "luxe_home_target": "主卧温湿度计"
+      }
+    },
+    {
+      "id": "home.battery.individual.battery_secondary_climate",
+      "category": "home.battery.individual",
+      "name": "次卧温湿度计还有多少电",
+      "order": 64,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "次卧温湿度计还有多少电",
+      "slots": {
+        "luxe_home_query": "battery",
+        "luxe_home_target": "次卧温湿度计"
+      }
+    },
+    {
+      "id": "home.battery.individual.battery_living_climate",
+      "category": "home.battery.individual",
+      "name": "客餐厅温湿度计还有多少电",
+      "order": 65,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "客餐厅温湿度计还有多少电",
+      "slots": {
+        "luxe_home_query": "battery",
+        "luxe_home_target": "客餐厅温湿度计"
+      }
+    },
+    {
+      "id": "home.battery.individual.battery_lock_main",
+      "category": "home.battery.individual",
+      "name": "门锁主电池还有多少电",
+      "order": 66,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "门锁主电池还有多少电",
+      "slots": {
+        "luxe_home_query": "battery",
+        "luxe_home_target": "门锁主电池"
+      }
+    },
+    {
+      "id": "home.battery.individual.battery_lock_camera",
+      "category": "home.battery.individual",
+      "name": "门锁猫眼电池还有多少电",
+      "order": 67,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "门锁猫眼电池还有多少电",
+      "slots": {
+        "luxe_home_query": "battery",
+        "luxe_home_target": "门锁猫眼电池"
+      }
+    },
+    {
+      "id": "home.battery.batteries_all",
+      "category": "home.battery",
+      "name": "智能家居设备电池电量",
+      "order": 68,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "智能家居设备电池电量",
+      "slots": {
+        "luxe_home_query": "batteries",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.battery.battery_low_all",
+      "category": "home.battery",
+      "name": "哪些设备电量低",
+      "order": 69,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "哪些设备电量低",
+      "slots": {
+        "luxe_home_query": "battery_low",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.access.curtains.curtain_master",
+      "category": "home.access.curtains",
+      "name": "主卧窗帘开着吗",
+      "order": 70,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "主卧窗帘开着吗",
+      "slots": {
+        "luxe_home_query": "curtain",
+        "luxe_home_target": "主卧"
+      }
+    },
+    {
+      "id": "home.access.curtains.curtain_pos_master",
+      "category": "home.access.curtains",
+      "name": "主卧窗帘开了多少",
+      "order": 71,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "主卧窗帘开了多少",
+      "slots": {
+        "luxe_home_query": "curtain_pos",
+        "luxe_home_target": "主卧"
+      }
+    },
+    {
+      "id": "home.access.curtains.curtain_secondary",
+      "category": "home.access.curtains",
+      "name": "次卧窗帘开着吗",
+      "order": 72,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "次卧窗帘开着吗",
+      "slots": {
+        "luxe_home_query": "curtain",
+        "luxe_home_target": "次卧"
+      }
+    },
+    {
+      "id": "home.access.curtains.curtain_pos_secondary",
+      "category": "home.access.curtains",
+      "name": "次卧窗帘开了多少",
+      "order": 73,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "次卧窗帘开了多少",
+      "slots": {
+        "luxe_home_query": "curtain_pos",
+        "luxe_home_target": "次卧"
+      }
+    },
+    {
+      "id": "home.access.curtains.curtain_living_dining",
+      "category": "home.access.curtains",
+      "name": "客厅窗帘开着吗",
+      "order": 74,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "客厅窗帘开着吗",
+      "slots": {
+        "luxe_home_query": "curtain",
+        "luxe_home_target": "客餐厅"
+      }
+    },
+    {
+      "id": "home.access.curtains.curtain_pos_living_dining",
+      "category": "home.access.curtains",
+      "name": "客厅窗帘开了多少",
+      "order": 75,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "客厅窗帘开了多少",
+      "slots": {
+        "luxe_home_query": "curtain_pos",
+        "luxe_home_target": "客餐厅"
+      }
+    },
+    {
+      "id": "home.access.curtains.curtains_all",
+      "category": "home.access.curtains",
+      "name": "全屋窗帘状态",
+      "order": 76,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "全屋窗帘状态",
+      "slots": {
+        "luxe_home_query": "curtains",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.devices.heater_all",
+      "category": "home.devices",
+      "name": "燃气热水器开着吗",
+      "order": 77,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "燃气热水器开着吗",
+      "slots": {
+        "luxe_home_query": "heater",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.overview.lights_all",
+      "category": "home.overview",
+      "name": "全屋照明概况",
+      "order": 78,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "全屋照明概况",
+      "slots": {
+        "luxe_home_query": "lights",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.overview.apps_on_all",
+      "category": "home.overview",
+      "name": "家里有哪些电器开着",
+      "order": 79,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里有哪些电器开着",
+      "slots": {
+        "luxe_home_query": "apps_on",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.overview.apps_running_all",
+      "category": "home.overview",
+      "name": "家里哪些家电正在运行",
+      "order": 80,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里哪些家电正在运行",
+      "slots": {
+        "luxe_home_query": "apps_running",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.overview.utility_all",
+      "category": "home.overview",
+      "name": "哪些水电气账户需要充值",
+      "order": 81,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "哪些水电气账户需要充值",
+      "slots": {
+        "luxe_home_query": "utility",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.safety.safety_all",
+      "category": "home.safety",
+      "name": "家里有没有安全报警",
+      "order": 82,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里有没有安全报警",
+      "slots": {
+        "luxe_home_query": "safety",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.safety.faults_all",
+      "category": "home.safety",
+      "name": "家里有哪些设备故障",
+      "order": 83,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里有哪些设备故障",
+      "slots": {
+        "luxe_home_query": "faults",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.safety.alerts_all",
+      "category": "home.safety",
+      "name": "家里有什么需要注意的",
+      "order": 84,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里有什么需要注意的",
+      "slots": {
+        "luxe_home_query": "alerts",
+        "luxe_home_target": "all"
+      }
+    },
+    {
+      "id": "home.overview.overview_all",
+      "category": "home.overview",
+      "name": "家里现在什么情况",
+      "order": 85,
+      "intent": "LuxeHomeQuery",
+      "read_only": true,
+      "sentence": "家里现在什么情况",
+      "slots": {
+        "luxe_home_query": "overview",
+        "luxe_home_target": "all"
+      }
+    }
+  ]
+}
