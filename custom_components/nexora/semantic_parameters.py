@@ -35,7 +35,7 @@ def _field(name):
 def _date_patterns(kind,period):
     y,m,d=(_field(n) for n in ("year","month","day"))
     if kind=="date":
-        return (y+"年"+m+"月"+d+"(?:日|号)",y+"-"+m+"-"+d",
+        return (y+"年"+m+"月"+d+"(?:日|号)",y+"-"+m+"-"+d,
                 "(?P<relative_year>去年|上一年|前年)"+m+"月"+d+"(?:日|号)")
     if kind=="month_day":
         return ("(?:今年|本年)?"+m+"月"+d+"(?:日|号)",)
