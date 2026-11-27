@@ -4,7 +4,7 @@ Extensible local intent and conversation engine for Home Assistant.
 
 [中文说明](README.zh-CN.md) · [Catalog protocol](docs/catalog.md)
 
-**v0.2.0-preview** — development preview. Requires the corresponding existing read-only intent libraries; Nexora does not provide supplier data or control devices.
+**v0.3.0-preview** — development preview. Requires the corresponding existing read-only intent libraries; Nexora does not provide supplier data or control devices.
 
 ## Built-in catalogs
 
@@ -26,6 +26,12 @@ Add this repository in HACS as an Integration custom repository when available, 
 
 ## Limits and safety
 
-The HA strict-recognition internals are targeted at Core 2026.11.3. Execute only speech-only Intent Scripts after native sentence/slot validation; no LLM fallback on failed menu query. Menu operations still use the ordinary CN IM Hub lane; natural-language contextual follow-ups and fast menu dispatch are future work. Data may be unavailable despite valid query execution. v0.2.0-preview requires fresh live validation; v0.1.0-preview Utility execution was verified in the target HA environment.
+The HA strict-recognition internals are targeted at Core 2026.11.3. Execute only speech-only Intent Scripts after native sentence/slot validation; no LLM fallback on failed menu query. Menu operations still use the ordinary CN IM Hub lane; fast menu dispatch and context synchronization for upstream fast queries are future work. Basic menu-origin Utility follow-ups are supported. Data may be unavailable despite valid query execution. v0.3.0-preview requires fresh live validation; v0.1.0-preview Utility execution was verified in the target HA environment.
 
 Targeted read-only probe: [scripts/probe.js](scripts/probe.js).
+
+## Dynamic capabilities
+
+443 remains the registered catalog baseline, not a fixed menu count. Light features use strict native alias resolution (cached for five minutes, refreshed lazily) and live supported_color_modes. Unknown and offline targets remain visible; previously confirmed unsupported features remain hidden until valid new metadata appears. Other devices and people use optional local /config/nexora/bindings.yaml (see examples/bindings.yaml); null explicitly means not configured. A missing binding or temporarily missing entity never proves removal. No supplier refresh, polling or Jinja execution for detection.
+
+Dot-separated paths (e.g. 1.2.1) start at the current menu and cannot cross a query/parameter prompt; invalid paths restore the snapshot. Concise labels omit representative examples. Basic menu-origin Utility context lasts five minutes, separate from ten-minute menu sessions; no fast-lane context capture. Full probe reports visible-query execution separately from omission review.

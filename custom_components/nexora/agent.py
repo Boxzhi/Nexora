@@ -88,8 +88,12 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         if t in HELP|BACK|NEXT|PREV or t in self.menu.aliases or re.fullmatch(r"[1-8](?:\.[1-8])*",t):
             await self._prepare_capabilities(u,available)
         get_state=getattr(getattr(self.hass,"states",None),"get",lambda _:None)
+        statuses={}
         def visible(cap):
-            return cap["intent"] in available and self.resolver.status(cap,get_state)!="hidden"
+            cid=cap["id"]
+            if cid not in statuses:
+                statuses[cid]=cap["intent"] in available and self.resolver.status(cap,get_state)!="hidden"
+            return statuses[cid]
         reply = self.menu.route(key, u.text, visible, today=dt_util.now().date())
         if reply is None:
             self.menu.followups.clear(key)
@@ -128,13 +132,13 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                     if mapped is not None and mapped!=recognized["luxe_light_id"]:
                         self.resolver.invalidate()
                         return self._reply(u,cid,"该查询目标已变化，请发送 help 刷新菜单。")
-                if not visible(cap):
+                if self.resolver.status(cap,get_state)=="hidden":
                     return self._reply(u,cid,"该查询已不可用，请发送 help 刷新菜单。")
                 # No await between handler identity validation and dispatch.
                 response = await intent.async_handle(self.hass, "conversation", cap["intent"], {k:{"value":v,"text":str(v)} for k,v in recognized.items()}, reply.sentence, u.context, u.language, assistant="conversation", conversation_agent_id="conversation.home_assistant")
         except Exception:
             _LOGGER.debug("Nexora local query failed", exc_info=True)
             return self._reply(u, cid, "本地查询暂时失败，请稍后重试。")
-        if response.as_dict().get("response_type")!="error":
+        if response.as_dict().get("response_type")=="action_done":
             self.menu.followups.remember(key,reply.capability)
         return conversation.ConversationResult(response=response, conversation_id=cid)

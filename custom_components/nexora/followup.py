@@ -40,10 +40,14 @@ class Followups:
     def route(self,key,text,available):
         self.prune()
         c=self.contexts.get(key)
-        labels={self.menu.settings["primary_label"]:"j",self.menu.settings["secondary_label"]:"l"}
+        labels=[(self.menu.settings["primary_label"],"j")]
         if self.menu.settings["secondary"]:
-            labels[self.menu.settings["secondary"]]="l"
-        targets={label.casefold()+"呢":prop for label,prop in labels.items() if label}
+            labels.extend([(self.menu.settings["secondary_label"],"l"),(self.menu.settings["secondary"],"l")])
+        options={}
+        for label,prop in labels:
+            if label:
+                options.setdefault(label.casefold()+"呢",set()).add(prop)
+        targets={label:next(iter(props)) for label,props in options.items() if len(props)==1}
         if not c:
             if text in PERIODS or text in targets or text in USAGE_PHRASES:
                 return "查询上下文已失效，请补充查询对象，或发送 help。"
@@ -52,6 +56,8 @@ class Followups:
         kind=slots.get("utility_kind")
         metric=slots.get("utility_metric")
         if c.pending_period and text in USAGE|COST:
+            if text in {"用水量","用电量","用气量","水费","电费","燃气费"} and text not in {"w":{"用水量","水费"},"e":{"用电量","电费"},"g":{"用气量","燃气费"}}.get(kind,set()):
+                return "请选择当前账户的用量或费用，或发送 help。"
             if kind not in MONTHLY:
                 return "请发送 help 重新选择查询。"
             slots["utility_metric"]=MONTHLY[kind][0 if text in USAGE else 1]

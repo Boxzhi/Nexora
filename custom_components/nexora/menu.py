@@ -262,8 +262,10 @@ class Menu:
         if not s:
             return Reply("当前没有有效菜单，请发送 help。")
         if t in BACK:
+            self.followups.clear(key)
             return self._render(key, self.items[s.node].parent or "root", available)
         if t in NEXT | PREV:
+            self.followups.clear(key)
             return self._render(key, s.node, available, s.page + (-1 if t in PREV else 1))
         if len(t)!=1 or t not in "12345678" or int(t)>len(s.shown):
             return Reply("无效选项，请发送当前菜单中的数字，或发送 help。")
@@ -273,6 +275,7 @@ class Menu:
         if self.items[cap_id].kind == "menu":
             self.followups.clear(key)
             return self._render(key, cap_id, available)
+        self.followups.clear(key)
         s.expires = self.clock()+self.ttl
         param = self.capabilities[cap_id].get("parameter")
         if param:

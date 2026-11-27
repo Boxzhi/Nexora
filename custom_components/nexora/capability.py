@@ -35,7 +35,7 @@ def validate_bindings(raw):
             raise ValueError("Invalid binding key")
         if value is None:
             result[key]=None
-        elif isinstance(value,list) and value and all(isinstance(v,str) and ENTITY_ID.fullmatch(v) for v in value):
+        elif isinstance(value,(list,tuple)) and value and all(isinstance(v,str) and ENTITY_ID.fullmatch(v) for v in value):
             result[key]=tuple(value)
         else:
             raise ValueError("Binding must be null or a non-empty entity ID list")
@@ -73,9 +73,9 @@ class Resolver:
         raw=state.attributes.get("supported_color_modes")
         if isinstance(raw,(list,tuple,set,frozenset)) and raw and all(isinstance(x,str) and x in KNOWN for x in raw):
             self.modes[entity]=frozenset(raw)
-        else:
-            # Unknown metadata on a live entity is not a proven unsupported mode.
-            self.modes.pop(entity,None)
+        # Missing/partial attributes must not change numbering when a light
+        # is switched off or temporarily disconnected. Only valid new metadata
+        # supersedes the last authoritative mode set.
 
     def status(self, cap, get_state):
         """Return hidden, temporary or visible; only hidden affects numbering."""

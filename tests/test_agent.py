@@ -18,6 +18,8 @@ class Response:
         self.speech=""
     def async_set_speech(self,text):
         self.speech=text
+    def as_dict(self):
+        return {"response_type":"action_done"}
 
 def load_adapter():
     modules={n:ModuleType(n) for n in ("homeassistant","homeassistant.components","homeassistant.components.conversation","homeassistant.components.intent_script","homeassistant.components.intent_script.helpers","homeassistant.helpers","homeassistant.helpers.intent","homeassistant.util","homeassistant.util.dt")}
@@ -37,7 +39,11 @@ def load_adapter():
         if "." in n:
             parent,key=n.rsplit(".",1)
             setattr(modules[parent],key,m)
-    spec=importlib.util.spec_from_file_location("nexora_test_adapter",Path(__file__).resolve().parents[1]/"custom_components/nexora/agent.py")
+    base=Path(__file__).resolve().parents[1]/"custom_components/nexora"
+    pkg=ModuleType("nexora_adapter_test")
+    pkg.__path__=[str(base)]
+    sys.modules[pkg.__name__]=pkg
+    spec=importlib.util.spec_from_file_location("nexora_adapter_test.agent",base/"agent.py")
     adapter=importlib.util.module_from_spec(spec)
     with patch.dict(sys.modules,modules):
         spec.loader.exec_module(adapter)
@@ -54,9 +60,10 @@ class Tests(IsolatedAsyncioTestCase):
         self.native=SimpleNamespace(_trigger_intents_config={"intents":{}},async_recognize_intent=AsyncMock(return_value=self.result))
         self.fallback=object()
         self.conv.async_get_agent=lambda hass,aid:self.native if aid=="conversation.home_assistant" else self.fallback
-        self.menu=SimpleNamespace(capabilities={"water":{"intent":"LuxeUtilityQuery"}},route=lambda *a,**kw:SimpleNamespace(capability="water",sentence="水费余额是多少",slots=self.slots,text=""))
+        self.menu=SimpleNamespace(aliases={},followups=SimpleNamespace(clear=lambda *a:None,remember=lambda *a:None),capabilities={"water":{"id":"water","intent":"LuxeUtilityQuery"}},route=lambda *a,**kw:SimpleNamespace(capability="water",sentence="水费余额是多少",slots=self.slots,text=""))
         self.agent=self.a.NexoraAgent(object(),"entry",self.menu,"fallback")
         self.u=SimpleNamespace(text="1",conversation_id="test",context=SimpleNamespace(user_id="u"),device_id=None,satellite_id=None,language="zh-CN",extra_system_prompt="p")
+        self.agent.resolver.replace_targets("zh-CN",{})
     async def test_matching_read_only_query(self):
         r=await self.agent.async_process(self.u)
         self.it.async_handle.assert_awaited_once()
@@ -107,10 +114,29 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertFalse(self.a._slots_match(expected,expected,native))
     async def test_native_light_dispatch(self):
         self.h=Handler("LuxeLightQuery")
-        self.menu.capabilities["water"]={"intent":"LuxeLightQuery","native_slots":{"luxe_light_id":"light"}}
+        self.menu.capabilities["water"]={"id":"water","category":"lights.fixture","intent":"LuxeLightQuery","native_slots":{"luxe_light_id":"light"}}
         self.slots={"light_query":"single_state"}
         self.result.intent.name="LuxeLightQuery"
         self.result.entities_list=[SimpleNamespace(name="light_query",value="single_state"),SimpleNamespace(name="luxe_light_id",value="light.example")]
         await self.agent.async_process(self.u)
         self.it.async_handle.assert_awaited_once()
         self.assertEqual(self.it.async_handle.call_args.args[3]["luxe_light_id"]["value"],"light.example")
+
+    async def test_context_remember_only_success(self):
+        remembered=[]
+        self.menu.followups.remember=lambda *args:remembered.append(args)
+        await self.agent.async_process(self.u)
+        self.assertEqual(len(remembered),1)
+        self.it.async_handle.return_value=SimpleNamespace(as_dict=lambda:{"response_type":"error"})
+        await self.agent.async_process(self.u)
+        self.assertEqual(len(remembered),1)
+    async def test_changed_native_target_blocks(self):
+        self.h=Handler("LuxeLightQuery")
+        self.menu.capabilities["water"]={"id":"water","category":"lights.fixture","intent":"LuxeLightQuery","native_slots":{"luxe_light_id":"light"}}
+        self.slots={"light_query":"single_state"}
+        self.result.intent.name="LuxeLightQuery"
+        self.result.entities_list=[SimpleNamespace(name="light_query",value="single_state"),SimpleNamespace(name="luxe_light_id",value="light.new")]
+        self.agent.resolver.replace_targets("zh-CN",{"lights.fixture":"light.old"})
+        r=await self.agent.async_process(self.u)
+        self.assertIn("目标已变化",r.response.speech)
+        self.it.async_handle.assert_not_awaited()

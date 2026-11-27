@@ -3,11 +3,15 @@ from datetime import date
 import importlib.util
 import json
 from pathlib import Path
+from types import ModuleType
 import sys
 import unittest
 
 BASE=Path(__file__).resolve().parents[1]/"custom_components"/"nexora"
-spec=importlib.util.spec_from_file_location("nexora_menu",BASE/"menu.py")
+pkg=ModuleType("nexora_menu_test")
+pkg.__path__=[str(BASE)]
+sys.modules[pkg.__name__]=pkg
+spec=importlib.util.spec_from_file_location("nexora_menu_test.menu",BASE/"menu.py")
 mod=importlib.util.module_from_spec(spec)
 sys.modules[spec.name]=mod
 spec.loader.exec_module(mod)
@@ -215,5 +219,76 @@ class AllCatalogTests(unittest.TestCase):
     def test_reserved_alias(self):
         c=copy.deepcopy(self.catalogs[0]);c["module"]["aliases"]=["exit"]
         with self.assertRaises(ValueError):mod.Menu([c])
+
+class V03Tests(unittest.TestCase):
+    def setUp(self):
+        self.now=0
+        self.catalogs=[json.loads(p.read_text()) for p in sorted((BASE/"catalogs").glob("*.json"))]
+        self.m=mod.Menu(self.catalogs,settings=SET,clock=lambda:self.now)
+    def route(self,text,key="a",**kw):
+        return self.m.route(key,text,**kw)
+    def test_no_example(self):
+        self.assertNotIn("示例：",self.route("水费").text)
+        self.assertIn("欠费情况",self.route("水费").text)
+    def test_compound_success(self):
+        self.route("help")
+        self.assertEqual(self.route("1.2.1").capability,"utility.water.balance")
+        self.assertEqual(self.route("1").capability,"utility.water.balance")
+    def test_compound_atomic_failure(self):
+        self.route("help")
+        before=self.m.sessions["a"]
+        self.assertIn("无效数字路径",self.route("1.2.1.2").text)
+        self.assertEqual(self.m.sessions["a"],before)
+        self.assertIn("水电气",self.route("1").text)
+    def test_compound_requires_session(self):
+        self.assertIn("没有有效",self.route("1.2.1").text)
+    def test_compound_parameter_boundary(self):
+        self.route("help")
+        self.assertIn("无效数字路径",self.route("1.1.1.2.1.4.1").text)
+        self.assertEqual(self.m.sessions["a"].node,"root")
+        self.assertIn("YYYY-MM-DD",self.route("1.1.1.2.1.4").text)
+        self.assertIn("先完成",self.route("1.2").text)
+        self.assertEqual(self.route("2024-01-02",today=date(2026,11,27)).slots["luxe_utility_day"],2)
+    def test_compound_respects_snapshot(self):
+        self.route("help")
+        self.assertIn("不可用",self.route("1.2.1",available=lambda c:c["intent"]!="LuxeUtilityQuery").text)
+        self.assertEqual(self.m.sessions["a"].node,"root")
+    def test_context_balance_clarification(self):
+        self.m.followups.remember("a","utility.water.balance")
+        self.assertIn("用量还是费用",self.route("上个月呢").text)
+        q=self.route("用水量")
+        self.assertEqual(q.slots["utility_period"],"previous")
+        self.assertEqual(q.slots["utility_metric"],"history_usage")
+        self.m.followups.remember("a",q.capability)
+        self.assertEqual(self.route("这个月呢").slots["utility_period"],"current")
+    def test_context_property_switch(self):
+        self.m.followups.remember("a","utility.electric.j.basic.balance")
+        q=self.route("第二账户呢")
+        self.assertEqual(q.slots["luxe_utility_property"],"l")
+        self.m.followups.remember("a",q.capability)
+        q=self.route("上个月用了多少度")
+        self.assertEqual(q.slots["utility_metric"],"h_month_usage")
+        self.assertEqual(q.slots["luxe_utility_property"],"l")
+    def test_context_timeout_isolation(self):
+        self.m.followups.remember("a","utility.water.balance")
+        self.assertIn("失效",self.route("上个月呢","b").text)
+        self.now=300
+        self.assertIn("失效",self.route("上个月呢").text)
+    def test_context_exit_and_passthrough(self):
+        self.m.followups.remember("a","utility.water.balance")
+        self.assertIsNone(self.route("打开客厅灯"))
+        self.assertIn("失效",self.route("上个月呢").text)
+        self.m.followups.remember("a","utility.water.balance")
+        self.route("exit")
+        self.assertIn("失效",self.route("上个月呢").text)
+    def test_hidden_alias(self):
+        self.assertIn("暂无已配置",self.route("灯光",available=lambda c:c["intent"]!="LuxeLightQuery").text)
+    def test_bad_requirement(self):
+        c=copy.deepcopy(self.catalogs[0])
+        c["capabilities"][0]["requires"]=[{"kind":"expression","code":"anything"}]
+        with self.assertRaises(ValueError):mod.Menu([c])
+    def test_context_does_not_infer_other_unit(self):
+        self.m.followups.remember("a","utility.water.balance")
+        self.assertIsNone(self.route("上个月用了多少度"))
 
 if __name__=="__main__":unittest.main()

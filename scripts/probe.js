@@ -1,4 +1,4 @@
-// Nexora v0.2.0-preview: targeted live HA checks, no LLM or device control.
+// Nexora v0.3.0-preview: targeted live HA checks, no LLM or device control.
 (async()=>{
  const hass=document.querySelector("home-assistant")?.hass;
  if(!hass)throw Error("找不到 HA 前端");
@@ -29,7 +29,11 @@
   await check("1","水费");
   await check("水费","账户余额");
   await check("1",native.speech);
-  await check("1",native.speech);
+  await check("上个月呢","用量还是费用");
+  await check("用量","账单用水量");
+  await check("这个月呢","账单用水量");
+  await check("帮助","1. ⚡ 水电气");
+  await check("1.2.1",native.speech);
   await check("1","没有有效菜单",other);
   await check("88","无效选项");
   await check("0","水电气");
@@ -45,7 +49,7 @@
   await check("1","没有有效菜单");
   report.passed=report.checks.every(x=>x.passed);
  }catch(e){report.error=e.message||String(e);}
- console.log("========== Nexora v0.2.0-preview 真实环境验收 ==========");
+ console.log("========== Nexora v0.3.0-preview 真实环境验收 ==========");
  console.log(JSON.stringify(report,null,2));
  console.log("========== 验收结束 ==========");
 })();

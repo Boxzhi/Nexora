@@ -38,3 +38,12 @@ The public catalog mirrors the source Utility v1.1.0 metric set, not every synon
 Optional module.icon is rendered before the module name in the root and in its own title; it is not part of aliases. English help/exit/back/next/prev and their Chinese equivalents are reserved.
 
 The built-in Lights catalog uses the narrowly scoped native_slots: {luxe_light_id: light} field for single_state, brightness and temperature queries only. It requires a strict recognition result from the installed list, with the exact intent and all other fixed slots equal and exactly one light-domain entity slot. Other intents cannot use this facility. Local administrator-supplied lists are authoritative for the alias-to-entity mapping. No entity IDs are published. This is not a generic wildcard or a tool call.
+
+## v0.3.0 requirements and local bindings
+
+Optional requires is a list of declarative checks combined with AND. Supported kinds:
+
+- {kind: native_light, feature: presence|brightness|color_temp}: only for the existing strict single-light native binding, matched to the correct query metric.
+- {kind: binding, key: module.binding_id}: reads administrator-provided /config/nexora/bindings.yaml. A null value means confirmed not configured; a nonempty list contains entity IDs. Missing key = unknown, retain. A configured entity temporarily absent/unavailable is not removed.
+
+Do not infer missing configuration by interpreting Intent Script output or parsing arbitrary templates. Local bindings affect menu visibility only; they never alter the executed slots. Example: home.family.person_grandfather: null. No device ID is required in the public catalog. A module with no visible leaves is omitted; old menu snapshots are checked by capability ID before execution. Capability caches are lazy and in memory. Version 1 remains backwards compatible.
