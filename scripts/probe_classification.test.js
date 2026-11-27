@@ -25,3 +25,12 @@ test('normal negatives and unsupported metrics remain distinct',()=>{
  assert.equal(classify('亮度调节：不支持。'),'capability_limit');
  assert.equal(classify('当前无欠费'),'normal_negative');
 });
+
+test('mixed washer shutdown plus verified lifetime counters is partial state limitation',()=>{
+ const valid='海尔洗衣机 · 用水用电统计\n\n已关机，无法确认当前数据。\n设备报告累计用水：12345升。\n设备报告累计用电：72.34度。\n设备报告累计洗涤周期：234次。';
+ assert.equal(classify(valid),'partial_state_limit');
+ assert.equal(classify(valid.replace('72.34度','数据不可用')),'data_gap');
+ assert.equal(classify(valid+'\n另有数据不可用。'),'data_gap');
+ assert.equal(classify(valid.replace('设备报告累计洗涤周期：234次。','')),'data_gap');
+ assert.equal(classify(valid,'error'),'error');
+});

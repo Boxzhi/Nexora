@@ -1,11 +1,11 @@
-// Nexora v0.5.6-preview — local scene and follow-up smoke test.
+// Nexora v0.5.7-preview — local scene and follow-up smoke test.
 (async()=>{
  const hass=document.querySelector('home-assistant')?.hass;
  if(!hass)throw Error('找不到 HA 前端');
  const list=await hass.callWS({type:'conversation/agent/list'}),agents=(list.agents||[]).filter(a=>a.name==='Nexora');
  if(agents.length!==1)throw Error('未找到唯一 Nexora Agent');
- const agent=agents[0],cid='nexora-v056-smoke:'+crypto.randomUUID(),other='nexora-v056-smoke:'+crypto.randomUUID(),wechat='wechat:nexora-v056-probe:'+crypto.randomUUID();
- const report=window.__nexora056Smoke={version_expected:'0.5.6',checks:[],errors:[],structural_passed:false,manual_value_review_required:true};
+ const agent=agents[0],cid='nexora-v057-smoke:'+crypto.randomUUID(),other='nexora-v057-smoke:'+crypto.randomUUID(),wechat='wechat:nexora-v057-probe:'+crypto.randomUUID();
+ const report=window.__nexora057Smoke={version_expected:'0.5.7',checks:[],errors:[],structural_passed:false,manual_value_review_required:true};
  const menu=s=>s.trimEnd().endsWith('回复数字选择，help 返回主菜单，exit 退出菜单。');
  const choices=s=>[...s.matchAll(/^([1-9]|1[0-9]|20)\.\s+(.+)$/gm)].map(m=>({n:m[1],label:m[2].trim()}));
  async function ask(text,id=cid){
@@ -36,15 +36,25 @@
    ['洗衣机当前洗衣进度',['家电','洗衣机','当前洗衣进度']],
    ['全屋环境温湿度',['全屋状态','环境温湿度','全屋环境']],
    ['最近燃气缴费记录',['水电气','燃气费','燃气缴费查询','最近缴费记录']],
-   ['今年燃气缴费情况',['水电气','燃气费','燃气缴费查询','年度缴费统计']]
+   ['今年燃气缴费情况',['水电气','燃气费','燃气缴费查询','年度缴费统计']],
+   ['全屋感应概况',['全屋状态','人体感应及光照','全屋感应概况']],
+   ['全屋概况',['全屋状态','全屋概况']],
+   ['全屋环境',['全屋状态','环境温湿度','全屋环境']]
   ];
   for(const [q,path] of cases){
    try{
     const byMenu=await select(path);save('菜单：'+q,byMenu,usable(byMenu));
     await ask('exit');const byLanguage=await ask(q);
     const title=s=>s.split('\n')[0].trim();
-    save('自然语言：'+q,byLanguage,usable(byLanguage)&&usable(byMenu)&&title(byLanguage.speech)===title(byMenu.speech));
+    const presentation=r=>q==='全屋概况'?r.speech.startsWith('全屋概况\n\n'):q==='全屋感应概况'?r.speech.startsWith('人体感应及光照 · 全屋感应概况\n\n')&&!/\d(?:\.\d+)?勒克斯/.test(r.speech):true;
+    save('自然语言：'+q,byLanguage,usable(byLanguage)&&usable(byMenu)&&title(byLanguage.speech)===title(byMenu.speech)&&presentation(byLanguage)&&presentation(byMenu));
    }catch(e){report.checks.push({name:q,passed:false,error:e.message,visibility_review_required:true});}
+  }
+  await ask('exit',other);
+  for(const phrase of ['账户概况','本月','最近缴费记录']){
+   const scoped=await ask(phrase,other);
+   save('无范围澄清：'+phrase,scoped,scoped.type==='action_done'&&scoped.speech.includes('请明确')&&!/AI.{0,12}(?:不可用|失败|超时)/.test(scoped.speech));
+   await ask('exit',other);
   }
   const normal=await ask('最近燃气缴费记录',other);
   const formatted=await ask('最近燃气缴费记录',wechat);
@@ -65,6 +75,6 @@
  finally{
   for(const id of [cid,other,wechat])try{await ask('exit',id);}catch(e){report.errors.push('退出清理：'+e.message);}
   if(report.errors.length)report.structural_passed=false;
-  console.log('========== Nexora v0.5.6-preview 场景专项验收 ==========');console.log(JSON.stringify(report,null,2));
+  console.log('========== Nexora v0.5.7-preview 场景专项验收 ==========');console.log(JSON.stringify(report,null,2));
  }
 })();
