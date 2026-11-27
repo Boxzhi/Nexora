@@ -4,6 +4,7 @@ import logging
 import re
 from uuid import uuid4
 from .capability import Resolver
+from .binding_extractor import BindingExtractor
 
 from homeassistant.components import conversation
 from homeassistant.components.intent_script.helpers import ScriptIntentHandler
@@ -34,6 +35,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
     def __init__(self, hass, entry_id, menu, fallback, bindings=None):
         self.hass, self.entry_id, self.menu, self.fallback = hass, entry_id, menu, fallback
         self.resolver = Resolver(bindings)
+        self.resolver.extractor = BindingExtractor()
         self._resolve_lock = asyncio.Lock()
 
     @property
@@ -82,7 +84,13 @@ class NexoraAgent(conversation.AbstractConversationAgent):
     async def async_process(self, u):
         cid = u.conversation_id or uuid4().hex
         key = (u.context.user_id, u.device_id, u.satellite_id, cid)
-        available = {h.intent_type for h in intent.async_get(self.hass) if type(h) is ScriptIntentHandler and "speech" in h.config and not any(k in h.config for k in ("action", "reprompt", "card"))}
+        handlers = [h for h in intent.async_get(self.hass) if type(h) is ScriptIntentHandler and "speech" in h.config and not any(k in h.config for k in ("action", "reprompt", "card"))]
+        available = {h.intent_type for h in handlers}
+        changed = self.resolver.extractor.refresh(handlers)
+        if "LuxeLightQuery" in changed:
+            self.resolver.targets.clear()
+            self.resolver.modes.clear()
+            self.resolver.invalidate()
         from .menu import HELP, BACK, NEXT, PREV, TRANSLATE
         t=u.text.strip().casefold().translate(TRANSLATE)
         if t in HELP|BACK|NEXT|PREV or t in self.menu.aliases or re.fullmatch(r"[1-8](?:\.[1-8])*",t):

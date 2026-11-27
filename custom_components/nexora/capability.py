@@ -1,6 +1,7 @@
 """Declarative capability requirements; no rendering of business templates."""
 import re
 from time import monotonic
+from .binding_extractor import UNKNOWN
 
 DIM = frozenset({"brightness","color_temp","hs","xy","rgb","rgbw","rgbww","white"})
 KNOWN = DIM | {"onoff"}
@@ -49,6 +50,7 @@ class Resolver:
     """
     def __init__(self, bindings=None, clock=monotonic, ttl=300):
         self.bindings=validate_bindings(bindings or {})
+        self.extractor=None
         self.clock,self.ttl=clock,ttl
         self.targets={}
         self.modes={}
@@ -83,10 +85,15 @@ class Resolver:
         for rule in cap.get("requires",[]):
             if rule["kind"]=="binding":
                 key=rule["key"]
-                if key not in self.bindings:
+                if key in self.bindings:
+                    ids=self.bindings[key]
+                elif self.extractor is not None:
+                    ids=self.extractor.binding(cap,self.targets)
+                    if ids is UNKNOWN:
+                        continue
+                else:
                     continue
-                ids=self.bindings[key]
-                if ids is None:
+                if not ids:
                     return "hidden"
                 if all((s:=get_state(e)) is None or s.state in {"unknown","unavailable"} for e in ids):
                     result="temporary"

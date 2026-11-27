@@ -1,11 +1,14 @@
 import importlib.util
 from pathlib import Path
 import sys
-from types import SimpleNamespace
+from types import SimpleNamespace, ModuleType
 import unittest
 
 path=Path(__file__).resolve().parents[1]/"custom_components/nexora/capability.py"
-spec=importlib.util.spec_from_file_location("nexora_resolver_test",path)
+pkg=ModuleType("nexora_resolver_test")
+pkg.__path__=[str(path.parent)]
+sys.modules[pkg.__name__]=pkg
+spec=importlib.util.spec_from_file_location("nexora_resolver_test.capability",path)
 m=importlib.util.module_from_spec(spec)
 sys.modules[spec.name]=m
 spec.loader.exec_module(m)

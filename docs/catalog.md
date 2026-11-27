@@ -47,3 +47,7 @@ Optional requires is a list of declarative checks combined with AND. Supported k
 - {kind: binding, key: module.binding_id}: reads administrator-provided /config/nexora/bindings.yaml. A null value means confirmed not configured; a nonempty list contains entity IDs. Missing key = unknown, retain. A configured entity temporarily absent/unavailable is not removed.
 
 Do not infer missing configuration by interpreting Intent Script output or parsing arbitrary templates. Local bindings affect menu visibility only; they never alter the executed slots. Example: home.family.person_grandfather: null. No device ID is required in the public catalog. A module with no visible leaves is omitted; old menu snapshots are checked by capability ID before execution. Capability caches are lazy and in memory. Version 1 remains backwards compatible.
+
+## v0.3.1 automatic bindings
+
+Known local speech-only templates are parsed as Jinja AST, never rendered. Structural fingerprints exclude exactly one first-statement literal binding dictionary. Home and Appliance adapters map known slot semantics to entity bindings; unknown schema or unsupported expressions remain visible. The original Home windows stub is hidden; no discovery by contact device class or friendly name. An optional explicit local binding overrides automatic binding presence (not the native light capability check). Utility is unchanged. No runtime template source or binding values are published.

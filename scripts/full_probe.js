@@ -1,4 +1,4 @@
-// Nexora v0.3.0-preview — full read-only menu traversal.
+// Nexora v0.3.1-preview — full read-only menu traversal.
 (async()=>{
  const hass=document.querySelector("home-assistant")?.hass;
  if(!hass)throw Error("找不到 HA 前端");
@@ -73,7 +73,7 @@
    s=menu(await call("9"),path.join(" / "));page++;
   }
  }
- console.log("========== Nexora v0.3.0-preview 全量只读验收 ==========");
+ console.log("========== Nexora v0.3.1-preview 全量只读验收 ==========");
  try{
   const root=menu(await call("help"),"主菜单");
   report.visible_modules=choices(root).map(x=>x.label);
