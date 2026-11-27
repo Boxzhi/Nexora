@@ -4,7 +4,7 @@ Extensible local intent and conversation engine for Home Assistant.
 
 [中文说明](README.zh-CN.md) · [Catalog protocol](docs/catalog.md)
 
-**v0.5.1-preview** — pre-release for independent HA testing, not a stable release. Requires the corresponding existing read-only intent libraries; Nexora does not provide supplier data or control devices.
+**v0.5.2-preview** — pre-release for independent HA testing, not a stable release. Requires the corresponding existing read-only intent libraries; Nexora does not provide supplier data or control devices.
 
 ## Built-in catalogs
 
@@ -30,9 +30,13 @@ Canonical sentences and registered dynamic queries retain the original fast path
 
 ## Limits and safety
 
-The HA strict-recognition internals are targeted at Core 2026.11.3. Execute only speech-only Intent Scripts after native sentence/slot validation; no LLM fallback on failed menu query. Nexora runs as an independent HA Conversation Agent; no CN IM Hub or AI Hub upgrade or private protocol is required. Menu/parameter/follow-up handling precedes deterministic ambiguity checks and strict native recognition. Registered native and semantic matches must agree; otherwise Nexora responds locally. Unmatched likely real-time queries, contextless follow-ups, cancelled reads and recognized mixed query/control requests are handled locally; ordinary questions and explicit device commands retain the configured fallback Agent and its permissions. Nexora itself executes only validated speech-only queries. The household guard is heuristic, not a security boundary. AI sessions and local menu sessions are separate; fallback timeout is 60 seconds. Live validation of v0.5.1 is pending.
+The HA strict-recognition internals are targeted at Core 2026.11.3. Execute only speech-only Intent Scripts after native sentence/slot validation; no LLM fallback on failed menu query. Nexora runs as an independent HA Conversation Agent; no CN IM Hub or AI Hub upgrade or private protocol is required. Menu/parameter/follow-up handling precedes deterministic ambiguity checks and strict native recognition. Registered native and semantic matches must agree; otherwise Nexora responds locally. Unmatched likely real-time queries, contextless follow-ups, cancelled reads and recognized mixed query/control requests are handled locally; ordinary questions and explicit device commands retain the configured fallback Agent and its permissions. Nexora itself executes only validated speech-only queries. The household guard is heuristic, not a security boundary. AI sessions and local menu sessions are separate; fallback timeout is 60 seconds. Live validation of v0.5.2 is pending.
 
 Acceptance scripts are distributed separately from the integration. See [query planner design](docs/query-planner-v050.md) and [acceptance](docs/preview-acceptance.md).
+
+## Aggregate queries and follow-ups (v0.5.2)
+
+Primary-residence and all-account water/electricity/gas queries resolve the existing aggregate balance, arrears, top-up and update-time capabilities. An explicit scope switch keeps the last metric; scope is not a historical date or a secondary electricity account. Distributed phrasing asks for per-account results, not a fabricated total. Contextless financial follow-ups and unsupported household account queries return local guidance instead of AI guesses. Yearly electricity snapshot statistics and formal-bill totals remain separate; a same-session metric switch preserves that distinction. The structured planner also distinguishes aggregate environment readings, light-list/status contracts, washer power and operation, and device-water versus room temperature. The original 443 catalog entries are unchanged. The fixed reverse audit measures canonical structural reachability, not arbitrary-language coverage.
 
 ## Response quality and diagnostics
 
@@ -48,6 +52,6 @@ Dot-separated paths (e.g. 1.2.1) start at the current menu and cannot cross a qu
 
 Static adapters accept only the verified AST structure, excluding the literal binding dictionary. When an intent script is reloaded, the next conversation request observes the new source without polling or a Nexora reload. The known Home windows stub is hidden independently of the toilet-lid contact sensor; changed or unknown business logic is retained conservatively. Utility accounts and historical data are unchanged. No source, entity IDs or private bindings are logged or bundled.
 
-## v0.5.1-preview acceptance
+## v0.5.2-preview acceptance
 
 See [integration acceptance and rollback](docs/preview-acceptance.md). The 443 registered / 420 visible / 23 hidden reference is from the previously validated household, not a universal device count. Do not enable a tool-capable AI fallback merely to run the probes.
