@@ -19,7 +19,7 @@ class Response:
     def async_set_speech(self,text):
         self.speech=text
     def as_dict(self):
-        return {"response_type":"action_done"}
+        return {"response_type":"action_done","speech":{"plain":{"speech":self.speech}}}
 
 def load_adapter():
     modules={n:ModuleType(n) for n in ("homeassistant","homeassistant.components","homeassistant.components.conversation","homeassistant.components.intent_script","homeassistant.components.intent_script.helpers","homeassistant.helpers","homeassistant.helpers.intent","homeassistant.util","homeassistant.util.dt")}
@@ -515,7 +515,7 @@ class Tests(IsolatedAsyncioTestCase):
         self.it.async_handle.assert_not_awaited()
         self.conv.async_converse.assert_not_awaited()
 
-    async def test_real_menu_clarification_and_followup_use_verified_intent(self):
+    async def test_real_menu_scene_and_followup_use_verified_intent(self):
         import json
         from importlib import import_module
         Menu=import_module("nexora_adapter_test.menu").Menu
@@ -533,17 +533,23 @@ class Tests(IsolatedAsyncioTestCase):
             return SimpleNamespace(intent=SimpleNamespace(name=cap["intent"]),unmatched_entities=[],
                 entities_list=[SimpleNamespace(name=k,value=v) for k,v in cap["slots"].items()])
         self.native.async_recognize_intent=AsyncMock(side_effect=recognize)
+        async def handle(hass,domain,intent,slots,sentence,*args,**kw):
+            response=Response("zh-CN")
+            response.async_set_speech(sentence+"：测试值。")
+            return response
+        self.it.async_handle=AsyncMock(side_effect=handle)
         self.u.text="主卧空调多少度"
         r=await self.agent.async_process(self.u)
         self.assertIn("设定温度",r.response.speech)
-        self.it.async_handle.assert_not_awaited()
+        self.assertIn("室温",r.response.speech)
+        self.assertEqual(self.it.async_handle.await_count,2)
         for query,device,metric in (("设定温度","m","target"),("现在屋里几度","m","temp"),("次卧呢","s","temp")):
             self.u.text=query
             await self.agent.async_process(self.u)
             slots=self.it.async_handle.call_args.args[3]
             self.assertEqual(slots["luxe_appliance_device"]["value"],device)
             self.assertEqual(slots["luxe_appliance_query"]["value"],metric)
-        self.assertEqual(self.it.async_handle.await_count,3)
+        self.assertEqual(self.it.async_handle.await_count,5)
         self.conv.async_converse.assert_not_awaited()
 
     async def test_cancelled_mixed_and_unmatched_read_never_reach_fallback(self):
