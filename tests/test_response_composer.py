@@ -129,7 +129,7 @@ class ResponseComposerTests(unittest.TestCase):
             ("appliance","w","energy","海尔洗衣机设备报告累计用电：106.95度。","海尔洗衣机设备报告累计用电：106.95度。"),
             ("appliance","p","filters","米家净水器PPC滤芯剩余90.0%，RO滤芯剩余95.0%。","米家净水器PPC滤芯剩余90%，RO滤芯剩余95%。"),
             ("utility","g","balance","华润燃气燃气账户余额：83.00元。","华润燃气账户余额：83.00元。"),
-            ("utility","e","cost","京华府2026年10月电费：121.20元（月度账单）。","京华府2026年10月电费：121.20元（月度账单）。"),
+            ("utility","e","cost","示例甲账户2026年4月电费：99.20元（月度账单）。","示例甲账户2026年4月电费：99.20元（月度账单）。"),
             ("appliance","b","heatremain","米家浴霸浴霸延时关闭：未启用。","米家浴霸延时关闭：未启用。"),
             ("home","主卧","temp","主卧温度：-3.0℃，设备版本1.0.0。","主卧温度：-3℃，设备版本1.0.0。"),
         ]:
@@ -141,7 +141,7 @@ class ResponseComposerTests(unittest.TestCase):
     def test_partial_coverage_not_rewritten_as_missing_or_complete(self):
         a=step("utility","e","h_year_usage")
         p=qp.Plan((a,))
-        text="京华府2026年账单累计用电量：1703度（10期有效账单；本月暂无账单）。"
+        text="示例甲账户2026年账单累计用电量：1500度（10期有效账单；本月暂无账单）。"
         r=pe.PlanRun((pe.Outcome(a,"partial_data",text),))
         result=rc.compose(p,r,label)
         self.assertTrue(result.primary_completed)
