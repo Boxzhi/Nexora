@@ -49,3 +49,9 @@ class BoundaryTests(unittest.TestCase):
             self.assertEqual(self.guard.classify(q).kind,"compound",q)
         self.assertEqual(self.guard.classify("不要帮我查燃气余额").kind,"cancelled")
         self.assertEqual(self.guard.classify("燃气余额和水费余额").kind,"live")
+
+    def test_v051_additional_mixed_clause_boundaries(self):
+        for q in ("关灯再看看燃气余额","先关灯随后查一下燃气余额","先查燃气余额，再把客厅灯关闭","打开空调接下来查看水费余额","关灯再帮我看看燃气余额"):
+            self.assertEqual(self.guard.classify(q).kind,"compound",q)
+        for q in ("洗衣机怎么清洁","如何把灯具接入 Home Assistant","打开阳台灯"):
+            self.assertFalse(self.guard.blocked(q),q)

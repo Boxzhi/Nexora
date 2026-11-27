@@ -68,3 +68,25 @@ class NaturalLanguageTests(unittest.TestCase):
         self.assertEqual(x.goal,"remaining_physical")
         x,=self.parser.parse("燃气还剩下多少钱")
         self.assertEqual(x.goal,"remaining_unspecified")
+
+    def test_v051_new_reading_fragments(self):
+        cases=[
+            ("电费账户还有多少余额","utility","e","balance",""),
+            ("燃气剩余多少钱","utility","g","","remaining_unspecified"),
+            ("燃气剩余多少立方米","utility","g","","remaining_physical"),
+            ("家里还有没有灯亮着","lights","all","","any_lights_on"),
+            ("客厅灯哪几盏亮着","lights","ke_ting","list_on",""),
+            ("洗衣机还需要几分钟洗完","appliance","w","remaining",""),
+            ("净水器RO滤芯寿命还有百分之多少","appliance","p","ro",""),
+            ("净水器PPC滤芯剩余多少","appliance","p","ppc",""),
+            ("大门有没有关好","home","all","","entry_safety"),
+            ("门锁有没有上锁","home","all","lock",""),
+        ]
+        for q,f,t,m,g in cases:
+            with self.subTest(q=q):
+                frames=self.parser.parse(q)
+                self.assertEqual(len(frames),1,frames)
+                x=frames[0]
+                self.assertEqual((x.subject.family,x.subject.target,x.metric,x.goal),(f,t,m,g))
+        for q in ("燃气剩余多少吨","水费还有多少度电","家里还有没有灯亮着再打开空调","门锁上锁","净水器RO滤芯更换","大门关好"):
+            self.assertFalse(self.parser.parse(q),q)

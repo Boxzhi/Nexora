@@ -80,3 +80,21 @@ class ResolverTests(unittest.TestCase):
         for raw in ({"a":False},{"a":[]},{"a":["invalid"]}):
             with self.assertRaises(ValueError):m.Resolver(raw)
         self.assertEqual(m.validate_bindings(m.validate_bindings({"a":["light.example"]})),{"a":("light.example",)})
+
+    def test_reason_is_feature_metadata_not_current_power(self):
+        self.state.state="on"
+        result=self.r.assess(cap("brightness"),self.get)
+        self.assertEqual(result,{"status":"hidden","reasons":[{"code":"native_feature_unsupported","feature":"brightness","supported_color_modes":["onoff"],"metadata":"current"}]})
+        self.state.state="unavailable"
+        self.state.attributes={}
+        self.assertEqual(self.r.assess(cap("brightness"),self.get)["reasons"][0]["metadata"],"cached")
+        self.state.state="off"
+        self.state.attributes={"supported_color_modes":["color_temp"]}
+        self.assertEqual(self.r.assess(cap("brightness"),self.get)["status"],"visible")
+
+    def test_unresolved_and_explicit_binding_reason_are_distinct(self):
+        self.r=m.Resolver()
+        self.assertEqual(self.r.assess(cap("brightness"),self.get),{"status":"visible","reasons":[{"code":"native_target_unresolved"}]})
+        self.r=m.Resolver({"home.family.example":None})
+        c={"requires":[{"kind":"binding","key":"home.family.example"}]}
+        self.assertEqual(self.r.assess(c,self.get),{"status":"hidden","reasons":[{"code":"explicit_binding_empty"}]})

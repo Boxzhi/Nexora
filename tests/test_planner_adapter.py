@@ -136,3 +136,51 @@ class PlannerAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("上下文",r)
         self.assertFalse(self.calls)
         self.conv.async_converse.assert_not_awaited()
+
+    async def test_canonical_and_structured_speech_use_same_formatter(self):
+        cap=self.menu.capabilities["utility.gas.basic.balance"]
+        for query in (self.menu._query(cap["id"],{}).sentence,
+                      "能不能帮我看看家里的天燃气费还剩下多少钱"):
+            self.calls.clear()
+            self.assertEqual(await self.ask(query),"华润燃气账户余额：83.36元。")
+            self.assertEqual(self.calls,[cap["id"]])
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_quality_diagnostics_separate_from_execution(self):
+        self.speech["utility.gas.basic.balance"]="华润燃气账户余额：数据不可用。"
+        self.assertIn("数据不可用",await self.ask(self.menu._query("utility.gas.basic.balance",{}).sentence))
+        self.assertIn("query_quality:data_gap",self.agent.diagnostics_snapshot())
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_capability_diagnostics_is_redacted_and_nonexecuting(self):
+        from types import SimpleNamespace
+        self.agent.resolver.replace_targets("zh-CN",{"lights.fixtures.master_ceiling":"light.private_secret"})
+        self.agent.hass=SimpleNamespace(states={"light.private_secret":SimpleNamespace(state="on",attributes={"supported_color_modes":["onoff"]})})
+        report=self.agent.capability_snapshot()
+        self.assertEqual(report["registered"],443)
+        row=next(x for x in report["details"] if x.get("capability")=="lights.fixtures.master_ceiling.brightness")
+        self.assertEqual(row["status"],"hidden")
+        self.assertIn("native_feature_unsupported",str(row))
+        self.assertNotIn("light.private_secret",str(report))
+        self.it.async_handle.assert_not_awaited()
+        self.native.async_recognize_intent.assert_not_awaited()
+
+    async def test_v051_reading_and_mixed_boundaries(self):
+        for q,expected in [
+            ("电费账户还有多少余额","utility.electric.j.basic.balance"),
+            ("燃气剩余多少钱","utility.gas.basic.balance"),
+            ("家里还有没有灯亮着","lights.all.list_on"),
+            ("客厅灯哪几盏亮着","lights.rooms.ke_ting.list_on"),
+            ("洗衣机还需要几分钟洗完","appliance.washer.remaining"),
+            ("净水器RO滤芯寿命还有百分之多少","appliance.purifier.ro"),
+            ("门锁有没有上锁","home.access.door.lock_all"),
+        ]:
+            self.calls.clear()
+            await self.ask(q)
+            self.assertEqual(self.calls,[expected],q)
+        for q in ("关灯再看看燃气余额","先关灯随后查一下燃气余额","先查燃气余额，再把客厅灯关闭"):
+            self.calls.clear()
+            r=await self.ask(q)
+            self.assertIn("分别发送",r)
+            self.assertFalse(self.calls)
+        self.conv.async_converse.assert_not_awaited()

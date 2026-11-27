@@ -103,3 +103,13 @@ class ExtractTests(unittest.TestCase):
         e.refresh([handler(HOME,home_source())])
         e.refresh([])
         self.assertIs(e.binding(cap("windows"),{}),b.UNKNOWN)
+
+    def test_verified_empty_and_unimplemented_window_reasons(self):
+        e=b.BindingExtractor()
+        r=Resolver()
+        r.extractor=e
+        e.refresh([handler(HOME,home_source())])
+        self.assertEqual(r.assess(cap("person","爷爷"),lambda _:None)["reasons"],[{"code":"verified_binding_empty"}])
+        self.assertEqual(r.assess(cap("windows"),lambda _:None)["reasons"],[{"code":"verified_window_branch_unimplemented"}])
+        e.refresh([handler(HOME,home_source().replace("stub","changed"))])
+        self.assertEqual(r.assess(cap("windows"),lambda _:None)["status"],"visible")
