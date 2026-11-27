@@ -75,12 +75,14 @@ class CompleteMenuTests(unittest.TestCase):
                 self.assertFalse(set(s.capability for s in plan.primary+plan.supplements)&hidden)
         print("V053_VISIBILITY="+json.dumps({"baseline_registered":443,"visible_detail":420,"visible_scenes":149,"hidden_detail":23}))
     def test_custom_navigation_and_detail_mode(self):
-        custom={"schema_version":1,"module":{"id":"extra","name":"额外模块","order":500},"categories":[],"capabilities":[{"id":"extra.read","category":"extra","name":"状态","sentence":"额外状态如何","intent":"ExtraQuery","slots":{},"read_only":True,"order":10}]}
+        custom={"schema_version":1,"module":{"id":"extra","name":"额外模块","order":500},"categories":[{"id":"extra.info","name":"额外信息","order":10}],"capabilities":[{"id":"extra.info.read","category":"extra.info","name":"状态","sentence":"额外状态如何","intent":"ExtraQuery","slots":{},"read_only":True,"order":10}]}
         menu=mod.Menu(CATS+[custom],settings=SET)
         menu.install_scene_layout(build_layout(menu))
         self.assertIn("5. 额外模块",menu.route("a","help").text)
         self.assertIn("额外模块",menu.route("a","5").text)
-        self.assertEqual(menu.route("a","1").capability,"extra.read")
+        self.assertIn("额外信息",menu.route("a","1").text)
+        self.assertEqual(menu.route("a","1").capability,"extra.info.read")
+        self.assertIn("额外模块",menu.route("a","0").text)
         self.assertIn("发送 detail",menu.route("a","0").text)
         menu.route("a","detail")
         self.assertIn("第三阶梯",menu.route("a","燃气阶梯").text)
