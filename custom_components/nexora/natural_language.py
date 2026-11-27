@@ -135,6 +135,20 @@ UTILITY_RULES=(
     (r"(?:账单)?(?:费用|金额|花了|花了多少|花了多少钱|花了多少元|多少钱|多少块钱|多少元|多少|是多少)(?:多少)?","cost",""),
     (r"(?:余额|数据)?(?:更新|刷新)(?:时间|了没|了吗|了没有|于何时|是什么时候|什么时候)","update",""),
 )
+# Aggregate-only distributed phrasing; a list of account values is not a sum.
+AGGREGATE_RULES=(
+    (re.compile(r"(?:账户)?(?:余额|剩余金额)(?:各自|分别)(?:还有多少|还剩多少|是多少|多少|有多少)"),"balance",""),
+    (re.compile(r"(?:账户)?(?:各自|各|分别)(?:的)?(?:账户)?(?:余额|剩余金额|可用余额)(?:还有多少|还剩多少|是多少|多少|有多少)?"),"balance",""),
+    (re.compile(r"(?:账户)?(?:各自|各|分别)(?:还)?(?:剩(?:下|余)?|有)(?:多少|几)(?:块钱|块|元|钱)?"),"","remaining_unspecified"),
+    (re.compile(r"(?:有哪些|哪些|有没有|有无)(?:账户)?欠费(?:的账户|了|的|账户|吗|没有)?"),"debt",""),
+    (re.compile(r"有欠费的账户吗"),"debt",""),
+)
+def aggregate_fragment(tail):
+    for pattern,metric,goal in AGGREGATE_RULES:
+        if pattern.fullmatch(tail):
+            return metric,goal
+    return None
+
 LIGHT_RULES=(
     (r"(?:是)?(?:还)?(?:亮着|开着)(?:的)?(?:吗|没|没有)|(?:全)?关(?:好|了)(?:吗|没|没有)|(?:有没有|还有没有)(?:开着|亮着|没关)的?灯?(?:具)?|(?:还有没有|有没有)灯(?:具)?(?:亮着|开着|没关)|(?:是不是|是否)(?:都|全)关(?:好|了)(?:吗|没)?","","any_lights_on"),
     (r"(?:(?:是不是|是否)全部关闭|全部关闭(?:了吗|吗|没|没有)|都关(?:好|了)(?:吗|没|没有))","all_off",""),
@@ -304,6 +318,10 @@ class QueryParser:
 
     def _metrics(self,sub,tail):
         out=set()
+        if sub.family=="utility" and sub.target=="all":
+            match=aggregate_fragment(tail)
+            if match is not None:
+                return {match}
         if sub.domain=="light_room":
             if not re.search(r"灯|灯具|灯光",tail):
                 return out

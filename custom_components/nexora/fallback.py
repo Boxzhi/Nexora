@@ -8,7 +8,7 @@ from time import monotonic
 import re
 
 from .semantic_lexicon import ROOMS as ROOM_ALIASES, DEVICES, UTILITIES, describe
-from .natural_language import CORRECTIONS
+from .natural_language import CORRECTIONS, aggregate_fragment
 
 # These are recognition hints for unmatched queries, not an authorization layer.
 HOUSEHOLD = {
@@ -37,7 +37,8 @@ MISSING_CONTEXT = {"还剩多少","剩多少","还有多少钱","余额呢","多
 BARE_UTILITY=re.compile(r"(?:余额|账户余额|欠费情况|数据更新时间|(?:有没有|有无|是否|是不是|有)?欠费(?:了)?(?:的|账户|的账户|吗|没|没有)?|(?:还)?(?:要|需要|该)(?:充值|缴费|交费|交钱)(?:了)?(?:吗|没|没有|的)?|(?:有没有|有无|哪些)(?:账户)?(?:需要|要|该)充值(?:的|账户|的账户)?|(?:所有|全部)(?:水电气)?账户|主住所)(?:呢|啊|呀)?")
 def _missing_context(text):
     return (text in MISSING_CONTEXT or text.removesuffix("呢") in MISSING_CONTEXT
-            or BARE_UTILITY.fullmatch(text) is not None)
+            or BARE_UTILITY.fullmatch(text) is not None
+            or aggregate_fragment(text.removesuffix("呢")) is not None)
 
 # Explicit query+action composition is not an implicit authorization to run either.
 SEPARATOR = re.compile(r"然后|接着|随后|接下来|同时|顺便|并且|以及|另外|和|并(?=查询|查|看|问|关|开|调|设|启|停|锁|解|把|将)|再(?:帮我)?(?=查|看|问|关|开|调|设|启|停|锁|解|把|将)|[，,；;]")

@@ -182,6 +182,9 @@ class QueryContext:
                 metric,goal=next(iter(options))
                 if metric in {"balance","debt","update"} or goal in {"remaining_unspecified","payment_needed"}:
                     return self._safe(replace(old,metric=metric,goal=goal,correction=()),focus,today)
+        if old.subject.family=="utility" and old.subject.target=="e" and old.metric in {"year_cost","year_usage"} and tail in {"用量","费用","账单"}:
+            return self._safe(replace(old,metric={"用量":"year_usage","费用":"year_cost","账单":"cost"}[tail],
+                 time=TimeSpec(period="year"),goal="",correction=()),focus,today)
         if not focus.scene:
             return PlanningResult()
         # Short metric switches are scoped by previous subject; no
