@@ -7,6 +7,7 @@ from .capability import Resolver
 from .binding_extractor import BindingExtractor
 from .executor import _slot_equal, _slots_match, execute_readonly
 from .router import Route, decide, is_menu_message
+from .semantic import SemanticIndex
 
 from homeassistant.components import conversation
 from homeassistant.components.intent_script.helpers import ScriptIntentHandler
@@ -21,6 +22,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         self.resolver = Resolver(bindings)
         self.resolver.extractor = BindingExtractor()
         self._resolve_lock = asyncio.Lock()
+        self.semantic = SemanticIndex(menu)
 
     @property
     def supported_languages(self):
@@ -67,6 +69,15 @@ class NexoraAgent(conversation.AbstractConversationAgent):
 
     menu_protocol_version = 1
     context_protocol_version = 1
+    semantic_protocol_version = 1
+
+    def is_semantic_message(self, text):
+        return self.semantic.match(text) is not None
+
+    async def async_process_semantic(self, u):
+        if not self.is_semantic_message(u.text):
+            return self._reply(u, u.conversation_id or uuid4().hex, "查询能力已变化，请发送 help。")
+        return await self._async_process(u, menu_only=True)
 
     def is_menu_message(self, text):
         if is_menu_message(self.menu, text):
@@ -123,7 +134,10 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             self.resolver.invalidate()
         from .menu import HELP, BACK, NEXT, PREV, TRANSLATE
         t=u.text.strip().casefold().translate(TRANSLATE)
-        if t in HELP|BACK|NEXT|PREV or t in self.menu.aliases or re.fullmatch(r"[1-8](?:\.[1-8])*",t):
+        semantic_match = self.semantic.match(u.text)
+        needs_native = (semantic_match is not None and semantic_match.capability is not None
+                        and self.menu.capabilities[semantic_match.capability].get("native_slots"))
+        if needs_native or t in HELP|BACK|NEXT|PREV or t in self.menu.aliases or re.fullmatch(r"[1-8](?:\.[1-8])*",t):
             await self._prepare_capabilities(u,available)
         get_state=getattr(getattr(self.hass,"states",None),"get",lambda _:None)
         statuses={}
@@ -134,7 +148,8 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             return statuses[cid]
         if not self.menu.followups.is_current(key,generation):
             return self._reply(u,cid,"查询会话已更新，请重新发送。")
-        decision = decide(self.menu, key, u.text, visible, today=dt_util.now().date())
+        decision = decide(self.menu, key, u.text, visible, today=dt_util.now().date(),
+                          semantic=self.semantic, semantic_match=semantic_match)
         if decision.route is Route.FALLBACK:
             if menu_only:
                 return self._reply(u, cid, "当前没有待输入的菜单参数，请发送 help。")
