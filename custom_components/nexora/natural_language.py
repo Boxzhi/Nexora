@@ -178,6 +178,28 @@ SPECIAL_RULES={
     "safety":((r"(?:异常|提醒|问题|警报|告警)(?:有哪些|多少|吗)?","","alerts"),),
 }
 
+# Only reviewed, high-certainty lexical substitutions. No edit-distance
+# guessing over room names, accounts, dates, units or control commands.
+CORRECTIONS = {
+    "天燃气": "天然气", "天燃气费": "天然气费", "洗衣鸡": "洗衣机",
+    "净水气": "净水器", "主卧空条": "主卧空调", "次卧空条": "次卧空调",
+    "空条": "空调", "客厅登": "客厅灯",
+}
+
+def valid_utility_fragment(target,tail,metric,goal):
+    # The same numeral/unit may mean a different metric; a mismatched unit
+    # invalidates the frame rather than being discarded or guessed.
+    if goal=="remaining_physical":
+        return target=="g" and bool(re.search(r"(?:方|立方米|m3)$",tail))
+    if metric=="usage":
+        if re.search(r"度电|耗电|用电|度$",tail):
+            return target=="e"
+        if re.search(r"吨水|用水|吨$",tail):
+            return target=="w"
+        if re.search(r"方气|用气|立方米|方$",tail):
+            return target=="g"
+    return True
+
 class QueryParser:
     def __init__(self,menu,registry):
         self.menu=menu
@@ -269,6 +291,10 @@ class QueryParser:
         # essential for broad status queries and temperature ambiguity.
         for pattern,metric,goal in self.rules[sub.domain]:
             if pattern.fullmatch(tail):
+                if sub.family=="utility" and not valid_utility_fragment(sub.target,tail,metric,goal):
+                    continue
+                if sub.family=="utility" and goal=="account_health" and sub.target!="all":
+                    goal="payment_needed"
                 if sub.domain=="fixture" and goal=="any_lights_on":
                     metric,goal="single_state",""
                 if sub.domain=="fixture" and goal=="overview":
@@ -308,6 +334,15 @@ class QueryParser:
             break
         value=value.lstrip()
         matches=self.subjects.prefixes(value)
+        correction=()
+        if not matches:
+            for typo,word in sorted(CORRECTIONS.items(),key=lambda x:-len(x[0])):
+                if value.startswith(typo):
+                    corrected=word+value[len(typo):]
+                    candidate=self.subjects.prefixes(corrected)
+                    if candidate and candidate[0][0]>=len(word):
+                        value,matches,correction=corrected,candidate,(typo,word)
+                    break
         result=set()
         # Prefer longest known subject. Do not reinterpret a failed specific
         # target as a shorter one, e.g. "燃气热水器" -> "燃气".
@@ -323,7 +358,7 @@ class QueryParser:
                 if (explicit or time!=TimeSpec()) and sub.family!="utility":
                     continue
                 for metric,goal in self._metrics(sub,tail):
-                    result.add(Frame(sub,metric,goal,account,time,explicit))
+                    result.add(Frame(sub,metric,goal,account,time,explicit,correction))
         # Object-last form, with exact independent metric fragment and a known
         # target at the end, no unconstrained text deletion.
         if not matches:

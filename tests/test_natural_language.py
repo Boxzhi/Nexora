@@ -43,3 +43,28 @@ class NaturalLanguageTests(unittest.TestCase):
                   "主卧空调多少度并关灯","主卧空调温度是多少帮我关闭","门锁反锁","大门上锁","主卧窗帘关闭","马桶盖打开"):
             with self.subTest(q=q):
                 self.assertFalse(self.parser.parse(q))
+
+    def test_reviewed_corrections_at_subject_boundary(self):
+        for q,target,typo in (
+            ("天燃气余额","g","天燃气"),
+            ("我想知道主卧空条多少度","m","主卧空条"),
+            ("洗衣鸡洗完没","w","洗衣鸡"),
+            ("净水气滤芯还剩多少","p","净水气"),
+            ("客厅登关了吗","ke_ting","客厅登"),
+        ):
+            with self.subTest(q=q):
+                x,=self.parser.parse(q)
+                self.assertEqual(x.subject.target,target)
+                self.assertEqual(x.correction[0],typo)
+        for q in ("把主卧空条打开","天燃气余额然后关灯","主卧空条调到26度",
+                  "火星天燃气余额","次住所天燃气余额2024年","主卧空调天燃气余额"):
+            self.assertFalse(self.parser.parse(q))
+
+    def test_units_and_explicit_scope_never_guessed(self):
+        for q in ("燃气用了多少吨","水费用了多少度电","电费用了多少吨水","燃气还剩多少度","水费还剩几吨"):
+            with self.subTest(q=q):
+                self.assertFalse(self.parser.parse(q))
+        x,=self.parser.parse("燃气还剩多少立方米")
+        self.assertEqual(x.goal,"remaining_physical")
+        x,=self.parser.parse("燃气还剩下多少钱")
+        self.assertEqual(x.goal,"remaining_unspecified")
