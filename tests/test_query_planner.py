@@ -76,3 +76,15 @@ class PlannerTests(unittest.TestCase):
                 self.assertEqual(self.ids(q),("utility.summary.primary."+metric,))
         for q in ("去年水电气余额","次住所水电气余额","水电气还剩多少立方米","水电气本月费用"):
             self.assertIsNone(self.p.plan(q,TODAY).plan,q)
+
+    def test_aggregate_explicit_scope_and_metric(self):
+        for q,expected in [
+            ("水电气有没有欠费的","utility.summary.primary.debts"),
+            ("所有账户余额还有多少","utility.summary.all.balances_all"),
+            ("全部水电气账户需要充值吗","utility.summary.all.low_all"),
+            ("所有账户数据更新时间","utility.summary.all.updates_all"),
+            ("主住所的水电气欠费情况","utility.summary.primary.debts"),
+        ]:
+            self.assertEqual(self.ids(q),(expected,),q)
+        for q in ("去年所有账户余额","次住所所有账户余额","全部账户本月费用","所有账户还有多少立方米"):
+            self.assertIsNone(self.p.plan(q,TODAY).plan,q)

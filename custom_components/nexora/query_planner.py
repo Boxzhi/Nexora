@@ -48,7 +48,7 @@ class QueryPlanner:
             return Plan((self._step(QueryKey(s.family,s.target,"temp")),),focus=frame)
         if goal=="overview" and s.family=="appliance" and s.target in {"a","f","b"}:
             return Plan((self._step(QueryKey(s.family,s.target,"status")),),focus=frame)
-        rule=self.policies.get(PolicyKey(s.family,s.target,goal,account,frame.time.period))
+        rule=self.policies.get(PolicyKey(s.family,s.target,goal,account,frame.scope or frame.time.period))
         if rule is None:
             raise KeyError(goal)
         scene=rule.scene
@@ -136,11 +136,13 @@ class QueryPlanner:
             metric={"remaining_unspecified":"balances","payment_needed":"low"}.get(frame.goal)
         if metric is None:
             raise KeyError(frame.metric or frame.goal)
-        return Plan((self._step(QueryKey("utility","all",metric,account=account)),),focus=frame)
+        return Plan((self._step(QueryKey("utility","all",metric,period=frame.scope,account=account)),),focus=frame)
 
     def frame(self,frame,today):
         s=frame.subject
         account=frame.account
+        if frame.scope not in {"","all"} or (frame.scope and (s.family,s.target)!=("utility","all")):
+            return PlanningResult(message=MISSING)
         if s.family=="utility":
             if frame.explicit_account and account=="ambiguous":
                 return PlanningResult(message="账户名称存在歧义，请明确查询账户。")

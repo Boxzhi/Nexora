@@ -34,6 +34,7 @@ class Frame:
     time: TimeSpec = TimeSpec()
     explicit_account: bool = False
     correction: tuple = ()
+    scope: str = ""
 
 def surface(text):
     if not isinstance(text,str) or len(text)>256:
@@ -124,8 +125,9 @@ UTILITY_RULES=(
     (r"(?:账户(?:里|内)?)?(?:还)?(?:剩(?:下|余)?|有)(?:多少|几)(?:块钱|块|元|钱)?","","remaining_unspecified"),
     (r"(?:还)?(?:剩(?:下|余)?|有)(?:多少|几)(?:方|立方米|m3|m³)","","remaining_physical"),
     (r"(?:还)?(?:剩(?:下)?|有)(?:多少|几)(?:度|吨)","","remaining_physical"),
-    (r"(?:是不是|是否|有没有|有无)?欠费(?:了)?(?:吗|没|没有|多少)?","debt",""),
-    (r"(?:还)?(?:要|需要|该)(?:交费|缴费|交钱|交了|交|充值)(?:了)?(?:吗|没|没有)?|(?:账户|余额)?够不够用","","payment_needed"),
+    (r"(?:是不是|是否|有没有|有无)?欠费(?:了)?(?:吗|没|没有|多少|情况|的|账户)?","debt",""),
+    (r"(?:还)?(?:要|需要|该)(?:交费|缴费|交钱|交了|交|充值)(?:了)?(?:吗|没|没有|的|的账户)?|(?:账户|余额)?够不够用","","payment_needed"),
+    (r"(?:有无|有没有|哪些)(?:账户)?(?:需要|要|该)充值(?:的|的账户|账户)?","","payment_needed"),
     (r"(?:累计|总计|总共)?(?:交|缴|支付)(?:了)?(?:多少|几)(?:块钱|元|钱)(?:费)?","payment_amount",""),
     (r"(?:账户)?(?:情况|健康|怎么样|如何)","","account_health"),
     (r"(?:累计|总计)?(?:用量|用电量|耗电量|用水量|用气量|耗电|用电|用水|用气)(?:是|有|为)?(?:多少|几)?","usage",""),
@@ -226,6 +228,8 @@ class QueryParser:
                     self.aliases[w].add(sub)
         for t,words in UTILITIES.items():
             add("utility",t,"utility",words)
+        add("utility","all","utility_all",("全部账户","所有账户","全部水电气账户","所有水电气账户","全部水电气","所有水电气"))
+        add("utility","all","utility",("主住所水电气","主住所的水电气"))
         for t,words in DEVICES.items():
             d={"w":"washer","p":"purifier"}.get(t,"appliance")
             add("appliance",t,d,words+({"ac":("空调","两台空调"),"w":("衣服","洗衣服")}.get(t,())))
@@ -282,9 +286,9 @@ class QueryParser:
             word=surface(menu.settings.get(key,""))
             if word:
                 self.accounts.add(word,account)
-        for domain in ("utility","light_scope","light_room","fixture","appliance","washer","purifier","environment",
+        for domain in ("utility","utility_all","light_scope","light_room","fixture","appliance","washer","purifier","environment",
                        "door","family","person","battery","curtain","lid","heater","safety"):
-            common=UTILITY_RULES if domain=="utility" else LIGHT_RULES if domain in {"light_scope","light_room","fixture"} else (
+            common=UTILITY_RULES if domain in {"utility","utility_all"} else LIGHT_RULES if domain in {"light_scope","light_room","fixture"} else (
                 APPLIANCE_RULES if domain in {"appliance","washer","purifier"} else HOME_ENV_RULES if domain=="environment" else ())
             self.rules[domain]=tuple((re.compile(p),m,g) for p,m,g in SPECIAL_RULES.get(domain,())+common)
 
@@ -378,7 +382,7 @@ class QueryParser:
                 if (explicit or time!=TimeSpec()) and sub.family!="utility":
                     continue
                 for metric,goal in self._metrics(sub,tail):
-                    result.add(Frame(sub,metric,goal,account,time,explicit,correction))
+                    result.add(Frame(replace(sub,domain="utility") if sub.domain=="utility_all" else sub,metric,goal,account,time,explicit,correction,scope="all" if sub.domain=="utility_all" else ""))
         # Object-last form, with exact independent metric fragment and a known
         # target at the end, no unconstrained text deletion.
         if not matches:
@@ -390,7 +394,7 @@ class QueryParser:
                     if (explicit or time!=TimeSpec()) and sub.family!="utility":
                         continue
                     for metric,goal in self._metrics(sub,head):
-                        result.add(Frame(sub,metric,goal,account,time,explicit))
+                        result.add(Frame(replace(sub,domain="utility") if sub.domain=="utility_all" else sub,metric,goal,account,time,explicit,scope="all" if sub.domain=="utility_all" else ""))
         return tuple(sorted(result,key=repr))
 
     def subject_only(self,text):
