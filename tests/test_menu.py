@@ -151,4 +151,10 @@ class Tests(unittest.TestCase):
         cap["parameter_slots"]["year"]="utility_kind"
         with self.assertRaises(ValueError):mod.Menu([c])
 
+    def test_independent_question_during_date_prompt(self):
+        node="utility.water.history.history_usage"
+        self.select_id(node,node+".history_usage_year")
+        self.assertIsNone(self.route("详细介绍一下峰谷电价"))
+        self.assertIsNone(self.m.sessions["a"].pending)
+
 if __name__=="__main__":unittest.main()

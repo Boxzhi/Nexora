@@ -10,6 +10,11 @@ from homeassistant.util import dt as dt_util
 
 _LOGGER = logging.getLogger(__name__)
 
+def _slot_equal(actual, expected):
+    if type(expected) is int:
+        return (type(actual) in (int, float) and actual == expected) or (type(actual) is str and actual == str(expected))
+    return type(actual) is str and actual == expected
+
 class NexoraAgent(conversation.AbstractConversationAgent):
     def __init__(self, hass, entry_id, menu, fallback):
         self.hass, self.entry_id, self.menu, self.fallback = hass, entry_id, menu, fallback
@@ -32,7 +37,8 @@ class NexoraAgent(conversation.AbstractConversationAgent):
     async def async_process(self, u):
         cid = u.conversation_id or uuid4().hex
         key = (u.context.user_id, u.device_id, u.satellite_id, cid)
-        reply = self.menu.route(key, u.text, lambda cap: self._handler(cap["intent"]) is not None, today=dt_util.now().date())
+        available = {h.intent_type for h in intent.async_get(self.hass) if type(h) is ScriptIntentHandler and "speech" in h.config and not any(k in h.config for k in ("action", "reprompt", "card"))}
+        reply = self.menu.route(key, u.text, lambda cap: cap["intent"] in available, today=dt_util.now().date())
         if reply is None:
             try:
                 agent = conversation.async_get_agent(self.hass, self.fallback)
@@ -61,7 +67,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                     return self._reply(u, cid, "该问句与已安装意图库不匹配，请检查版本。")
                 recognized = {item.name: item.value for item in result.entities_list}
                 expected = reply.slots
-                if set(recognized) != set(expected) or any(str(recognized[k]) != str(v) for k,v in expected.items()) or self._handler(cap["intent"]) is not handler:
+                if set(recognized) != set(expected) or any(not _slot_equal(recognized[k], v) for k,v in expected.items()) or self._handler(cap["intent"]) is not handler:
                     return self._reply(u, cid, "查询参数与已安装意图库不一致，请检查版本。")
                 # No await between handler identity validation and dispatch.
                 response = await intent.async_handle(self.hass, "conversation", cap["intent"], {k:{"value":v,"text":str(v)} for k,v in recognized.items()}, reply.sentence, u.context, u.language, assistant="conversation", conversation_agent_id="conversation.home_assistant")

@@ -13,3 +13,5 @@
 自定义目录放在 /config/nexora/catalogs/，支持 JSON/YAML。修改后重载集成生效。详见 docs/catalog.md。
 
 限制：当前只接入 Utility，仍可能等待 LLM 普通队列；多轮追问、其他业务意图库后续扩展。仅针对 HA Core 2026.11.3 的接口设计，本版本尚待真实 HA 验收。公开仓库不包含实际账户实体 ID 或余额。
+
+控制台初步验收脚本：[scripts/probe.js](scripts/probe.js)。仅执行水费余额和菜单导航等只读操作，不调用大模型或控制设备。

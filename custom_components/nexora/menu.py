@@ -211,6 +211,10 @@ class Menu:
         if s and s.pending:
             if t in BACK:
                 return self._render(key, s.node, available, s.page)
+            if not re.fullmatch(r"[0-9-]+", t) and t not in {"下一页", "上一页"}:
+                # A complete independent question remains usable during a date prompt.
+                s.pending = None
+                return None
             cap_id = s.pending
             if not self._available(cap_id, available):
                 return self._render(key, s.node, available, s.page)

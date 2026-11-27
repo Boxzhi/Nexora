@@ -19,3 +19,5 @@ Add this repository in HACS as an Integration custom repository once a preview r
 ## Limitations
 
 Only Utility is included in this preview. Account aliases and matching must be supplied locally. The HA strict-recognition internals are targeted at Core 2026.11.3; other versions are not certified. Menu operations use the ordinary CN IM Hub lane and can wait behind an LLM request. No stateful natural-language follow-ups yet. Registry refresh requires integration reload; sessions are in memory and expire after ten minutes. No real HA validation of this preview has been completed at initial commit. See Actions for test status.
+
+Targeted live read-only probe: [scripts/probe.js](scripts/probe.js). Run in the Home Assistant browser console after adding the agent, before switching the IM agent.
