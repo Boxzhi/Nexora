@@ -93,7 +93,7 @@ class SemanticIndex:
                         for suffix in ("","多少","是多少"):
                             variants.add(prefix+metric+suffix)
                 for query in (room+"有多亮",room+"亮度",room+"亮度多少",room+"亮度是多少",
-                              room+"的亮度",room+"的亮度是多少",room+"的亮度多少"):
+                              room+"的亮度",room+"的亮度是多少",room+"的亮度多少",room+"亮不亮"):
                     self.clarifications[query] = "请确认要查询"+room+"的环境光照度，还是某个灯具的亮度？可发送“"+room+"光照度是多少”，或指定灯具名称。"
             if cap["intent"] == "LuxeApplianceQuery" and canonical.endswith("现在状态如何"):
                 subject = canonical[:-len("现在状态如何")]

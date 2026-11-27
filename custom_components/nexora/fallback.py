@@ -86,7 +86,7 @@ class FallbackGuard:
     def _query(self,value):
         return self._household(value) and (LIVE.search(value) is not None or INQUIRY.search(value) is not None or QUESTION.search(value) is not None or re.search(r"怎么样|哪了|够不够|够用|几天",value) is not None)
 
-    def classify(self,text):
+    def classify(self,text,known_query=None):
         value=text.strip().casefold() if isinstance(text,str) else ""
         if not value:
             return BoundaryDecision("delegate")
@@ -95,7 +95,8 @@ class FallbackGuard:
         if NEGATED_READ.search(compact):
             return BoundaryDecision("cancelled","已取消本次查询，不执行查询。")
         parts=[p for p in SEPARATOR.split(compact) if p]
-        if len(parts)>1 and any(self._command(p) for p in parts) and any(self._query(p) and not self._command(p) for p in parts):
+        if len(parts)>1 and any(self._command(p) for p in parts) and any(
+                (self._query(p) or (known_query is not None and known_query(p))) and not self._command(p) for p in parts):
             return BoundaryDecision("compound","检测到查询与设备控制混合在同一条消息中，请分别发送查询和控制指令。")
         if compact in MISSING_CONTEXT or compact.removesuffix("呢") in MISSING_CONTEXT:
             return BoundaryDecision("missing_context","请补充查询对象或账期，当前没有足够的本地查询上下文。")

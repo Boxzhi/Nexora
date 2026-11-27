@@ -223,7 +223,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             self.resolver.invalidate()
         from .menu import HELP,BACK,NEXT,PREV,TRANSLATE,PATH_RE
         text=u.text.strip().casefold().translate(TRANSLATE)
-        if text in HELP|BACK|NEXT|PREV or text in self.menu.aliases or PATH_RE.fullmatch(text) or self.menu.followups.is_followup_message(text):
+        if text in HELP|BACK|NEXT|PREV or text in self.menu.aliases or PATH_RE.fullmatch(text) or self.menu.followups.is_followup_message(text.rstrip("？?。！!").strip()):
             await self._prepare_capabilities(u,available)
         get_state=getattr(getattr(self.hass,"states",None),"get",lambda _:None)
         def visible(cap):
@@ -236,7 +236,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         today=dt_util.now().date()
         decision=decide(self.menu,key,u.text,visible,today=today)
         if decision.route is Route.FALLBACK:
-            boundary=self.fallback_guard.classify(u.text)
+            boundary=self.fallback_guard.classify(u.text,lambda q:self.semantic.match(q,today=today) is not None)
             # Do not pass cancelled reads or compound query/control requests to
             # either native recognition or an action-capable fallback.
             if boundary.kind in {"cancelled","compound"}:
