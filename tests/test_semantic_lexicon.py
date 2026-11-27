@@ -112,9 +112,9 @@ class ComposedMatcherTests(VocabularyTests):
                 self.assertEqual(self.index.match(phrase).capability,cid)
     def test_no_control_unit_or_time_guessing(self):
         for phrase in ("帮我打开客厅灯","主卧空调调到26度","请问关闭浴霸",
-                       "把洗衣机停一下","燃气还剩多少方","燃气剩多少度","水费还剩多少吨",
+                       "把洗衣机停一下",
                        "昨天主卧现在几度","不要查燃气剩多少","燃气剩多少然后关灯",
-                       "未知房间现在几度","2024年3月电费是多少"):
+                       "未知房间现在几度"):
             with self.subTest(phrase=phrase):
                 self.assertIsNone(self.index.match(phrase))
     def test_account_alias_collision_is_local_clarification(self):

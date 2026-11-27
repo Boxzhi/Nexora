@@ -455,3 +455,58 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertIn("不一致",r.response.speech)
         self.it.async_handle.assert_not_awaited()
         self.conv.async_converse.assert_not_awaited()
+
+    async def test_dynamic_spoken_date_strict_dispatch(self):
+        from importlib import import_module
+        SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
+        cid="utility.electric.j.history.h_month_cost.h_month_cost_last_year"
+        cap={"id":cid,"intent":"LuxeUtilityQuery","sentence":"去年{month}月电费是多少",
+             "slots":{"utility_kind":"e","utility_metric":"h_month_cost","luxe_utility_property":"j","utility_period":"last_year"},
+             "parameter":"month","parameter_slots":{"month":"luxe_utility_month"},"parameter_year_offset":-1}
+        self.menu.capabilities={cid:cap}
+        self.menu._available=lambda c,visible:visible(cap)
+        self.menu._query=lambda c,p:SimpleNamespace(capability=c,sentence=cap["sentence"].format(**p),
+                slots={**cap["slots"],"luxe_utility_month":p["month"]})
+        self.menu.route=lambda *a,**kw:None
+        self.agent.semantic=SemanticIndex(self.menu)
+        self.u.text="去年三月份电费花了多少钱"
+        slots={**cap["slots"],"luxe_utility_month":3}
+        self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in slots.items()]
+        async def recognize(u,**kw):
+            return self.result if u.text=="去年3月电费是多少" else None
+        self.native.async_recognize_intent=AsyncMock(side_effect=recognize)
+        await self.agent.async_process(self.u)
+        self.it.async_handle.assert_awaited_once()
+        self.assertEqual(self.it.async_handle.call_args.args[3]["luxe_utility_month"]["value"],3)
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_explicit_ambiguity_is_terminal_before_native(self):
+        self.menu.route=lambda *a,**kw:None
+        for q in ("主卧空调多少度","燃气还剩多少方","大门好了吗","最近7天电费多少"):
+            self.u.text=q
+            r=await self.agent.async_process(self.u)
+            self.assertTrue(r.response.speech)
+        self.native.async_recognize_intent.assert_not_awaited()
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_native_date_disagreement_never_executes(self):
+        from importlib import import_module
+        SemanticIndex=import_module("nexora_adapter_test.semantic").SemanticIndex
+        cid="utility.electric.j.history.h_month_cost.h_month_cost_last_year"
+        cap={"id":cid,"intent":"LuxeUtilityQuery","sentence":"去年{month}月电费是多少",
+             "slots":{"utility_kind":"e","utility_metric":"h_month_cost","luxe_utility_property":"j","utility_period":"last_year"},
+             "parameter":"month","parameter_slots":{"month":"luxe_utility_month"},"parameter_year_offset":-1}
+        self.menu.capabilities={cid:cap}
+        self.menu._available=lambda c,visible:visible(cap)
+        self.menu._query=lambda c,p:SimpleNamespace(capability=c,sentence=cap["sentence"].format(**p),
+            slots={**cap["slots"],"luxe_utility_month":p["month"]})
+        self.menu.route=lambda *a,**kw:None
+        self.agent.semantic=SemanticIndex(self.menu)
+        self.u.text="去年三月份电费花了多少钱"
+        slots={**cap["slots"],"luxe_utility_month":4}
+        self.result.entities_list=[SimpleNamespace(name=k,value=v) for k,v in slots.items()]
+        r=await self.agent.async_process(self.u)
+        self.assertIn("参数不一致",r.response.speech)
+        self.it.async_handle.assert_not_awaited()
+        self.conv.async_converse.assert_not_awaited()
