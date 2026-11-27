@@ -1,0 +1,54 @@
+name: Publish Nexora v0.5.2-preview
+on:
+  push:
+    branches:
+      - release/v0.5.2-preview
+    paths:
+      - .github/workflows/publish-v052-preview.yml
+permissions:
+  contents: write
+concurrency:
+  group: nexora-v052-preview-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: github.repository == 'Boxzhi/Nexora' && github.ref == 'refs/heads/release/v0.5.2-preview'
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Boxzhi/Nexora
+      RELEASE_TAG: v0.5.2-preview
+      RELEASE_SHA: 7bda37f97fb0bb3af218af492681e66a7a69e78d
+    steps:
+      - name: Verify fixed candidate and publish prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GH_REPO/commits/$RELEASE_SHA" --jq .sha | grep -Fx "$RELEASE_SHA"
+          if gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "Release already exists; refusing overwrite."
+            exit 1
+          fi
+          if gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag already exists; refusing reuse."
+            exit 1
+          fi
+          cat > release-notes.md <<'EOF'
+          ## 修复
+          - 综合水电气余额、欠费、充值与更新时间正确映射至既有聚合能力。
+          - 主住所与全部账户明确区分，连续追问保留指标及范围；单账户欠费追问修复。
+          - 缺少上下文的欠费/充值等实时问句及无法支持的综合账户查询在本地处理，不交给 AI 猜测。
+          - 区分年度基础统计与正式账单累计、灯光列表与全部关闭状态、洗衣机电源与运行状态、设备水温与室温；补齐全屋环境聚合与童锁语义。
+          - 原443项能力、绑定可见性、只读权限及其他集成保持不变。
+          ## 验证
+          - 固定候选 7bda37f：263项自动化测试、443项原能力模拟执行、6225条旧组合语料、85条旧独立语料、68条 v0.5.0 独立语料、11条 v0.5.1 独立语料、42条回复格式回放、22条新增独立口语、5组16轮连续会话、15条新增反例通过。
+          - 443项固定注册问句反向审计：178直接规划、2场景扩展、263沿用原有识别路径、0错误映射。并非任意自然语言覆盖率。
+          - Hassfest 通过；HACS 8/10（Topics、Brands 未通过）。真实 v0.5.2 HA 与微信验收待用户执行。
+          ## 升级
+          - 仅升级 Nexora，保留原8个 YAML、现有配置、CN IM Hub、AI Hub、SGCC Add-on。bindings.yaml 仍可选。
+          - HACS 安装预览版后重启 Core；异常回滚 v0.5.1-preview。独立验收 ZIP 单独交付，不上传 Release。
+          - 若 HA 专项通过但微信追问仍失败，核实微信端实际 Agent 路由与 conversation_id 连续性。外部原生 Intent 直达不共享 Nexora 上下文。
+          EOF
+          gh release create "$RELEASE_TAG" --repo "$GH_REPO" --target "$RELEASE_SHA" --title "Nexora v0.5.2-preview" --prerelease --latest=false --notes-file release-notes.md
+          gh release view "$RELEASE_TAG" --repo "$GH_REPO" --json url,tagName,isPrerelease,isDraft
