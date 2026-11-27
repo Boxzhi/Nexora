@@ -6,7 +6,7 @@ from uuid import uuid4
 from .capability import Resolver
 from .binding_extractor import BindingExtractor
 from .executor import _slot_equal, _slots_match, execute_readonly
-from .router import Route, decide
+from .router import Route, decide, is_menu_message
 
 from homeassistant.components import conversation
 from homeassistant.components.intent_script.helpers import ScriptIntentHandler
@@ -65,7 +65,21 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 _LOGGER.debug("Nexora capability mapping deferred",exc_info=True)
             self.resolver.replace_targets(u.language,targets)
 
+    menu_protocol_version = 1
+
+    def is_menu_message(self, text):
+        return is_menu_message(self.menu, text)
+
+    async def async_process_menu(self, u):
+        """Local-only entrypoint for an ordered transport menu lane."""
+        if not self.is_menu_message(u.text):
+            return self._reply(u, u.conversation_id or uuid4().hex, "非菜单指令，请重新发送 help。")
+        return await self._async_process(u, menu_only=True)
+
     async def async_process(self, u):
+        return await self._async_process(u)
+
+    async def _async_process(self, u, *, menu_only=False):
         cid = u.conversation_id or uuid4().hex
         key = (u.context.user_id, u.device_id, u.satellite_id, cid)
         handlers = [h for h in intent.async_get(self.hass) if type(h) is ScriptIntentHandler and "speech" in h.config and not any(k in h.config for k in ("action", "reprompt", "card"))]
@@ -88,6 +102,8 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             return statuses[cid]
         decision = decide(self.menu, key, u.text, visible, today=dt_util.now().date())
         if decision.route is Route.FALLBACK:
+            if menu_only:
+                return self._reply(u, cid, "当前没有待输入的菜单参数，请发送 help。")
             self.menu.followups.clear(key)
             try:
                 agent = conversation.async_get_agent(self.hass, self.fallback)

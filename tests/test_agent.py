@@ -182,3 +182,32 @@ class Tests(IsolatedAsyncioTestCase):
         self.assertEqual(r.response.speech,"数据不可用")
         self.it.async_handle.assert_awaited_once()
         self.conv.async_converse.assert_not_awaited()
+
+    def test_menu_protocol_classifies_only_reserved_syntax(self):
+        self.menu.aliases={"阳台":"home.balcony"}
+        for text in ("HELP","退出","１","1.2.1","2026-11-27","prev","阳台"):
+            with self.subTest(text=text):
+                self.assertTrue(self.agent.is_menu_message(text))
+        for text in ("阳台有人吗","关闭客厅灯","上个月呢","请帮我分析",""):
+            with self.subTest(text=text):
+                self.assertFalse(self.agent.is_menu_message(text))
+
+    async def test_menu_protocol_query_uses_existing_executor(self):
+        await self.agent.async_process_menu(self.u)
+        self.it.async_handle.assert_awaited_once()
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_menu_protocol_never_falls_back(self):
+        self.menu.route=lambda *a,**kw:None
+        r=await self.agent.async_process_menu(self.u)
+        self.assertIn("help",r.response.speech)
+        self.conv.async_converse.assert_not_awaited()
+        self.it.async_handle.assert_not_awaited()
+
+    async def test_menu_protocol_rejects_free_text_without_routing(self):
+        self.u.text="关闭客厅灯"
+        self.menu.route=lambda *a,**kw:self.fail("unexpected route")
+        r=await self.agent.async_process_menu(self.u)
+        self.assertIn("非菜单指令",r.response.speech)
+        self.conv.async_converse.assert_not_awaited()
+        self.it.async_handle.assert_not_awaited()
