@@ -155,3 +155,4 @@ class PlannerTests(unittest.TestCase):
         self.assertEqual(self.ids("电费今年账单费用多少"),("utility.electric.j.history.h_year_cost.h_year_cost_year",))
         self.assertEqual(self.ids("洗衣机开机了吗"),("appliance.washer.power",))
         self.assertEqual(self.ids("厨房的灯现在全关了吗"),("lights.rooms.chu_fang.list_on",))
+        self.assertEqual(self.ids("厨房灯都关了吗"),("lights.rooms.chu_fang.all_off",))

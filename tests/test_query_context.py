@@ -83,3 +83,10 @@ class PlannerContextTests(unittest.TestCase):
         f=ctx.Focus(self.c.from_registered("utility.summary.all.balances_all",{},TODAY),TODAY,300,False)
         self.assertEqual(self.ids("有没有欠费的",f),("utility.summary.all.debts_all",))
         self.assertIsNone(self.c.resolve("去年余额",f,TODAY).plan)
+
+    def test_registered_single_account_financial_followups(self):
+        for cid,expected in [("utility.water.balance","utility.water.debt"),
+                             ("utility.gas.basic.balance","utility.gas.basic.debt"),
+                             ("utility.electric.l.basic.balance","utility.electric.l.basic.debt")]:
+            f=ctx.Focus(self.c.from_registered(cid,{},TODAY),TODAY,300,False)
+            self.assertEqual(self.ids("有没有欠费的",f),(expected,))

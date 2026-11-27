@@ -176,6 +176,12 @@ class QueryContext:
                 metric,goal=next(iter(options))
                 if metric in {"balance","debt","update","balances","debts","low","updates"} or goal in {"remaining_unspecified","payment_needed","account_health"}:
                     return self._safe(replace(old,metric=metric,goal=goal,correction=()),focus,today)
+        if old.subject.family=="utility" and old.subject.target!="all" and old.time==TimeSpec():
+            options=self.planner.parser._metrics(old.subject,tail)
+            if len(options)==1:
+                metric,goal=next(iter(options))
+                if metric in {"balance","debt","update"} or goal in {"remaining_unspecified","payment_needed"}:
+                    return self._safe(replace(old,metric=metric,goal=goal,correction=()),focus,today)
         if not focus.scene:
             return PlanningResult()
         # Short metric switches are scoped by previous subject; no
