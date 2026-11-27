@@ -9,6 +9,7 @@ import re
 from .menu import Reply, TRANSLATE
 from .semantic_lexicon import FAMILIES, describe, patterns
 from .semantic_parameters import ParameterIndex
+from .context_transitions import Selection
 
 INTENTS = frozenset(FAMILIES)
 METRIC = re.compile(r"(?:余额|光照度|温度|湿度|亮度|色温|风速|水温|转速|档位|读数|电量|用电量|用水量|用气量|费用|电费|水费|燃气费|气价|寿命|tds|位置|限位)$")
@@ -33,6 +34,7 @@ class Match:
     capability: str | None = None
     clarification: str | None = None
     params: tuple = ()
+    options: tuple = ()
 
 class SemanticIndex:
     def __init__(self, menu):
@@ -41,6 +43,7 @@ class SemanticIndex:
         self.aliases = {}
         self.clarifications = {}
         self.profiles = {}
+        self.clarification_options={}
         self.parameter_index=ParameterIndex(menu,normalize)
         settings = getattr(menu, "settings", {})
         items = getattr(menu, "items", {})
@@ -122,7 +125,38 @@ class SemanticIndex:
         for phrase in ("上个月花了多少","上月花了多少","这个月花了多少","本月花了多少","这个月用了多少","上个月用了多少"):
             self.clarifications[phrase]="请明确要查询电费、水费还是燃气费，或相应的用量。"
         for phrase in ("水费要交了吗","电费要交了吗","燃气费要交了吗"):
-            self.clarifications[phrase]="请确认要查询是否欠费，还是账户余额是否需要充值？"
+            self.clarifications[phrase]="请确认要查询是否欠费，还是查询账户余额？"
+
+        # Store only registered choices, never execute on clarification alone.
+        def choice(family,target,metric,period="",account=None):
+            ids=[p.capability for p in self.profiles.values() if p.family==family and p.target==target
+                 and p.metric==metric and p.period==period and not p.parameter
+                 and (account is None or p.account==account)]
+            return Selection(ids[0]) if len(ids)==1 else None
+        for phrase in self.clarifications:
+            opts={}
+            for name,target in (("主卧空调","m"),("主卧室空调","m"),("次卧空调","s"),("次卧室空调","s"),("浴霸","b")):
+                if phrase.startswith(name) and self.clarifications[phrase].endswith("实际检测温度？"):
+                    opts={k:choice("appliance",target,metric) for k,metric in
+                          (("设定温度","target"),("调的几度","target"),("检测温度","temp"),("实际温度","temp"),("室温","temp"))}
+            if phrase in ("大门好了吗","大门好了没","大门安全吗","入户门好了吗","门好了吗"):
+                opts={k:choice("home","all",metric) for k,metric in (("关闭状态","door"),("关门状态","door"),("上锁状态","lock"),("反锁状态","deadbolt"))}
+            if "环境光照度，还是" in self.clarifications[phrase]:
+                for p in self.profiles.values():
+                    if p.family=="home" and p.metric=="lux" and phrase.startswith(p.target):
+                        opts={"环境光照度":Selection(p.capability),"光照度":Selection(p.capability),"环境亮度":Selection(p.capability)}
+            if phrase in ("水费要交了吗","电费要交了吗","燃气费要交了吗"):
+                kind={"水":"w","电":"e","燃":"g"}[phrase[0]]
+                opts={k:choice("utility",kind,metric,account="j") for k,metric in (("欠费","debt"),("是否欠费","debt"),("余额","balance"),("账户余额","balance"))}
+            if self.clarifications[phrase].startswith("燃气账户余额以元计"):
+                opts={k:choice("utility","g",metric,account="j") for k,metric in (("第一阶梯","tier1_remaining"),("第二阶梯","tier2_remaining"),("余额","balance"))}
+            if phrase in ("上个月花了多少","上月花了多少","这个月花了多少","本月花了多少","这个月用了多少","上个月用了多少"):
+                period="previous" if phrase.startswith("上") else "current"
+                usage="用了" in phrase
+                from .followup import MONTHLY
+                opts={label:choice("utility",kind,MONTHLY[kind][0 if usage else 1],period,"j") for label,kind in (("电费","e"),("水费","w"),("燃气费","g"))}
+            if opts:
+                self.clarification_options[phrase]=tuple(sorted((k,v) for k,v in opts.items() if v is not None))
 
     @staticmethod
     def _add(index, phrase, cid):
@@ -137,7 +171,7 @@ class SemanticIndex:
         # Do not silently choose an exact phrase over another registered meaning.
         choices=self.exact.get(key,set()) | self.aliases.get(key,set())
         if key in self.clarifications:
-            return Match(clarification=self.clarifications[key])
+            return Match(clarification=self.clarifications[key],options=self.clarification_options.get(key,()))
         if not choices:
             parsed=self.parameter_index.match(key,today or date.today())
             if parsed.invalid:

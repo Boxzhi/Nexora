@@ -222,7 +222,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             self.resolver.invalidate()
         from .menu import HELP,BACK,NEXT,PREV,TRANSLATE,PATH_RE
         text=u.text.strip().casefold().translate(TRANSLATE)
-        if text in HELP|BACK|NEXT|PREV or text in self.menu.aliases or PATH_RE.fullmatch(text):
+        if text in HELP|BACK|NEXT|PREV or text in self.menu.aliases or PATH_RE.fullmatch(text) or self.menu.followups.is_followup_message(text):
             await self._prepare_capabilities(u,available)
         get_state=getattr(getattr(self.hass,"states",None),"get",lambda _:None)
         def visible(cap):
@@ -240,6 +240,8 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             # if the native recognizer would otherwise pick an interpretation.
             if match is not None and match.clarification is not None:
                 decision=from_reply(self.semantic.reply(match,visible),"local_semantic")
+                if match.options:
+                    self.menu.followups.remember_clarification(key,generation,match.options)
             else:
                 native=await self._native_registered_query(u,visible,today,available)
                 if not self.menu.followups.is_current(key,generation):
@@ -283,6 +285,10 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         response = execution.response
         ok=response.as_dict().get("response_type")=="action_done"
         if ok:
-            self.menu.followups.complete(key,generation,reply.capability)
+            if cap.get("parameter"):
+                params={k:reply.slots[v] for k,v in cap["parameter_slots"].items()}
+                self.menu.followups.complete(key,generation,reply.capability,params,today)
+            else:
+                self.menu.followups.complete(key,generation,reply.capability)
         self._record(route,"completed" if ok else "error",started)
         return conversation.ConversationResult(response=response, conversation_id=cid)
