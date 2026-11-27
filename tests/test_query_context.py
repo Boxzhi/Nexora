@@ -64,3 +64,29 @@ class PlannerContextTests(unittest.TestCase):
         f=self.focus("主卧空调多少度")
         for q in ("把空调打开","关灯","讲个故事","空调调到26度"):
             self.assertIsNone(self.c.resolve(q,f,TODAY).plan)
+
+    def test_aggregate_scope_inheritance_from_structured_and_registered(self):
+        for initial in (self.focus("我家水电气余额还有多少"),
+                        ctx.Focus(self.c.from_registered("utility.summary.primary.balances",{},TODAY),TODAY,300,False)):
+            f=initial
+            for q,cid in [
+                ("有没有欠费的","utility.summary.primary.debts"),
+                ("需要充值吗","utility.summary.primary.low"),
+                ("所有账户呢","utility.summary.all.low_all"),
+                ("余额呢","utility.summary.all.balances_all"),
+                ("主住所呢","utility.summary.primary.balances"),
+            ]:
+                r=self.c.resolve(q,f,TODAY)
+                self.assertIsNotNone(r.plan,(q,r.message))
+                self.assertEqual(tuple(s.capability for s in r.plan.primary),(cid,))
+                f=ctx.Focus(r.plan.focus,TODAY,300,True)
+        f=ctx.Focus(self.c.from_registered("utility.summary.all.balances_all",{},TODAY),TODAY,300,False)
+        self.assertEqual(self.ids("有没有欠费的",f),("utility.summary.all.debts_all",))
+        self.assertIsNone(self.c.resolve("去年余额",f,TODAY).plan)
+
+    def test_registered_single_account_financial_followups(self):
+        for cid,expected in [("utility.water.balance","utility.water.debt"),
+                             ("utility.gas.basic.balance","utility.gas.basic.debt"),
+                             ("utility.electric.l.basic.balance","utility.electric.l.basic.debt")]:
+            f=ctx.Focus(self.c.from_registered(cid,{},TODAY),TODAY,300,False)
+            self.assertEqual(self.ids("有没有欠费的",f),(expected,))

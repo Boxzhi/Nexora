@@ -34,6 +34,7 @@ class Frame:
     time: TimeSpec = TimeSpec()
     explicit_account: bool = False
     correction: tuple = ()
+    scope: str = ""
 
 def surface(text):
     if not isinstance(text,str) or len(text)>256:
@@ -124,8 +125,9 @@ UTILITY_RULES=(
     (r"(?:账户(?:里|内)?)?(?:还)?(?:剩(?:下|余)?|有)(?:多少|几)(?:块钱|块|元|钱)?","","remaining_unspecified"),
     (r"(?:还)?(?:剩(?:下|余)?|有)(?:多少|几)(?:方|立方米|m3|m³)","","remaining_physical"),
     (r"(?:还)?(?:剩(?:下)?|有)(?:多少|几)(?:度|吨)","","remaining_physical"),
-    (r"(?:是不是|是否|有没有|有无)?欠费(?:了)?(?:吗|没|没有|多少)?","debt",""),
-    (r"(?:还)?(?:要|需要|该)(?:交费|缴费|交钱|交了|交|充值)(?:了)?(?:吗|没|没有)?|(?:账户|余额)?够不够用","","payment_needed"),
+    (r"(?:是不是|是否|有没有|有无)?欠费(?:了)?(?:吗|没|没有|多少|情况|的|账户)?","debt",""),
+    (r"(?:还)?(?:要|需要|该)(?:交费|缴费|交钱|交了|交|充值)(?:了)?(?:吗|没|没有|的|的账户)?|(?:账户|余额)?够不够用","","payment_needed"),
+    (r"(?:有无|有没有|哪些)(?:账户)?(?:需要|要|该)充值(?:的|的账户|账户)?","","payment_needed"),
     (r"(?:累计|总计|总共)?(?:交|缴|支付)(?:了)?(?:多少|几)(?:块钱|元|钱)(?:费)?","payment_amount",""),
     (r"(?:账户)?(?:情况|健康|怎么样|如何)","","account_health"),
     (r"(?:累计|总计)?(?:用量|用电量|耗电量|用水量|用气量|耗电|用电|用水|用气)(?:是|有|为)?(?:多少|几)?","usage",""),
@@ -133,8 +135,25 @@ UTILITY_RULES=(
     (r"(?:账单)?(?:费用|金额|花了|花了多少|花了多少钱|花了多少元|多少钱|多少块钱|多少元|多少|是多少)(?:多少)?","cost",""),
     (r"(?:余额|数据)?(?:更新|刷新)(?:时间|了没|了吗|了没有|于何时|是什么时候|什么时候)","update",""),
 )
+AGGREGATE_SCOPE_ALIASES=("全部账户","所有账户","全部水电气账户","所有水电气账户","全部水电气","所有水电气")
+# Aggregate-only distributed phrasing; a list of account values is not a sum.
+AGGREGATE_RULES=(
+    (re.compile(r"(?:账户)?(?:余额|剩余金额)(?:各自|分别)(?:还有多少|还剩多少|是多少|多少|有多少)"),"balance",""),
+    (re.compile(r"(?:账户)?(?:各自|各|分别)(?:的)?(?:账户)?(?:余额|剩余金额|可用余额)(?:还有多少|还剩多少|是多少|多少|有多少)?"),"balance",""),
+    (re.compile(r"(?:账户)?(?:各自|各|分别)(?:还)?(?:剩(?:下|余)?|有)(?:多少|几)(?:块钱|块|元|钱)?"),"","remaining_unspecified"),
+    (re.compile(r"(?:有哪些|哪些|有没有|有无)(?:账户)?欠费(?:的账户|了|的|账户|吗|没有)?"),"debt",""),
+    (re.compile(r"有欠费的账户吗"),"debt",""),
+)
+def aggregate_fragment(tail):
+    for pattern,metric,goal in AGGREGATE_RULES:
+        if pattern.fullmatch(tail):
+            return metric,goal
+    return None
+
 LIGHT_RULES=(
-    (r"(?:是)?(?:还)?(?:亮着|开着)(?:的)?(?:吗|没|没有)|(?:都|全)?关(?:好|了)(?:吗|没|没有)|(?:有没有|还有没有)(?:开着|亮着|没关)的?灯?(?:具)?|(?:还有没有|有没有)灯(?:具)?(?:亮着|开着|没关)|(?:是不是|是否)(?:都|全)关(?:好|了)(?:吗|没)?","","any_lights_on"),
+    (r"(?:是)?(?:还)?(?:亮着|开着)(?:的)?(?:吗|没|没有)|(?:全)?关(?:好|了)(?:吗|没|没有)|(?:有没有|还有没有)(?:开着|亮着|没关)的?灯?(?:具)?|(?:还有没有|有没有)灯(?:具)?(?:亮着|开着|没关)|(?:是不是|是否)(?:都|全)关(?:好|了)(?:吗|没)?","","any_lights_on"),
+    (r"(?:(?:是不是|是否)全部关闭|全部关闭(?:了吗|吗|没|没有)|都关(?:好|了)(?:吗|没|没有))","all_off",""),
+    (r"(?:(?:是不是|是否)(?:都|全)(?:开|打开)(?:了)?(?:吗|没)?|(?:都|全)(?:开|打开)(?:了)?(?:吗|没|没有))","all_on",""),
     (r"(?:还有|有|开了|亮着|还亮着|还开着)?(?:多少|几)(?:组|盏|个)灯?(?:具)?(?:是)?(?:开着|亮着|没关)(?:的)?|(?:开着|亮着|开了|还亮着)(?:多少|几)(?:组|盏|个)灯?(?:具)?","count_on",""),
     (r"(?:还)?(?:有)?(?:哪些|什么|哪几(?:组|盏|个))灯?(?:具)?(?:是)?(?:亮着|开着|没关)(?:的)?|(?:开着|亮着)(?:的)?(?:有)?哪些","list_on",""),
     (r"(?:情况|概况|怎么样|如何|状态)","","overview"),
@@ -170,7 +189,8 @@ SPECIAL_RULES={
                 (r"(?:滤芯|滤芯寿命)(?:怎么样|还剩多少|剩多少|如何|寿命多少)?","filters",""),
                 (r"滤芯(?:该|要|需要)(?:更换|换)(?:了)?(?:吗|没)?","","maintenance"),
                 (r"(?:出水温度|出水水温|水温)(?:现在|目前|当前)?(?:是多少|多少|几度)?","temp","")),
-    "door":((r"(?:关好|关严)(?:了)?(?:吗|没|没有)|(?:有没有|是否|是不是)(?:关好|关严)(?:了)?|(?:好|安全)(?:了)?(?:吗|没|没有)|(?:状态|情况|怎么样)","","entry_safety"),
+    "door":((r"童锁(?:状态|(?:是否|有没有)?(?:开着|开启|打开)(?:了)?(?:吗|没|没有))","childlock",""),
+             (r"(?:关好|关严)(?:了)?(?:吗|没|没有)|(?:有没有|是否|是不是)(?:关好|关严)(?:了)?|(?:好|安全)(?:了)?(?:吗|没|没有)|(?:状态|情况|怎么样)","","entry_safety"),
              (r"(?:反锁)(?:了)?(?:吗|没|没有|状态)|(?:有没有|是否|是不是)反锁(?:了)?","deadbolt",""),
              (r"(?:上锁|锁好|锁)(?:了)?(?:吗|没|没有|状态)|(?:有没有|是否|是不是)(?:上锁|锁好)(?:了)?","lock",""),
              (r"(?:关着|关闭|关)(?:了)?(?:吗|没|没有|状态)","door","")),
@@ -226,6 +246,8 @@ class QueryParser:
                     self.aliases[w].add(sub)
         for t,words in UTILITIES.items():
             add("utility",t,"utility",words)
+        add("utility","all","utility_all",AGGREGATE_SCOPE_ALIASES)
+        add("utility","all","utility",("主住所水电气","主住所的水电气"))
         for t,words in DEVICES.items():
             d={"w":"washer","p":"purifier"}.get(t,"appliance")
             add("appliance",t,d,words+({"ac":("空调","两台空调"),"w":("衣服","洗衣服")}.get(t,())))
@@ -282,9 +304,9 @@ class QueryParser:
             word=surface(menu.settings.get(key,""))
             if word:
                 self.accounts.add(word,account)
-        for domain in ("utility","light_scope","light_room","fixture","appliance","washer","purifier","environment",
+        for domain in ("utility","utility_all","light_scope","light_room","fixture","appliance","washer","purifier","environment",
                        "door","family","person","battery","curtain","lid","heater","safety"):
-            common=UTILITY_RULES if domain=="utility" else LIGHT_RULES if domain in {"light_scope","light_room","fixture"} else (
+            common=UTILITY_RULES if domain in {"utility","utility_all"} else LIGHT_RULES if domain in {"light_scope","light_room","fixture"} else (
                 APPLIANCE_RULES if domain in {"appliance","washer","purifier"} else HOME_ENV_RULES if domain=="environment" else ())
             self.rules[domain]=tuple((re.compile(p),m,g) for p,m,g in SPECIAL_RULES.get(domain,())+common)
 
@@ -297,6 +319,10 @@ class QueryParser:
 
     def _metrics(self,sub,tail):
         out=set()
+        if sub.family=="utility" and sub.target=="all":
+            match=aggregate_fragment(tail)
+            if match is not None:
+                return {match}
         if sub.domain=="light_room":
             if not re.search(r"灯|灯具|灯光",tail):
                 return out
@@ -306,6 +332,8 @@ class QueryParser:
                 if tail.startswith(word):
                     tail=modifiers(tail[len(word):])
                     break
+        if sub.family=="appliance" and sub.target=="w" and re.fullmatch(r"(?:电源状态|(?:是否|有没有|是不是)?开机(?:了)?(?:吗|没|没有)|是否开机|有没有开机)",tail):
+            return {("power","")}
         if sub.family=="appliance" and sub.target=="f" and re.fullmatch(r"风速(?:多少|是多少|几档)",tail):
             return {("speed","")}
         # Domain rules take precedence over legacy fragment aliases. This is
@@ -316,7 +344,11 @@ class QueryParser:
                     continue
                 if sub.family=="utility" and goal=="account_health" and sub.target!="all":
                     goal="payment_needed"
-                if sub.domain=="fixture" and goal=="any_lights_on":
+                # A washer/purifier temperature is water temperature, not
+                # room temperature. A physical qualifier may not be erased.
+                if sub.family=="appliance" and sub.target in {"w","p"} and metric=="temp" and re.match(r"室内|室",tail):
+                    continue
+                if sub.domain=="fixture" and (goal=="any_lights_on" or metric in {"all_off","all_on"}):
                     metric,goal="single_state",""
                 if sub.domain=="fixture" and goal=="overview":
                     metric,goal="single_state",""
@@ -378,7 +410,9 @@ class QueryParser:
                 if (explicit or time!=TimeSpec()) and sub.family!="utility":
                     continue
                 for metric,goal in self._metrics(sub,tail):
-                    result.add(Frame(sub,metric,goal,account,time,explicit,correction))
+                    if sub.family=="utility" and sub.target=="e" and time==TimeSpec(period="year") and metric=="cost" and tail in {"是多少","多少","多少钱","多少元"}:
+                        metric="year_cost"
+                    result.add(Frame(replace(sub,domain="utility") if sub.domain=="utility_all" else sub,metric,goal,account,time,explicit,correction,scope="all" if sub.domain=="utility_all" else ""))
         # Object-last form, with exact independent metric fragment and a known
         # target at the end, no unconstrained text deletion.
         if not matches:
@@ -390,7 +424,7 @@ class QueryParser:
                     if (explicit or time!=TimeSpec()) and sub.family!="utility":
                         continue
                     for metric,goal in self._metrics(sub,head):
-                        result.add(Frame(sub,metric,goal,account,time,explicit))
+                        result.add(Frame(replace(sub,domain="utility") if sub.domain=="utility_all" else sub,metric,goal,account,time,explicit,scope="all" if sub.domain=="utility_all" else ""))
         return tuple(sorted(result,key=repr))
 
     def subject_only(self,text):

@@ -184,3 +184,33 @@ class PlannerAdapterTests(unittest.IsolatedAsyncioTestCase):
             self.assertIn("分别发送",r)
             self.assertFalse(self.calls)
         self.conv.async_converse.assert_not_awaited()
+
+    async def test_wechat_aggregate_scope_sequence(self):
+        for q,cid in [
+            ("我家水电气余额还有多少","utility.summary.primary.balances"),
+            ("有没有欠费的","utility.summary.primary.debts"),
+            ("需要充值吗","utility.summary.primary.low"),
+            ("所有账户呢","utility.summary.all.low_all"),
+            ("余额呢","utility.summary.all.balances_all"),
+            ("主住所呢","utility.summary.primary.balances"),
+        ]:
+            self.calls.clear()
+            await self.ask(q)
+            self.assertEqual(self.calls,[cid],q)
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_bare_financial_queries_isolated_and_cancelled(self):
+        await self.ask("我家水电气余额还有多少",cid="v052-a")
+        self.calls.clear()
+        self.assertIn("上下文",await self.ask("有没有欠费的",cid="v052-b"))
+        self.assertFalse(self.calls)
+        self.assertIn("分别发送",await self.ask("关灯然后有没有欠费的",cid="v052-a"))
+        self.assertFalse(self.calls)
+        self.assertIn("上下文",await self.ask("有没有欠费的",cid="v052-a"))
+        self.assertFalse(self.calls)
+        await self.ask("我家水电气余额还有多少",cid="v052-a")
+        self.calls.clear()
+        await self.ask("exit",cid="v052-a")
+        self.assertIn("上下文",await self.ask("需要充值吗",cid="v052-a"))
+        self.assertFalse(self.calls)
+        self.conv.async_converse.assert_not_awaited()

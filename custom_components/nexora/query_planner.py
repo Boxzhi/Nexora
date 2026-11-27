@@ -48,7 +48,7 @@ class QueryPlanner:
             return Plan((self._step(QueryKey(s.family,s.target,"temp")),),focus=frame)
         if goal=="overview" and s.family=="appliance" and s.target in {"a","f","b"}:
             return Plan((self._step(QueryKey(s.family,s.target,"status")),),focus=frame)
-        rule=self.policies.get(PolicyKey(s.family,s.target,goal,account,frame.time.period))
+        rule=self.policies.get(PolicyKey(s.family,s.target,goal,account,frame.scope or frame.time.period))
         if rule is None:
             raise KeyError(goal)
         scene=rule.scene
@@ -62,6 +62,8 @@ class QueryPlanner:
         metric=frame.metric
         if time.period=="invalid":
             raise ValueError("查询日期无效，请检查年月日。")
+        if target=="e" and metric in {"year_cost","year_usage"} and time in {TimeSpec(),TimeSpec(period="year")}:
+            return self._step(QueryKey("utility",target,metric,account=account))
         if metric=="payment_amount":
             if target=="g" and time==TimeSpec(period="year"):
                 return self._step(QueryKey("utility","g","year_pay",account=account))
@@ -125,9 +127,24 @@ class QueryPlanner:
                 raise ValueError("查询日期无效或超出当前日期，请检查年月日。") from None
         return self._step(QueryKey("utility",target,metric,period,parameter,account),params.items())
 
+    def _aggregate_utility(self,frame,account):
+        # Registered aggregate metrics are distinct from individual meters.
+        # Only explicit current-account meanings may be translated.
+        if frame.time!=TimeSpec():
+            raise ValueError("综合账户查询不支持指定历史账期。")
+        metric={"balance":"balances","debt":"debts","update":"updates",
+                "balances":"balances","debts":"debts","low":"low","updates":"updates"}.get(frame.metric)
+        if frame.goal:
+            metric={"remaining_unspecified":"balances","payment_needed":"low"}.get(frame.goal)
+        if metric is None:
+            raise KeyError(frame.metric or frame.goal)
+        return Plan((self._step(QueryKey("utility","all",metric,period=frame.scope,account=account)),),focus=frame)
+
     def frame(self,frame,today):
         s=frame.subject
         account=frame.account
+        if frame.scope not in {"","all"} or (frame.scope and (s.family,s.target)!=("utility","all")):
+            return PlanningResult(message=MISSING)
         if s.family=="utility":
             if frame.explicit_account and account=="ambiguous":
                 return PlanningResult(message="账户名称存在歧义，请明确查询账户。")
@@ -137,14 +154,19 @@ class QueryPlanner:
         elif frame.explicit_account or frame.time!=TimeSpec():
             return PlanningResult(message=MISSING)
         try:
-            if frame.goal:
+            if s.family=="utility" and s.target=="all" and frame.goal!="account_health":
+                plan=self._aggregate_utility(frame,account)
+            elif frame.goal:
                 if frame.time!=TimeSpec():
                     return PlanningResult(message="该场景没有已注册的历史日期查询。")
                 plan=self._scene(frame,account)
             elif s.family=="utility":
                 plan=Plan((self._utility_period(frame,account,today),),focus=frame)
             else:
-                plan=Plan((self._step(QueryKey(s.family,s.target,frame.metric)),),focus=frame)
+                metric=frame.metric
+                if (s.family,s.target,s.domain)==("home","all","environment"):
+                    metric={"temp":"temp_avg","hum":"hum_avg","lux":"lux_all","presence":"presence_all","water":"water_all"}.get(metric,metric)
+                plan=Plan((self._step(QueryKey(s.family,s.target,metric)),),focus=frame)
             return PlanningResult(plan)
         except ValueError as exc:
             return PlanningResult(message=str(exc))

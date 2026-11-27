@@ -78,7 +78,8 @@ class QueryContext:
             domain={"w":"washer","p":"purifier"}.get(k.target,"appliance")
         else:
             domain="utility"
-        time=TimeSpec(period=k.period)
+        scope="all" if k.family=="utility" and k.target=="all" and k.period=="all" else ""
+        time=TimeSpec(period="" if scope else k.period)
         metric=k.metric
         if k.family=="utility":
             metric=UTILITY_ABSTRACT.get(metric,metric)
@@ -95,11 +96,11 @@ class QueryContext:
                 # Keep the original registered path for same-object repeats.
                 metric=k.metric
         return Frame(Subject(k.family,k.target,domain),metric,account=k.account,time=time,
-                     explicit_account=bool(k.account))
+                     explicit_account=bool(k.account),scope=scope)
 
     def _default(self,sub):
-        if sub.domain=="utility" and sub.target=="all":
-            return Frame(sub,goal="account_health")
+        if sub.domain in {"utility","utility_all"} and sub.target=="all":
+            return Frame(replace(sub,domain="utility"),goal="account_health",scope="all" if sub.domain=="utility_all" else "")
         if sub.domain=="fixture":
             return Frame(sub,metric="single_state")
         if sub.domain=="person":
@@ -148,7 +149,7 @@ class QueryContext:
             raw=value[:-1]
             if old.subject.family=="appliance" and old.subject.target in {"m","s","ac"} and raw in {"主卧","主卧室","次卧","次卧室"}:
                 raw=("主卧" if raw.startswith("主") else "次卧")+"空调"
-            subjects=self.planner.parser.subject_only(raw)
+            subjects=() if old.subject.family=="utility" and old.subject.target=="all" and raw in {"所有账户","全部账户","全部水电气账户","所有水电气账户","全部水电气","所有水电气","主住所","主住所水电气"} else self.planner.parser.subject_only(raw)
             if subjects:
                 matching=[s for s in subjects if s.family==old.subject.family and (
                     s.domain==old.subject.domain or s.family=="lights" and s.domain in {"light_scope","light_room"} and old.subject.domain in {"light_scope","light_room"})]
@@ -163,9 +164,29 @@ class QueryContext:
                     if new:
                         return self._safe(new,focus,today)
                     return PlanningResult(message="该对象没有对应的继承查询。")
+        tail=value.removesuffix("呢")
+        if old.subject.family=="utility" and old.subject.target=="all":
+            # Scope is not a historical period or an electricity account.
+            # Only explicit scope switches can widen a completed aggregate.
+            if value.endswith("呢") and tail in {"所有账户","全部账户","全部水电气账户","所有水电气账户","全部水电气","所有水电气","主住所","主住所水电气"}:
+                scope="" if tail.startswith("主住所") else "all"
+                return self._safe(replace(old,scope=scope,correction=()),focus,today)
+            options=self.planner.parser._metrics(old.subject,tail)
+            if len(options)==1:
+                metric,goal=next(iter(options))
+                if metric in {"balance","debt","update","balances","debts","low","updates"} or goal in {"remaining_unspecified","payment_needed","account_health"}:
+                    return self._safe(replace(old,metric=metric,goal=goal,correction=()),focus,today)
+        if old.subject.family=="utility" and old.subject.target!="all" and old.time==TimeSpec():
+            options=self.planner.parser._metrics(old.subject,tail)
+            if len(options)==1:
+                metric,goal=next(iter(options))
+                if metric in {"balance","debt","update"} or goal in {"remaining_unspecified","payment_needed"}:
+                    return self._safe(replace(old,metric=metric,goal=goal,correction=()),focus,today)
+        if old.subject.family=="utility" and old.subject.target=="e" and old.metric in {"year_cost","year_usage"} and tail in {"用量","费用","账单"}:
+            return self._safe(replace(old,metric={"用量":"year_usage","费用":"year_cost","账单":"cost"}[tail],
+                 time=TimeSpec(period="year"),goal="",correction=()),focus,today)
         if not focus.scene:
             return PlanningResult()
-        tail=value.removesuffix("呢")
         # Short metric switches are scoped by previous subject; no
         # free-form guessing or conversation transcript reconstruction.
         if tail in {"用量","费用","账单"} and old.subject.family=="utility":
