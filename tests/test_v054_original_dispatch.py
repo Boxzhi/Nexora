@@ -12,7 +12,7 @@ class OriginalDispatchTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_original_443_dispatches_without_public_detail_menu(self):
         count=0
-        self.assertEqual(await self.ask("detail"),await self.ask("help"))
+        await self.ask("help")
         for cid in self.menu.capabilities:
             with self.subTest(capability=cid):
                 self.menu._render(("u",None,None,"a"),"root",lambda c:True)
@@ -27,3 +27,14 @@ class OriginalDispatchTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(count,443)
         self.conv.async_converse.assert_not_awaited()
         print("V054_ORIGINAL_AGENT_DISPATCH="+json.dumps({"passed":count}))
+
+    async def test_removed_menu_commands_are_not_local_menu_routes(self):
+        for i,phrase in enumerate(("detail","DETAIL","完整菜单")):
+            cid="removed:"+str(i)
+            self.calls.clear()
+            self.conv.async_converse.reset_mock()
+            reply=await self.ask(phrase,cid)
+            self.assertFalse(self.calls)
+            self.assertNotIn(("u",None,None,cid),self.menu.sessions)
+            self.assertNotIn("回复数字选择",reply)
+        self.assertIn("回复数字选择",await self.ask("help","supported"))

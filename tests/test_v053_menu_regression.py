@@ -89,7 +89,9 @@ class CompleteMenuTests(unittest.TestCase):
         self.assertIn("额外模块",menu.route("a","0").text)
         root=menu.route("a","0").text
         self.assertNotIn("发送 detail",root)
-        self.assertEqual(menu.route("a","detail").text,root)
+        self.assertIsNone(menu.route("a","detail"))
+        self.assertIsNone(menu.route("a","完整菜单"))
+        self.assertEqual(menu.route("a","help").text,root)
         self.assertIn("各阶梯详细数据",menu.route("a","燃气阶梯").text)
         self.assertIsNone(menu.navigation_alias("单个设备电量",menu.sessions["a"]))
         menu._render("internal","root",lambda c:True)
@@ -174,8 +176,8 @@ class CompleteSceneAgentTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("上下文",await self.ask("有没有欠费的"))
         self.assertFalse(self.calls)
         self.conv.async_converse.assert_not_awaited()
-    async def test_detail_and_independent_natural_language(self):
-        self.assertEqual(await self.ask("detail"),await self.ask("help"))
+    async def test_help_and_independent_natural_language(self):
+        await self.ask("help")
         self.menu._render(("u",None,None,"a"),"root",lambda c:True)
         self.calls.clear()
         await self.ask(path_for(self.menu,"utility.gas.basic.balance","root"))

@@ -1,11 +1,11 @@
-// Nexora v0.5.4-preview — local scene and follow-up smoke test.
+// Nexora v0.5.5-preview — local scene and follow-up smoke test.
 (async()=>{
  const hass=document.querySelector('home-assistant')?.hass;
  if(!hass)throw Error('找不到 HA 前端');
  const list=await hass.callWS({type:'conversation/agent/list'}),agents=(list.agents||[]).filter(a=>a.name==='Nexora');
  if(agents.length!==1)throw Error('未找到唯一 Nexora Agent');
- const agent=agents[0],cid='nexora-v054-smoke:'+crypto.randomUUID(),other='nexora-v054-smoke:'+crypto.randomUUID();
- const report=window.__nexora054Smoke={version_expected:'0.5.4',checks:[],errors:[],structural_passed:false,manual_value_review_required:true};
+ const agent=agents[0],cid='nexora-v055-smoke:'+crypto.randomUUID(),other='nexora-v055-smoke:'+crypto.randomUUID();
+ const report=window.__nexora055Smoke={version_expected:'0.5.5',checks:[],errors:[],structural_passed:false,manual_value_review_required:true};
  const menu=s=>s.trimEnd().endsWith('回复数字选择，help 返回主菜单，exit 退出菜单。');
  const choices=s=>[...s.matchAll(/^([1-9]|1[0-9]|20)\.\s+(.+)$/gm)].map(m=>({n:m[1],label:m[2].trim()}));
  async function ask(text,id=cid){
@@ -28,8 +28,7 @@
  try{
   const root=await ask('help');save('help 唯一场景菜单',root,menu(root.speech)&&!root.speech.includes('发送 detail 查看完整菜单'));
   if(!report.checks.at(-1).passed)throw Error('菜单预检失败');
-  let r=await ask('detail');save('旧 detail 仅返回同一菜单',r,r.speech===root.speech);
-  if(!report.checks.at(-1).passed)throw Error('兼容指令仍开启旧菜单');
+  let r;
   const cases=[
    ['我家水电气账户概况',['水电气','综合查询','主住所','账户概况']],
    ['所有账户概况',['水电气','综合查询','全部账户','账户概况']],
@@ -57,6 +56,6 @@
  finally{
   for(const id of [cid,other])try{await ask('exit',id);}catch(e){report.errors.push('退出清理：'+e.message);}
   if(report.errors.length)report.structural_passed=false;
-  console.log('========== Nexora v0.5.4-preview 场景专项验收 ==========');console.log(JSON.stringify(report,null,2));
+  console.log('========== Nexora v0.5.5-preview 场景专项验收 ==========');console.log(JSON.stringify(report,null,2));
  }
 })();

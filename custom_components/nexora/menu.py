@@ -18,8 +18,7 @@ PREV = {"98", "prev", "上一页"}
 CHOICE = r"(?:[1-9]|1[0-9]|20)"
 CHOICE_RE = re.compile(CHOICE)
 PATH_RE = re.compile(rf"{CHOICE}(?:\.{CHOICE})*")
-DETAIL = {"detail", "完整菜单"}
-RESERVED = HELP | EXIT | BACK | NEXT | PREV | DETAIL
+RESERVED = HELP | EXIT | BACK | NEXT | PREV
 FOOTER = "回复数字选择，help 返回主菜单，exit 退出菜单。"
 PARAMETERS = {
     "month": ("month",),
@@ -278,7 +277,7 @@ class Menu:
         t = text.strip().casefold().translate(TRANSLATE)
         s = self.sessions.get(key)
         spoken=t.rstrip("？?。！!").strip()
-        if t in HELP | DETAIL:
+        if t in HELP:
             self.followups.clear(key)
             return self._render(key, "scene" if self.scenes else "root", available)
         if t in EXIT:

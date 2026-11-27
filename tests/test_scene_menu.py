@@ -20,7 +20,10 @@ class SceneFoundationTests(unittest.TestCase):
         q=self.m.route("a","1")
         self.assertEqual(q.scene,"scene.utility.water.balance")
         self.assertEqual(len(QueryPlanner(self.m).menu_plan(q.scene,{},lambda c:True,None,date.today()).primary),2)
-        self.assertEqual(self.m.route("a","detail").text,self.m.route("a","help").text)
+        for obsolete in ("detail","DETAIL","完整菜单"):
+            self.assertIsNone(self.m.route("fresh",obsolete))
+            self.assertNotIn("fresh",self.m.sessions)
+        self.assertIn("水电气",self.m.route("a","help").text)
         self.m._render("a","root",lambda c:True)
         self.assertIn("水费",self.m.route("a","1").text)
         self.assertIn("欠费情况",self.m.route("a","2").text)

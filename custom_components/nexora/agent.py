@@ -364,12 +364,12 @@ class NexoraAgent(conversation.AbstractConversationAgent):
             self.resolver.targets.clear()
             self.resolver.modes.clear()
             self.resolver.invalidate()
-        from .menu import HELP,DETAIL,BACK,NEXT,PREV,TRANSLATE,PATH_RE
+        from .menu import HELP,BACK,NEXT,PREV,TRANSLATE,PATH_RE
         text=u.text.strip().casefold().translate(TRANSLATE)
         alias=text in self.menu.aliases or text in getattr(self.menu,"scene_aliases",{})
         index=getattr(self.menu,"scene_language",None)
         scene_id=index.match(u.text) if index else None
-        if text in HELP|DETAIL|BACK|NEXT|PREV or alias or scene_id or PATH_RE.fullmatch(text) or self.menu.followups.is_followup_message(text.rstrip("？?。！!").strip()):
+        if text in HELP|BACK|NEXT|PREV or alias or scene_id or PATH_RE.fullmatch(text) or self.menu.followups.is_followup_message(text.rstrip("？?。！!").strip()):
             await self._prepare_capabilities(u,available)
         get_state=getattr(getattr(self.hass,"states",None),"get",lambda _:None)
         def visible(cap):
@@ -383,7 +383,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         if prior and self.query_context:
             session=self.menu.sessions.get(key)
             from .menu import EXIT
-            if not (session and session.pending) and text not in HELP|DETAIL|EXIT|BACK|NEXT|PREV and not text.isdecimal() and not alias and not scene_id and not PATH_RE.fullmatch(text):
+            if not (session and session.pending) and text not in HELP|EXIT|BACK|NEXT|PREV and not text.isdecimal() and not alias and not scene_id and not PATH_RE.fullmatch(text):
                 boundary=self._boundary(u.text,today)
                 if boundary.kind not in {"cancelled","compound","control"}:
                     if prior.menu_scene:

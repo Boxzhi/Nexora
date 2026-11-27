@@ -37,7 +37,8 @@ class UtilitySceneTests(unittest.TestCase):
             self.assertEqual(dict(s.params),{"year":2026,"month":10})
         self.assertIn("主账户",self.ask("0").text)
     def test_old_menu_retains_original_paths(self):
-        self.assertEqual(self.ask("detail").text,self.ask("help").text)
+        self.assertIsNone(self.ask("detail"))
+        self.ask("help")
         self.m._render("a","root",lambda c:True)
         self.assertIn("余额及基本查询",self.ask("1.1.1").text)
     def test_tiers_stay_bounded(self):

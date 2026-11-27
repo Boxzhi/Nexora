@@ -1,12 +1,12 @@
-# Nexora v0.5.4-preview 验收
+# Nexora v0.5.5-preview 验收
 
-仅升级 Nexora；保留原四套 custom_sentences/zh-CN 与 intent_scripts 的8个 YAML、现有配置、CN IM Hub、AI Hub、SGCC Add-on。bindings.yaml 可选。备份后通过 HACS 安装已发布预览版并重启 Core 一次。异常时恢复 v0.5.3-preview 完整目录并重启，不删除配置条目或 .storage。未发布前不要升级。
+仅升级 Nexora；保留原四套 custom_sentences/zh-CN 与 intent_scripts 的8个 YAML、现有配置、CN IM Hub、AI Hub、SGCC Add-on。bindings.yaml 可选。备份后通过 HACS 安装已发布预览版并重启 Core 一次。异常时恢复 v0.5.4-preview 完整目录并重启，不删除配置条目或 .storage。未发布前不要升级。
 
 ## 验收顺序
 
-1. 发送 help 确认唯一场景菜单，不再显示 detail 入口；旧 detail 命令仅返回相同菜单。检查0返回、exit退出、参数输入与取消及独立会话。
+1. 发送 help 确认唯一场景菜单，不提供旧菜单或兼容命令。检查0返回、exit退出、参数输入与取消及独立会话。
 2. 在 HA 浏览器控制台独立执行 scripts/probe.js（Nexora Agent 专项），检查明确场景句式和数字菜单的标题/路由一致性，以及水电气连续追问。检查 structural_passed，同时人工核对实际回复；数据变化不要求数值文本相等。
-3. 独立执行 scripts/full_probe.js（help 场景全量探测）。注册场景基线150（65/37/24/24）；原443项能力通过内部自动化回归，不再从公开 detail 遍历。此前实机配置模拟可见149场景、420原始能力，隐藏23项原始能力，不是通用通过门槛。检查 execution_passed、visibility_review_required、manual_value_review_required，并复核每项真实数值、限制和错误。需要中止时在控制台执行 window.__nexora054Stop=true。
+3. 独立执行 scripts/full_probe.js（help 场景全量探测）。注册场景基线150（65/37/24/24）；原443项能力通过内部自动化回归，不再从旧公开菜单遍历。此前实机配置模拟可见149场景、420原始能力，隐藏23项原始能力，不是通用通过门槛。检查 execution_passed、visibility_review_required、manual_value_review_required，并复核每项真实数值、限制和错误。需要中止时在控制台执行 window.__nexora055Stop=true。
 4. 微信同一会话发送 help、我家水电气账户概况、所有账户概况、全屋照明概况、洗衣机当前洗衣进度、全屋环境温湿度；再发送 exit、我家水电气余额还有多少、有没有欠费的、需要充值吗、所有账户呢、余额呢，核对账户和指标切换。若 HA 专项通过但微信失败，核实 CN IM Hub 路由与 conversation_id；外部原生 Intent 直达不共享 Nexora 上下文。
 5. 发送 help 刷新映射后下载 Nexora 诊断，核查隐藏原因及聚合路由统计。诊断下载不触发新查询。SGCC 重启恢复、门锁传感器 unknown 不属于本版修复。
 
