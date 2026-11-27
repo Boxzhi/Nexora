@@ -1,0 +1,51 @@
+name: Publish Nexora v0.5.5-preview
+on:
+  push:
+    branches:
+      - release/v0.5.5-preview
+    paths:
+      - .github/workflows/publish-v055-preview.yml
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nexora-v055-preview-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: github.repository == 'Boxzhi/Nexora' && github.ref == 'refs/heads/release/v0.5.5-preview'
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Boxzhi/Nexora
+      RELEASE_TAG: v0.5.5-preview
+      RELEASE_SHA: dc63b3131e462e3b9302098812fb9ece188ac460
+    steps:
+      - name: Verify fixed candidate and publish prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GH_REPO/commits/$RELEASE_SHA" --jq .sha | grep -Fx "$RELEASE_SHA"
+          gh api "repos/$GH_REPO/actions/runs/46040450673" --jq .head_sha | grep -Fx "$RELEASE_SHA"
+          gh api "repos/$GH_REPO/actions/runs/46040450673/jobs" --jq '.jobs[] | select(.name == "tests" or .name == "hassfest") | .name + ":" + .conclusion' > checks.txt
+          grep -Fx 'tests:success' checks.txt
+          grep -Fx 'hassfest:success' checks.txt
+          if gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "Release already exists; refusing overwrite."
+            exit 1
+          fi
+          if gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag already exists; refusing reuse."
+            exit 1
+          fi
+          cat > release-notes.md <<'EOF'
+          ## v0.5.5-preview
+          - 移除旧 detail / 完整菜单指令及兼容跳转，help / 帮助 为主菜单入口。
+          - 同步更新路由、文档、验收脚本及回归测试；150项场景和443项原始只读能力不变。
+          - 固定候选 dc63b31：334项自动化测试通过，443项原始能力、150项场景与374项成员模拟执行通过，Hassfest 通过。
+          - HACS 8/10（原有 Topics、Brands 检查未通过）。真实 HA 与微信验收待执行。
+          - 仅升级 Nexora 并重启 Core；回滚至 v0.5.4-preview。不修改原有 YAML 或其他集成。
+          EOF
+          gh release create "$RELEASE_TAG" --repo "$GH_REPO" --target "$RELEASE_SHA" --title "Nexora v0.5.5-preview" --prerelease --latest=false --notes-file release-notes.md
+          gh release view "$RELEASE_TAG" --repo "$GH_REPO" --json url,tagName,isPrerelease,isDraft
