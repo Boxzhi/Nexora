@@ -4,7 +4,7 @@ Extensible local intent and conversation engine for Home Assistant.
 
 [中文说明](README.zh-CN.md) · [Catalog protocol](docs/catalog.md)
 
-**v0.4.1-preview** — standalone test candidate, not a stable release. Requires the corresponding existing read-only intent libraries; Nexora does not provide supplier data or control devices.
+**v0.5.0-preview** — standalone test candidate, not a stable release. Requires the corresponding existing read-only intent libraries; Nexora does not provide supplier data or control devices.
 
 ## Built-in catalogs
 
@@ -24,11 +24,15 @@ Send help (帮助), exit (退出), 0 / back (返回), 99 / next (下一页), or 
 
 Add this repository in HACS as an Integration custom repository when available, or copy custom_components/nexora from a fixed commit. Restart Core once. Existing Nexora config entries remain valid. Keep the corresponding original intent libraries installed. Test the agent before switching your IM provider. Additional JSON/YAML catalogs under /config/nexora/catalogs/ are loaded at entry setup/reload.
 
+## Local query planning
+
+Canonical sentences and registered dynamic queries retain the original fast path. The structured grammar resolves additional supported wording, reviewed lexical corrections, default metrics and bounded multi-read scenes. A plan contains at most four registered queries, with at most two simultaneous dispatches per plan and a 12-second execution budget (native recognition and mapping preparation are separate). The response composer preserves actual returned speech, partial failures and account attribution. No model, database, polling or new dependency. This is a bounded grammar, not unrestricted natural-language understanding. Custom catalogs remain on the legacy route when the structured registry cannot validate them.
+
 ## Limits and safety
 
 The HA strict-recognition internals are targeted at Core 2026.11.3. Execute only speech-only Intent Scripts after native sentence/slot validation; no LLM fallback on failed menu query. Nexora runs as an independent HA Conversation Agent; no CN IM Hub or AI Hub upgrade or private protocol is required. Menu/parameter/follow-up handling precedes deterministic ambiguity checks and strict native recognition. Registered native and semantic matches must agree; otherwise Nexora responds locally. Unmatched likely real-time queries, contextless follow-ups, cancelled reads and recognized mixed query/control requests are handled locally; ordinary questions and explicit device commands retain the configured fallback Agent and its permissions. Nexora itself executes only validated speech-only queries. The household guard is heuristic, not a security boundary. AI sessions and local menu sessions are separate; fallback timeout is 60 seconds. Live validation is pending.
 
-Targeted read-only probes: [v041_probe.js](scripts/v041_probe.js) and [full_probe.js](scripts/full_probe.js). See [semantic design](docs/semantic-v041.md).
+Acceptance scripts are distributed separately from the integration. See [query planner design](docs/query-planner-v050.md) and [acceptance](docs/preview-acceptance.md).
 
 ## Dynamic capabilities
 
@@ -38,6 +42,6 @@ Dot-separated paths (e.g. 1.2.1) start at the current menu and cannot cross a qu
 
 Static adapters accept only the verified AST structure, excluding the literal binding dictionary. When an intent script is reloaded, the next conversation request observes the new source without polling or a Nexora reload. The known Home windows stub is hidden independently of the toilet-lid contact sensor; changed or unknown business logic is retained conservatively. Utility accounts and historical data are unchanged. No source, entity IDs or private bindings are logged or bundled.
 
-## v0.4.1-preview acceptance
+## v0.5.0-preview acceptance
 
 See [integration acceptance and rollback](docs/preview-acceptance.md). The 443 registered / 420 visible / 23 hidden reference is from the previously validated household, not a universal device count. Do not enable a tool-capable AI fallback merely to run the probes.

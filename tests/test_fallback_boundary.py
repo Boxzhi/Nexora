@@ -43,3 +43,9 @@ class BoundaryTests(unittest.TestCase):
 
     def test_mixed_request_with_short_conjunction(self):
         self.assertEqual(self.guard.classify("燃气余额多少并关灯").kind,"compound")
+
+    def test_release_audit_mixed_and_cancelled(self):
+        for q in ("关灯和燃气余额","燃气余额以及关灯","燃气余额，顺便把客厅灯关了","关灯另外查询水费"):
+            self.assertEqual(self.guard.classify(q).kind,"compound",q)
+        self.assertEqual(self.guard.classify("不要帮我查燃气余额").kind,"cancelled")
+        self.assertEqual(self.guard.classify("燃气余额和水费余额").kind,"live")

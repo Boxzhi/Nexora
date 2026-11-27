@@ -20,7 +20,13 @@ def compose(plan,run,label):
         return Composed("查询会话已更新，请重新发送。",False)
     by_step={o.step:o for o in run.outcomes}
     lines=[]
-    # Deduplicate complete identical lines, not individual numeric values.
+    # Duplicate responses across different subjects, dates or accounts
+    # must keep their attribution. Within a scene only an identical
+    # state-limit message is safe to collapse across different metrics.
+    same={}
+    for outcome in run.outcomes:
+        if outcome.kind in {"ok","data_gap","state_limit"} and outcome.speech:
+            same.setdefault(_clean(outcome),[]).append(outcome)
     # Error messages retain the corresponding registered query label.
     def append(value):
         if value and value not in lines:
@@ -51,5 +57,10 @@ def compose(plan,run,label):
             if step in plan.primary:
                 primary_ok=False
         else:
-            append(value)
+            duplicates=same.get(value,[])
+            scopes={(o.step.key.family,o.step.key.target,o.step.key.account,o.step.key.period,o.step.params) for o in duplicates}
+            if len(duplicates)>1 and (len(scopes)>1 or any(o.kind!="state_limit" for o in duplicates)):
+                append(label(step)+"："+value)
+            else:
+                append(value)
     return Composed("\n".join(lines) or "没有可用的查询结果。",primary_ok)

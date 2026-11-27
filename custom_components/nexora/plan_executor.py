@@ -24,6 +24,7 @@ class PlanRun:
 # The Intent Script contract returns text, not typed device state. Only exact,
 # affirmative state messages can suppress optional work; unknown states cannot.
 AC_NAMES={"m":"主卧空调","s":"次卧空调"}
+LIGHT_NAMES={"all":"全屋","ke_ting":"客厅","can_ting":"餐厅","zhu_wo":"主卧","ci_wo":"次卧","er_tong_fang":"儿童房","xuan_guan":"玄关","guo_dao":"过道","chu_fang":"厨房","wei_sheng_jian":"卫生间","yang_tai":"阳台"}
 STATE_LIMIT=re.compile(r"^(?:主卧空调|次卧空调|餐厅风扇|洗衣机)(?:：|:)?(?:已关闭|已关机)，无当前运行参数[。.]?$")
 GAP=re.compile(r"(?:数据不可用|数据尚未获取|状态无法确认|状态未知|暂无该月正式账单|暂无该年正式账单|无法获取数据)[。.]?$")
 
@@ -53,7 +54,8 @@ def stop_supplements(plan,outcomes):
         if outcome.kind not in {"ok","state_limit"}:
             continue
         if "no_lights_on" in plan.stop_on and k.family=="lights" and k.metric=="count_on":
-            if re.fullmatch(r"[^。！？\n]{1,30}当前有0组灯具开启",s):
+            room=LIGHT_NAMES.get(k.target)
+            if room and s==room+"当前有0组灯具开启":
                 return True
         if k.family!="appliance" or k.metric!="status":
             continue

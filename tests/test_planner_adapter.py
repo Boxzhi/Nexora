@@ -118,3 +118,21 @@ class PlannerAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("参数不一致",r)
         self.assertFalse(self.calls)
         self.conv.async_converse.assert_not_awaited()
+
+    async def test_release_audit_mixed_requests_never_delegate(self):
+        for q in ("关灯和燃气余额","燃气余额以及关灯","燃气余额，顺便把客厅灯关了","不要帮我查燃气余额"):
+            self.calls.clear()
+            r=await self.ask(q)
+            self.assertTrue("分别发送" in r or "取消" in r,q)
+            self.assertFalse(self.calls)
+        self.conv.async_converse.assert_not_awaited()
+
+    async def test_release_audit_menu_exit_clears_scene_focus(self):
+        await self.ask("主卧空调多少度")
+        self.calls.clear()
+        r=await self.ask("exit")
+        self.assertIn("已退出",r)
+        r=await self.ask("次卧呢")
+        self.assertIn("上下文",r)
+        self.assertFalse(self.calls)
+        self.conv.async_converse.assert_not_awaited()

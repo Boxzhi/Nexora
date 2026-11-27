@@ -54,3 +54,13 @@ class ResponseComposerTests(unittest.TestCase):
         p=qp.Plan((a,))
         self.assertFalse(rc.compose(p,pe.PlanRun((),True),label).primary_completed)
         self.assertFalse(rc.compose(p,pe.PlanRun(()),label).primary_completed)
+
+    def test_duplicate_values_keep_different_subjects_and_accounts(self):
+        a=qp.Step(bm.QueryKey("utility","e","balance",account="j"),"主账户余额")
+        b=qp.Step(bm.QueryKey("utility","e","balance",account="l"),"第二账户余额")
+        p=qp.Plan((a,b))
+        for kind,value in (("ok","余额：20元。"),("data_gap","数据不可用。")):
+            r=pe.PlanRun((pe.Outcome(a,kind,value),pe.Outcome(b,kind,value)))
+            s=rc.compose(p,r,label).text
+            self.assertIn("主账户余额："+value,s)
+            self.assertIn("第二账户余额："+value,s)

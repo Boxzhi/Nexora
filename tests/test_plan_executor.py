@@ -104,3 +104,12 @@ class PlanExecutorTests(unittest.IsolatedAsyncioTestCase):
         r=await pe.run_plan(qp.Plan((step("target"),)),dispatch,lambda:True)
         self.assertEqual(r.outcomes[0].kind,"error")
         self.assertEqual(pe.unpack(step("target"),answer("主卧空调已关闭，无当前运行参数。")).kind,"state_limit")
+
+    async def test_wrong_room_reply_cannot_skip_supplement(self):
+        a=step("count_on","lights","ke_ting")
+        b=step("list_on","lights","ke_ting")
+        p=qp.Plan((a,),(b,),("no_lights_on",))
+        async def dispatch(s):
+            return answer("餐厅当前有0组灯具开启。")
+        r=await pe.run_plan(p,dispatch,lambda:True)
+        self.assertEqual([o.kind for o in r.outcomes],["ok","ok"])

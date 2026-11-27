@@ -13,7 +13,7 @@ from .query_planner import QueryPlanner
 from .query_context import QueryContext
 from .plan_executor import run_plan
 from .response_composer import compose
-from .menu import Menu
+from .menu import Menu, PARAMETERS, parse_parameter
 from .fallback import AIConversations, FallbackGuard, AI_PROMPT
 from .diagnostics import RouteDiagnostics
 
@@ -83,7 +83,7 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                             result=await recognize(probe,strict_intents_only=True)
                             if result is not None and not result.unmatched_entities and result.intent.name==cap["intent"]:
                                 slots={x.name:x.value for x in result.entities_list}
-                                if _slots_match(slots,cap["slots"],cap["native_slots"]):
+                                if len(slots)==len(result.entities_list) and _slots_match(slots,cap["slots"],cap["native_slots"]):
                                     targets[cap["category"]]=slots["luxe_light_id"]
             except Exception:
                 _LOGGER.debug("Nexora capability mapping deferred",exc_info=True)
@@ -277,7 +277,19 @@ class NexoraAgent(conversation.AbstractConversationAgent):
                 return ExecutionResult(error="查询能力配置已变化。")
             if not self.menu._available(step.capability,visible):
                 return ExecutionResult(error="该查询当前不可用。")
-            reply=self.menu._query(step.capability,dict(step.params))
+            params=dict(step.params)
+            fields=PARAMETERS.get(p.parameter,())
+            if len(params)!=len(step.params) or set(params)!=set(fields) or set(params)!=set(cap.get("parameter_slots",{})) or any(type(v) is not int for v in params.values()):
+                return ExecutionResult(error="查询日期参数不一致。")
+            if fields:
+                try:
+                    base_year=today.year+cap.get("parameter_year_offset",0)
+                    validated=parse_parameter(p.parameter,"-".join(str(params[k]) for k in fields),today,base_year=base_year)
+                    if validated!=params:
+                        return ExecutionResult(error="查询日期参数不一致。")
+                except (ValueError,KeyError,TypeError):
+                    return ExecutionResult(error="查询日期无效。")
+            reply=self.menu._query(step.capability,params)
             return await execute_readonly(hass=self.hass,conversation_api=conversation,intent_api=intent,
                 handler_for=self._handler,resolver=self.resolver,cap=cap,reply=reply,u=u,
                 get_state=get_state,logger=_LOGGER)
@@ -330,7 +342,8 @@ class NexoraAgent(conversation.AbstractConversationAgent):
         today=dt_util.now().date()
         if prior and self.query_context:
             session=self.menu.sessions.get(key)
-            if not (session and session.pending) and text not in self.menu.aliases and not PATH_RE.fullmatch(text):
+            from .menu import EXIT
+            if not (session and session.pending) and text not in HELP|EXIT|BACK|NEXT|PREV and not text.isdecimal() and text not in self.menu.aliases and not PATH_RE.fullmatch(text):
                 boundary=self._boundary(u.text,today)
                 if boundary.kind not in {"cancelled","compound","control"}:
                     inherited=self.query_context.resolve(u.text,prior,today)
