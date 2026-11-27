@@ -110,7 +110,7 @@ class ResponseComposerTests(unittest.TestCase):
         self.assertEqual(rc.compose(p,r,label).text,"主卧空调已关闭，暂无运行设定温度。最近报告室温18.9℃，读数可能未实时刷新。")
         p,r=build("home","阳台","brightness_unspecified",[("home","阳台","lux"),("lights","yang_tai","list_on")],
             ["阳台光照度：4勒克斯。","阳台1组灯具均已关闭。"],caveat="环境光照度与灯具开关状态是不同指标。")
-        self.assertEqual(rc.compose(p,r,label).text,"阳台环境光照度为4勒克斯，1组灯具均已关闭。")
+        self.assertEqual(rc.compose(p,r,label).text,"阳台环境光照度为4 lx，1组灯具均已关闭。")
         wrong=pe.PlanRun((r.outcomes[0],pe.Outcome(p.primary[1],"ok","餐厅2组灯具均已关闭。")))
         self.assertIn(p.caveat,rc.compose(p,wrong,label).text)
         self.assertIn("餐厅2组灯具均已关闭",rc.compose(p,wrong,label).text)

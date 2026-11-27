@@ -16,7 +16,9 @@ class HomeGroupingTests(unittest.TestCase):
         r=self.fixture.result("home.presence.whole",data)
         self.assertIn("阳台：未检测到人体 · 4 lx",r.text)
         self.assertIn("卫生间：未检测到人体 · 2 lx",r.text)
-        self.assertIn(data[3][1],r.text)
+        self.assertIn("最高光照（有效区域）：阳台 4 lx",r.text)
+        self.assertIn("最低光照（有效区域）：玄关、客厅、厨房 0 lx",r.text)
+        self.assertNotIn("勒克斯",r.text)
         data[1]=("data_gap","玄关：0勒克斯；客厅：数据不可用。")
         r=self.fixture.result("home.presence.whole",data)
         self.assertIn("客厅：数据不可用",r.text)
@@ -65,3 +67,24 @@ class HomeGroupingTests(unittest.TestCase):
                 self.assertEqual(format_overview(result),result)
         self.assertEqual(format_overview(""),"")
         self.assertEqual(format_overview("全屋概况"),"全屋概况")
+
+    def test_lux_units_and_extrema_preserve_qualifiers(self):
+        from nexora_menu_test.home_response import format_lux
+        from nexora_menu_test.response_composer import normalize_speech
+        from nexora_menu_test.business_model import QueryKey
+        cases=[
+            ("lux","阳台光照度：4.5勒克斯。","阳台光照度：4.5 lx。"),
+            ("lux_max","光照度最高的有效监测区域：阳台，4勒克斯。","最高光照（有效区域）：阳台 4 lx"),
+            ("lux_min","光照度最低的有效监测区域：玄关、客厅、厨房，0勒克斯。","最低光照（有效区域）：玄关、客厅、厨房 0 lx"),
+            ("lux_max","光照度最高的有效监测区域：数据不可用。","光照度最高的有效监测区域：数据不可用。"),
+            ("lux_all","玄关：0勒克斯；阳台：数据不可用。","玄关：0 lx\n阳台：数据不可用。"),
+            ("lux_max","光照度最高的有效监测区域：阳台，4勒克斯（部分区域数据不可用）。","光照度最高的有效监测区域：阳台，4 lx（部分区域数据不可用）。"),
+        ]
+        for metric,raw,expected in cases:
+            with self.subTest(metric=metric,raw=raw):
+                key=QueryKey("home","all" if metric!="lux" else "阳台",metric)
+                actual=normalize_speech(key,raw)
+                self.assertEqual(actual,expected)
+                self.assertEqual(normalize_speech(key,actual),actual)
+        self.assertEqual(normalize_speech(QueryKey("home","all","overview"),"设备数据不可用。"),"全屋概况\n\n设备数据不可用。")
+        self.assertEqual(normalize_speech(QueryKey("lights","阳台","brightness"),"灯具亮度：10%。"),"灯具亮度：10%。")

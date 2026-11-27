@@ -49,6 +49,16 @@ def format_overview(value):
     labels=("家庭成员","门锁","灯光","家电","室内环境","安全及异常")
     return title+"\n\n".join(label+"\n"+part for label,part in zip(labels,parts))
 
+def format_lux(metric,value):
+    """One unit for registered illuminance; shorten only known extrema."""
+    if metric in {"lux_max","lux_min"}:
+        adjective="最高" if metric=="lux_max" else "最低"
+        match=re.fullmatch("光照度"+adjective+r"的有效监测区域：([^。\n]+)，(\d+(?:\.\d+)?)勒克斯。",value)
+        if match:
+            return adjective+"光照（有效区域）："+match[1]+" "+match[2]+" lx"
+    # Preserve all other qualifiers and partial/missing readings.
+    return re.sub(r"(?<![\d.])(\d+(?:\.\d+)?)勒克斯",r"\1 lx",value)
+
 def _room_fields(text,pattern):
     result={}
     for line in text.splitlines():
@@ -68,7 +78,7 @@ def presence_overview(rows):
     if a[0]!="ok" or b[0]!="ok":
         return None
     states=_room_fields(a[1],r"([^：；。\n]+)：(未检测到人体|已检测到人体|检测到人体)")
-    lux=_room_fields(b[1],r"([^：；。\n]+)：(\d+(?:\.\d+)?)勒克斯")
+    lux=_room_fields(b[1],r"([^：；。\n]+)：(\d+(?:\.\d+)?)(?:勒克斯| lx)")
     if not states or not lux or set(states)!=set(lux):
         return None
     lines=[room+"："+state+" · "+lux[room]+" lx" for room,state in states.items()]

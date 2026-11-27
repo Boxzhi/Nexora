@@ -90,10 +90,10 @@ def _scene_text(plan,run):
         if a==name+"已关闭，无当前运行参数。" and b:
             return f"{name}已关闭，暂无运行设定温度。最近报告室温{b[1]}℃，读数可能未实时刷新。"
     if subject.family=="home" and subject.target=="阳台" and f.goal=="brightness_unspecified" and keys=={("home","阳台","lux"),("lights","yang_tai","list_on")} and plan.caveat=="环境光照度与灯具开关状态是不同指标。":
-        a=re.fullmatch(r"阳台光照度：(\d+(?:\.\d+)?)勒克斯。",by_metric["lux"])
+        a=re.fullmatch(r"阳台光照度：(\d+(?:\.\d+)?)(?:勒克斯| lx)。",by_metric["lux"])
         b=re.fullmatch(r"阳台(\d+)组灯具均已关闭。",by_metric["list_on"])
         if a and b:
-            return f"阳台环境光照度为{a[1]}勒克斯，{b[1]}组灯具均已关闭。"
+            return f"阳台环境光照度为{a[1]} lx，{b[1]}组灯具均已关闭。"
     return None
 
 def compose(plan,run,label):

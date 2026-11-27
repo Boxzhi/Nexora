@@ -52,7 +52,12 @@ def format_known(key,value):
         m=re.fullmatch(r"(主卧空调[^。\n]+。)(次卧空调[^。\n]+。)",value)
         if m:
             return "\n".join(m.groups())
-    if key.family=="home" and key.target=="all" and key.metric in {"env","family","presence_all","lux_all","water_all","batteries","battery_low","curtains"}:
+    if key.family=="home" and key.metric in {"lux","lux_all","lux_max","lux_min"}:
+        from .home_response import format_home, format_lux
+        if key.target=="all" and key.metric=="lux_all":
+            value=format_home(key.metric,value)
+        return format_lux(key.metric,value)
+    if key.family=="home" and key.target=="all" and key.metric in {"env","family","presence_all","water_all","batteries","battery_low","curtains"}:
         from .home_response import format_home
         return format_home(key.metric,value)
     if (key.family,key.target,key.metric)==("home","all","overview"):
