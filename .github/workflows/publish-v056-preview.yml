@@ -1,0 +1,55 @@
+name: Publish Nexora v0.5.6-preview
+on:
+  push:
+    branches:
+      - release/v0.5.6-preview
+    paths:
+      - .github/workflows/publish-v056-preview.yml
+permissions:
+  contents: write
+  actions: read
+concurrency:
+  group: nexora-v056-preview-release
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    if: github.repository == 'Boxzhi/Nexora' && github.ref == 'refs/heads/release/v0.5.6-preview'
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: Boxzhi/Nexora
+      RELEASE_TAG: v0.5.6-preview
+      RELEASE_SHA: c0d47ff78b8e6dab0922f146f19066c784fff3fd
+    steps:
+      - name: Verify fixed candidate and publish prerelease
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api "repos/$GH_REPO/commits/$RELEASE_SHA" --jq .sha | grep -Fx "$RELEASE_SHA"
+          gh api "repos/$GH_REPO/actions/runs/46047504818" --jq .head_sha | grep -Fx "$RELEASE_SHA"
+          gh api "repos/$GH_REPO/actions/runs/46047504818/jobs" --jq '.jobs[] | select(.name == "tests" or .name == "hassfest") | .name + ":" + .conclusion' > checks.txt
+          grep -Fx 'tests:success' checks.txt
+          grep -Fx 'hassfest:success' checks.txt
+          if gh release view "$RELEASE_TAG" --repo "$GH_REPO" >/dev/null 2>&1; then
+            echo "Release already exists; refusing overwrite."
+            exit 1
+          fi
+          if gh api "repos/$GH_REPO/git/ref/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag already exists; refusing reuse."
+            exit 1
+          fi
+          cat > release-notes.md <<'EOF'
+          ## v0.5.6-preview
+          - F11：扩展150项场景的明确对象及业务范围短语；736条无歧义注册短语模拟执行通过，保留精确单项查询。
+          - F12：wechat: 会话本地查询结果以 U+2028 表示单换行，保留双换行、菜单及其他渠道格式。
+          - F13–F20：按房间聚合人体感应与光照、空调关机说明去重、两个灯具展示名统一、本期账单月份去重、全屋概况分组、温湿度统计及区域感应顺序与全屋灯具长名单优化。
+          - T02：洗衣机关机状态分类与验收工具优化。
+          - F10：真实微信中“全屋照明概况”疑似被外部链路截获，具体位置未确认，不计为本版修复。
+          ## 验证及升级
+          - 固定候选 c0d47ff：355/355 Python 测试、3/3 JavaScript 测试、443项原始能力、150项场景、736条明确场景短语模拟执行通过；Hassfest 通过。
+          - HACS 8/10（原有 Topics、Brands 检查未通过）。真实 HA 及微信手机/电脑端验收待执行。
+          - 仅升级 Nexora 并重启 Core；回滚至 v0.5.5-preview。原四套能力目录、8个 YAML、CN IM Hub、AI Hub 及通知脚本不变；不恢复 detail。
+          EOF
+          gh release create "$RELEASE_TAG" --repo "$GH_REPO" --target "$RELEASE_SHA" --title "Nexora v0.5.6-preview" --prerelease --latest=false --notes-file release-notes.md
+          gh release view "$RELEASE_TAG" --repo "$GH_REPO" --json url,tagName,isPrerelease,isDraft
