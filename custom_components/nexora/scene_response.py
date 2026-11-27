@@ -7,6 +7,7 @@ their original wording, and failures remain attributed to the member.
 import re
 from .reply_format import render_section
 from .utility_response import summary_rows
+from .home_response import presence_overview, environment_overview
 
 GOOD={"ok","partial_data","data_gap","state_limit","capability_limit"}
 MONEY=r"-?\d+(?:\.\d+)?元"
@@ -356,7 +357,8 @@ def _presence(rows):
                 and ok in {"ok","data_gap"} and re.fullmatch(re.escape(x[1]+"："+x[2])+r"(?:，设备报告已持续[^。\n]+。|，持续时间数据不可用。)",v)
                 for other,ok,v in rows):
             skip.add(step)
-    return [text for step,_,text in rows if step not in skip]
+    ordered=sorted(rows,key=lambda row:{"presence":0,"duration":1,"lux":2}.get(row[0].key.metric,3))
+    return [text for step,_,text in ordered if step not in skip]
 
 def compose_menu(plan,run,label,normalize):
     by_step={o.step:o for o in run.outcomes}
@@ -405,8 +407,16 @@ def compose_menu(plan,run,label,normalize):
             lines=[text for _,_,text in rows]
     elif scene.startswith("scene.appliance."):
         heading,lines=_device(plan,rows)
+    elif scene=="scene.home.presence.whole":
+        lines=presence_overview(rows)
+        if lines is None:
+            lines=[text for _,_,text in rows]
     elif scene.startswith("scene.home.presence."):
         lines=_presence(rows)
+    elif scene=="scene.home.env.whole":
+        lines=environment_overview(rows)
+        if lines is None:
+            lines=[text for _,_,text in rows]
     else:
         lines=[text for _,_,text in rows]
     # Single existing aggregate replies already contain their own heading.

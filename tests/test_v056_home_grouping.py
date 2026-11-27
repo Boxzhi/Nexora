@@ -1,0 +1,56 @@
+import unittest
+import test_scene_response as scene_tests
+from nexora_menu_test.home_response import format_overview
+
+class HomeGroupingTests(unittest.TestCase):
+    def setUp(self):
+        self.fixture=scene_tests.MenuResponseTests()
+        self.fixture.setUp()
+    def test_room_presence_and_lux(self):
+        data=[
+            ("ok","玄关：未检测到人体；客厅：未检测到人体；阳台：未检测到人体；厨房：未检测到人体；卫生间：未检测到人体。"),
+            ("ok","玄关：0勒克斯；客厅：0勒克斯；阳台：4勒克斯；厨房：0勒克斯；卫生间：2勒克斯。"),
+            ("ok","光照度最高的有效监测区域：阳台，4勒克斯。"),
+            ("ok","光照度最低的有效监测区域：玄关、客厅、厨房，0勒克斯。"),
+        ]
+        r=self.fixture.result("home.presence.whole",data)
+        self.assertIn("阳台：未检测到人体 · 4 lx",r.text)
+        self.assertIn("卫生间：未检测到人体 · 2 lx",r.text)
+        self.assertIn(data[3][1],r.text)
+        data[1]=("data_gap","玄关：0勒克斯；客厅：数据不可用。")
+        r=self.fixture.result("home.presence.whole",data)
+        self.assertIn("客厅：数据不可用",r.text)
+        self.assertNotIn("阳台：未检测到人体 ·",r.text)
+    def test_region_order_and_conflict(self):
+        data=[("ok","阳台：未检测到人体。"),("ok","阳台光照度：4勒克斯。"),("ok","阳台：未检测到人体，设备报告已持续0分钟。")]
+        r=self.fixture.result("home.presence.balcony",data)
+        self.assertEqual(r.text.count("未检测到人体"),1)
+        self.assertLess(r.text.index("设备报告已持续"),r.text.index("光照度"))
+        data[2]=("ok","阳台：已检测到人体，设备报告已持续0分钟。")
+        r=self.fixture.result("home.presence.balcony",data)
+        self.assertIn("未检测到人体",r.text)
+        self.assertIn("已检测到人体",r.text)
+    def test_environment_statistics(self):
+        data=[("ok","主卧温度：20.5℃，主卧湿度：55%；次卧温度：16.9℃，次卧湿度：63%；3个有效监测区域平均温度：17.9℃。2个有效监测区域平均湿度：61.3%。"),
+              ("ok","温度最高的有效监测区域：主卧，20.5℃。"),
+              ("ok","温度最低的有效监测区域：客餐厅，16.2℃。"),
+              ("ok","湿度最高的有效监测区域：客餐厅，66%。"),
+              ("ok","湿度最低的有效监测区域：主卧，55%。")]
+        r=self.fixture.result("home.env.whole",data)
+        self.assertIn("平均温度：17.9℃（3个有效监测区域）",r.text)
+        self.assertIn("平均湿度：61.3%（2个有效监测区域）\n\n最高温度（有效区域）：主卧 20.5℃",r.text)
+        data[-1]=("data_gap","最低湿度：数据不可用。")
+        r=self.fixture.result("home.env.whole",data)
+        self.assertIn("最低湿度：数据不可用。",r.text)
+    def test_overview_replay_preserves_all_qualifiers(self):
+        parts=["家庭Wi-Fi：2位成员的设备已连接；未配置：成员甲。Wi-Fi仅供在家判断参考。",
+               "入户门锁：状态无法确认；最近一次事件为上锁（历史记录，不代表当前状态）。",
+               "15组灯光均已关闭。",
+               "已监测家电运行：无；热水器燃烧状态未统计。",
+               "3个有效监测区域平均温度：17.9℃。3个有效监测区域平均湿度：61.3%。",
+               "未确认到异常，但部分项目无法核实；数据不可用：入户门锁。未监测窗户、实时烟雾和燃气泄漏；洗衣机关机时不判断故障。"]
+        r=format_overview("".join(parts))
+        for part in parts:
+            self.assertIn(part,r)
+        self.assertIn("门锁\n入户门锁",r)
+        self.assertIn("安全及异常\n未确认到异常",r)

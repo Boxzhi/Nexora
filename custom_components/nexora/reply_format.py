@@ -56,5 +56,6 @@ def format_known(key,value):
         from .home_response import format_home
         return format_home(key.metric,value)
     if (key.family,key.target,key.metric)==("home","all","overview"):
-        return re.sub(r"(?<=。)(?=(?:入户门锁：|\d+组灯光中，|已监测家电运行：|\d+个有效监测区域平均温度：|未确认到异常，但部分项目无法核实；))","\n",value)
+        from .home_response import format_overview
+        return format_overview(value)
     return value
