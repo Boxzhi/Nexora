@@ -64,4 +64,7 @@ def install(menu,rows):
     # Keep external and not-yet-projected modules reachable.
     replaced={r.alias_of for r in rows if r.parent==root}
     children[root]=tuple(sorted(children[root]+tuple(x for x in children["root"] if x.id not in replaced),key=lambda x:(x.order,x.id)))
+    from .scene_language import SceneLanguageIndex
+    language=SceneLanguageIndex(items,specs)
     menu.items,menu.children,menu.scenes,menu.scene_aliases=items,children,specs,aliases
+    menu.scene_language=language
