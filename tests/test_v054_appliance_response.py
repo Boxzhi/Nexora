@@ -38,9 +38,9 @@ class AppliancePresentationTests(unittest.TestCase):
             ("ok","家里已确认开启的空调有0台。"),
             ("state_limit","主卧空调设备报告室温：19.1℃（空调已关闭，读数可能未实时刷新）。次卧空调设备报告室温：18.8℃（空调已关闭，读数可能未实时刷新）。"),
             ("state_limit","主卧空调已关闭，无当前运行参数。次卧空调已关闭，无当前运行参数。")])
-        self.assertIn("主卧空调\n已关闭。",r.text)
-        self.assertIn("次卧空调\n已关闭。",r.text)
-        self.assertEqual(r.text.count("读数可能未实时刷新"),2)
+        self.assertIn("主卧空调\n状态：已关闭",r.text)
+        self.assertIn("次卧空调\n状态：已关闭",r.text)
+        self.assertEqual(r.text.count("可能未实时刷新"),1)
         self.assertIn("0台",r.text)
 
     def test_filter_health_grouped_without_losing_estimate(self):

@@ -268,8 +268,25 @@ def _all_ac(rows):
         for part,name in zip(parts,rooms):
             rooms[name].append(part[len(name):].lstrip("：:"))
     lines=[count]
+    # Collapse repeated shutdown facts only when status, temperature
+    # qualifier and target reply agree for that exact device.
+    closed={}
     for name,values in rooms.items():
-        lines.extend(("",name,*values))
+        if len(values)!=3 or values[0]!="已关闭。" or values[2]!="已关闭，无当前运行参数。":
+            continue
+        m=re.fullmatch(r"设备报告室温：(-?\d+(?:\.\d+)?)℃（空调已关闭，读数可能未实时刷新）。",values[1])
+        if m:
+            closed[name]=m[1]
+    common=len(closed)==len(rooms)
+    for name,values in rooms.items():
+        if name in closed:
+            lines.extend(("",name,"状态：已关闭","设备报告室温："+closed[name]+"℃"))
+            if not common:
+                lines.append("当前无运行参数，设备报告室温可能未实时刷新。")
+        else:
+            lines.extend(("",name,*values))
+    if common:
+        lines.extend(("","空调关闭时无当前运行参数，设备报告室温可能未实时刷新。"))
     return lines
 
 def _filter_health(fields):
