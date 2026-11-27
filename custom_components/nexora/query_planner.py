@@ -161,7 +161,10 @@ class QueryPlanner:
             elif s.family=="utility":
                 plan=Plan((self._utility_period(frame,account,today),),focus=frame)
             else:
-                plan=Plan((self._step(QueryKey(s.family,s.target,frame.metric)),),focus=frame)
+                metric=frame.metric
+                if (s.family,s.target,s.domain)==("home","all","environment"):
+                    metric={"temp":"temp_avg","hum":"hum_avg","lux":"lux_all","presence":"presence_all","water":"water_all"}.get(metric,metric)
+                plan=Plan((self._step(QueryKey(s.family,s.target,metric)),),focus=frame)
             return PlanningResult(plan)
         except ValueError as exc:
             return PlanningResult(message=str(exc))
