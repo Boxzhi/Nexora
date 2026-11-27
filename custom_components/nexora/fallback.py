@@ -85,7 +85,7 @@ class FallbackGuard:
         return bool(CONTROL.search(value) or OBJECT_CONTROL.search(value))
 
     def _query(self,value):
-        return self._household(value) and (LIVE.search(value) is not None or INQUIRY.search(value) is not None)
+        return self._household(value) and (LIVE.search(value) is not None or INQUIRY.search(value) is not None or QUESTION.search(value) is not None or re.search(r"怎么样|哪了|够不够|够用|几天",value) is not None)
 
     def classify(self,text):
         value=text.strip().casefold() if isinstance(text,str) else ""
