@@ -164,3 +164,23 @@ class PlannerAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("light.private_secret",str(report))
         self.it.async_handle.assert_not_awaited()
         self.native.async_recognize_intent.assert_not_awaited()
+
+    async def test_v051_reading_and_mixed_boundaries(self):
+        for q,expected in [
+            ("电费账户还有多少余额","utility.electric.j.basic.balance"),
+            ("燃气剩余多少钱","utility.gas.basic.balance"),
+            ("家里还有没有灯亮着","lights.all.list_on"),
+            ("客厅灯哪几盏亮着","lights.rooms.ke_ting.list_on"),
+            ("洗衣机还需要几分钟洗完","appliance.washer.remaining"),
+            ("净水器RO滤芯寿命还有百分之多少","appliance.purifier.ro"),
+            ("门锁有没有上锁","home.access.door.lock_all"),
+        ]:
+            self.calls.clear()
+            await self.ask(q)
+            self.assertEqual(self.calls,[expected],q)
+        for q in ("关灯再看看燃气余额","先关灯随后查一下燃气余额","先查燃气余额，再把客厅灯关闭"):
+            self.calls.clear()
+            r=await self.ask(q)
+            self.assertIn("分别发送",r)
+            self.assertFalse(self.calls)
+        self.conv.async_converse.assert_not_awaited()
