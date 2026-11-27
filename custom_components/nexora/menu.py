@@ -253,10 +253,10 @@ class Menu:
             return self._path(key, t, available, today)
         if t not in BACK | NEXT | PREV and not (t.isascii() and t.isdigit()):
             result = self.followups.route(key, t, available)
+            if result in self.capabilities:
+                return self._query(result, {})
             if isinstance(result, str):
                 return Reply(result)
-            if result is not None:
-                return self._query(result, {})
             self.followups.clear(key)
             return None
         if not s:

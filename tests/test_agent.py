@@ -140,3 +140,15 @@ class Tests(IsolatedAsyncioTestCase):
         r=await self.agent.async_process(self.u)
         self.assertIn("目标已变化",r.response.speech)
         self.it.async_handle.assert_not_awaited()
+
+    async def test_lazy_mapping_only_recognizes(self):
+        cap={"id":"fixture","category":"lights.fixture","intent":"LuxeLightQuery","sentence":"测试灯状态如何","slots":{"light_query":"single_state"},"native_slots":{"luxe_light_id":"light"}}
+        self.menu.capabilities={"fixture":cap}
+        self.result.intent.name="LuxeLightQuery"
+        self.result.entities_list=[SimpleNamespace(name="light_query",value="single_state"),SimpleNamespace(name="luxe_light_id",value="light.example")]
+        self.agent.resolver.invalidate()
+        await self.agent._prepare_capabilities(self.u,{"LuxeLightQuery"})
+        self.assertEqual(self.agent.resolver.targets,{"lights.fixture":"light.example"})
+        self.it.async_handle.assert_not_awaited()
+        await self.agent._prepare_capabilities(self.u,{"LuxeLightQuery"})
+        self.native.async_recognize_intent.assert_awaited_once()

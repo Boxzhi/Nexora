@@ -66,6 +66,13 @@ class ResolverTests(unittest.TestCase):
         self.assertFalse(self.r.needs_refresh("zh-CN"))
         self.now=300
         self.assertTrue(self.r.needs_refresh("zh-CN"))
+    def test_transient_resolution_failure_preserves_modes(self):
+        self.assertEqual(self.r.status(cap("brightness"),self.get),"hidden")
+        self.r.replace_targets("zh-CN",{})
+        self.state=None
+        self.assertEqual(self.r.status(cap("brightness"),self.get),"hidden")
+        self.r.replace_targets("en",{})
+        self.assertEqual(self.r.status(cap("brightness"),self.get),"visible")
     def test_validation(self):
         for raw in ({"a":False},{"a":[]},{"a":["invalid"]}):
             with self.assertRaises(ValueError):m.Resolver(raw)

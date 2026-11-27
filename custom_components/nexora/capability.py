@@ -59,10 +59,10 @@ class Resolver:
         self.expires=0
 
     def replace_targets(self, language, targets):
-        self.targets=targets
+        self.targets={**self.targets,**targets} if self.language==language else dict(targets)
         self.language=language
         self.expires=self.clock()+self.ttl
-        self.modes={k:v for k,v in self.modes.items() if k in targets.values()}
+        self.modes={k:v for k,v in self.modes.items() if k in self.targets.values()}
 
     def needs_refresh(self, language):
         return self.language!=language or self.clock()>=self.expires
