@@ -151,3 +151,16 @@ class PlannerAdapterTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("数据不可用",await self.ask(self.menu._query("utility.gas.basic.balance",{}).sentence))
         self.assertIn("query_quality:data_gap",self.agent.diagnostics_snapshot())
         self.conv.async_converse.assert_not_awaited()
+
+    async def test_capability_diagnostics_is_redacted_and_nonexecuting(self):
+        from types import SimpleNamespace
+        self.agent.resolver.replace_targets("zh-CN",{"lights.fixtures.master_ceiling":"light.private_secret"})
+        self.agent.hass=SimpleNamespace(states={"light.private_secret":SimpleNamespace(state="on",attributes={"supported_color_modes":["onoff"]})})
+        report=self.agent.capability_snapshot()
+        self.assertEqual(report["registered"],443)
+        row=next(x for x in report["details"] if x.get("capability")=="lights.fixtures.master_ceiling.brightness")
+        self.assertEqual(row["status"],"hidden")
+        self.assertIn("native_feature_unsupported",str(row))
+        self.assertNotIn("light.private_secret",str(report))
+        self.it.async_handle.assert_not_awaited()
+        self.native.async_recognize_intent.assert_not_awaited()

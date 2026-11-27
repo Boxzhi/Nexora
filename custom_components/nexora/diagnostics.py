@@ -15,3 +15,13 @@ class RouteDiagnostics:
         return elapsed
     def snapshot(self):
         return {route+":"+status:dict(row) for (route,status),row in self.rows.items()}
+
+async def async_get_config_entry_diagnostics(hass, entry):
+    """HA diagnostics download; does not expose entity names, IDs or speech."""
+    from homeassistant.components import conversation
+    from .agent import NexoraAgent
+    agent=conversation.async_get_agent(hass,entry.entry_id)
+    if not isinstance(agent,NexoraAgent):
+        return {"status":"agent_unavailable"}
+    return {"route_diagnostics":agent.diagnostics_snapshot(),
+            "capabilities":agent.capability_snapshot()}

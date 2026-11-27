@@ -16,6 +16,7 @@ from .response_composer import compose, format_response
 from .menu import Menu, PARAMETERS, parse_parameter
 from .fallback import AIConversations, FallbackGuard, AI_PROMPT
 from .diagnostics import RouteDiagnostics
+from .diagnostic_ids import BUILTIN_IDS
 
 from homeassistant.components import conversation
 from homeassistant.components.intent_script.helpers import ScriptIntentHandler
@@ -95,6 +96,35 @@ class NexoraAgent(conversation.AbstractConversationAgent):
 
     def diagnostics_snapshot(self):
         return self.route_diagnostics.snapshot()
+
+    def capability_snapshot(self):
+        """Administrator diagnostic: no entity IDs, state values or templates.
+
+        Native mappings are those from the last normal query/menu refresh.
+        Downloading diagnostics itself does not recognize or execute intents.
+        """
+        available={h.intent_type for h in intent.async_get(self.hass)
+                   if type(h) is ScriptIntentHandler and "speech" in h.config
+                   and not any(k in h.config for k in ("action","reprompt","card"))}
+        get_state=getattr(getattr(self.hass,"states",None),"get",lambda _:None)
+        counts={"visible":0,"temporary":0,"hidden":0}
+        details=[]
+        for cid,cap in self.menu.capabilities.items():
+            result=(self.resolver.assess(cap,get_state) if cap["intent"] in available
+                else {"status":"hidden","reasons":[{"code":"intent_not_registered_readonly"}]})
+            counts[result["status"]]+=1
+            if result["status"]!="visible" or result["reasons"]:
+                # Only built-in semantic IDs; omit user-provided catalog
+                # labels and entity IDs. Custom IDs are not included.
+                if cid in BUILTIN_IDS:
+                    details.append({"capability":cid,**result})
+                else:
+                    details.append(result)
+        return {"registered":sum(counts.values()),"counts":counts,
+                "native_mapping_initialized":self.resolver.language is not None,
+                "native_mapping_refresh_needed":self.resolver.needs_refresh(self.resolver.language),
+                "template_schema_verified":sorted(self.resolver.extractor.data),
+                "details":details}
 
     async def _async_fallback(self,u,cid,key,started):
         boundary=self.fallback_guard.classify(u.text)

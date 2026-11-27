@@ -79,34 +79,60 @@ class Resolver:
         # is switched off or temporarily disconnected. Only valid new metadata
         # supersedes the last authoritative mode set.
 
-    def status(self, cap, get_state):
-        """Return hidden, temporary or visible; only hidden affects numbering."""
+    def assess(self, cap, get_state):
+        """Return the status and non-identifying evidence behind it.
+
+        Unknown is not absence. Cached light modes remain authoritative
+        through transient disconnects, just as in the previous resolver.
+        """
         result="visible"
+        reasons=[]
         for rule in cap.get("requires",[]):
             if rule["kind"]=="binding":
                 key=rule["key"]
                 if key in self.bindings:
                     ids=self.bindings[key]
+                    source="explicit"
                 elif self.extractor is not None:
                     ids=self.extractor.binding(cap,self.targets)
+                    source="verified_template"
                     if ids is UNKNOWN:
+                        reasons.append({"code":"binding_unknown"})
                         continue
                 else:
+                    reasons.append({"code":"binding_unknown"})
                     continue
                 if not ids:
-                    return "hidden"
+                    code="explicit_binding_empty" if source=="explicit" else "verified_binding_empty"
+                    if source=="verified_template" and cap.get("intent")=="LuxeHomeQuery" and cap.get("slots",{}).get("luxe_home_query")=="windows":
+                        code="verified_window_branch_unimplemented"
+                    return {"status":"hidden","reasons":reasons+[{"code":code}]}
                 if all((s:=get_state(e)) is None or s.state in {"unknown","unavailable"} for e in ids):
                     result="temporary"
+                    reasons.append({"code":"binding_temporarily_unavailable","source":source})
             elif rule["kind"]=="native_light":
                 entity=self.targets.get(cap["category"])
                 if not entity:
+                    reasons.append({"code":"native_target_unresolved"})
                     continue
                 state=get_state(entity)
                 self.observe(entity,state)
                 modes=self.modes.get(entity)
                 feature=rule["feature"]
+                raw=getattr(state,"attributes",{}).get("supported_color_modes") if state is not None else None
+                fresh=(state is not None and getattr(state,"state",None) in {"on","off"}
+                    and isinstance(raw,(list,tuple,set,frozenset)) and raw
+                    and all(isinstance(x,str) and x in KNOWN for x in raw))
                 if modes and ((feature=="brightness" and not modes & DIM) or (feature=="color_temp" and "color_temp" not in modes)):
-                    return "hidden"
+                    return {"status":"hidden","reasons":reasons+[{"code":"native_feature_unsupported",
+                        "feature":feature,"supported_color_modes":sorted(modes),
+                        "metadata":"current" if fresh else "cached"}]}
+                if not modes:
+                    reasons.append({"code":"native_modes_unknown"})
                 if state is None or state.state in {"unknown","unavailable"}:
                     result="temporary"
-        return result
+                    reasons.append({"code":"native_target_temporarily_unavailable"})
+        return {"status":result,"reasons":reasons}
+
+    def status(self, cap, get_state):
+        return self.assess(cap,get_state)["status"]
