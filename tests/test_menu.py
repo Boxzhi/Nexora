@@ -36,7 +36,7 @@ class Tests(unittest.TestCase):
         self.route("水费")
         q=self.select_id("utility.water","utility.water.balance")
         self.assertEqual(q.slots,{"utility_kind":"w","utility_metric":"balance","luxe_utility_property":"j"})
-        self.assertEqual(q.sentence,"水费余额")
+        self.assertEqual(q.sentence,"水费余额是多少")
     def test_isolation(self):
         self.route("水费")
         self.assertIn("没有有效",self.route("1","b").text)
@@ -127,6 +127,28 @@ class Tests(unittest.TestCase):
         with self.assertRaises(ValueError):mod.Menu([c])
     def test_category_cycle(self):
         c=copy.deepcopy(CAT);c["categories"][0]["parent"]="utility.electric"
+        with self.assertRaises(ValueError):mod.Menu([c])
+
+    def test_last_year_month(self):
+        node="utility.water.history.history_usage"
+        self.select_id(node,node+".history_usage_last_year")
+        q=self.route("12",today=date(2026,11,27))
+        self.assertEqual(q.slots["luxe_utility_month"],12)
+        self.assertEqual(q.sentence,"去年12月用了多少吨水")
+    def test_ambiguous_implicit_alias(self):
+        other={"schema_version":1,"module":{"id":"other","name":"其他","order":200},"categories":[{"id":"other.month","name":"月度用量","order":10}],"capabilities":[]}
+        m=mod.Menu([CAT,other],settings=SET)
+        self.assertNotIn("月度用量",m.aliases)
+    def test_parameter_mapping(self):
+        other={"schema_version":1,"module":{"id":"other","name":"其他","order":200},"categories":[{"id":"other.date","name":"日期查询","order":10}],"capabilities":[{"id":"other.date.query","category":"other.date","name":"指定日期","order":10,"intent":"OtherQuery","sentence":"{year}年记录","slots":{},"parameter":"year","parameter_slots":{"year":"other_year"},"read_only":True}]}
+        m=mod.Menu([CAT,other],settings=SET)
+        m.route("a","日期查询");m.route("a","1")
+        q=m.route("a","2024",today=date(2026,11,27))
+        self.assertEqual(q.slots,{"other_year":2024})
+    def test_slot_override_rejected(self):
+        c=copy.deepcopy(CAT)
+        cap=next(x for x in c["capabilities"] if x.get("parameter")=="date")
+        cap["parameter_slots"]["year"]="utility_kind"
         with self.assertRaises(ValueError):mod.Menu([c])
 
 if __name__=="__main__":unittest.main()

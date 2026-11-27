@@ -24,7 +24,10 @@ def load_catalogs(local):
             if path.stat().st_size > 2_000_000:
                 raise ValueError("Catalog too large")
             with path.open(encoding="utf-8") as stream:
-                result.append(json.load(stream) if path.suffix == ".json" else yaml.safe_load(stream))
+                try:
+                    result.append(json.load(stream) if path.suffix == ".json" else yaml.safe_load(stream))
+                except yaml.YAMLError as err:
+                    raise ValueError("Invalid YAML catalog") from err
     return result
 
 async def async_setup_entry(hass, entry):

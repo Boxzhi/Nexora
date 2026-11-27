@@ -4,7 +4,7 @@ Catalog files use JSON or safe-loaded YAML. Each document contains schema_versio
 
 IDs are namespaced with module.id and immutable. Category parent defaults to the module ID; cycles and duplicate IDs are rejected. Explicit aliases must be globally unique and may not be reserved navigation commands. Numeric menu snapshots use capability IDs, never position as permanent identity.
 
-The bundled catalog has two configurable account labels. {secondary} in a sentence is replaced by the locally configured existing sentence alias. Such leaves are hidden when no secondary alias is configured. Parameter kinds: month (1–12), year (2000–2099), year_month (YYYY-MM), date (YYYY-MM-DD), month_day (MM-DD). These bind luxe_utility_year/month/day slots for Utility v1.1.0. General-purpose parameter-to-slot mapping is planned, not yet implemented. Date inputs use HA local date and reject future dates. Registry is loaded on entry setup/reload, not watched live. Local catalog files are trusted administrator configuration.
+The bundled catalog has two configurable account labels. {secondary} in a sentence is replaced by the locally configured existing sentence alias. Such leaves are hidden when no secondary alias is configured. Parameter kinds: month (1–12), year (2000–2099), year_month (YYYY-MM), date (YYYY-MM-DD), month_day (MM-DD). Every parameterized capability declares parameter_slots, mapping year/month/day to its own intent slot names. The Utility catalog uses luxe_utility_year/month/day. Optional parameter_year_offset: -1 is used for last-year month choices. Date inputs use HA local date and reject future dates. Registry is loaded on entry setup/reload, not watched live. Local catalog files are trusted administrator configuration.
 
 Example:
 ```yaml

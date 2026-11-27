@@ -46,7 +46,7 @@ class Reply:
     sentence: str = ""
     slots: dict | None = None
 
-def parse_parameter(kind, text, today):
+def parse_parameter(kind, text, today, base_year=None):
     """Parse only an explicitly requested parameter; reject invalid/future dates."""
     if not re.fullmatch(r"[0-9]{1,4}(?:-[0-9]{1,2}){0,2}", text):
         raise ValueError("Invalid number")
@@ -55,7 +55,7 @@ def parse_parameter(kind, text, today):
     if len(values) != len(fields):
         raise ValueError("Wrong number of fields")
     p = dict(zip(fields, values))
-    y, m, d = p.get("year", today.year), p.get("month", 1), p.get("day", 1)
+    y, m, d = p.get("year", base_year if base_year is not None else today.year), p.get("month", 1), p.get("day", 1)
     if not 2000 <= y <= 2099 or date(y, m, d) > today:
         raise ValueError("Invalid or future date")
     return p
@@ -70,6 +70,7 @@ class Menu:
             raise ValueError("Invalid session bounds")
         for catalog in catalogs:
             self._register(catalog)
+        self._add_shortcuts()
         self.children = {key: tuple(sorted((x for x in self.items.values() if x.parent == key), key=lambda x: (x.order, x.id))) for key in self.items}
 
     def _add(self, item):
@@ -118,11 +119,14 @@ class Menu:
             if not isinstance(slots, dict) or not all(SLOT.fullmatch(k) and type(v) in (str, int) for k, v in slots.items()):
                 raise ValueError("Invalid slots")
             param = x.get("parameter")
+            if x.get("parameter_year_offset", 0) not in (0, -1):
+                raise ValueError("Invalid parameter year offset")
             if param is not None and param not in PARAMETERS:
                 raise ValueError("Invalid parameter kind")
             allowed = set(PARAMETERS.get(param, ()))
-            if any("luxe_utility_" + v in slots for v in allowed):
-                raise ValueError("Parameter overrides fixed slot")
+            mapping = x.get("parameter_slots", {})
+            if not isinstance(mapping, dict) or set(mapping) != allowed or len(set(mapping.values())) != len(mapping) or any(not isinstance(v, str) or not SLOT.fullmatch(v) or v in slots for v in mapping.values()):
+                raise ValueError("Invalid parameter-to-slot mapping")
             fields = set()
             for _, field, spec, conversion in Formatter().parse(x["sentence"]):
                 if field is not None:
@@ -134,7 +138,9 @@ class Menu:
             self._add(Item(x["id"], self._label(x["name"]), x["category"], x["order"], "query"))
             self.capabilities[x["id"]] = dict(x)
 
-        # Use unique category names as shortcuts, unless explicitly reserved.
+    def _add_shortcuts(self):
+        # Register implicit names only after ALL modules have been loaded.
+        # Explicit aliases remain authoritative; ambiguous labels have no shortcut.
         for x in self.items.values():
             if x.kind != "menu" or x.id == "root":
                 continue
@@ -188,7 +194,7 @@ class Menu:
         cap = self.capabilities[cap_id]
         sentence = cap["sentence"].format(secondary=self.settings["secondary"], **params)
         slots = dict(cap["slots"])
-        slots.update({"luxe_utility_" + k: v for k, v in params.items()})
+        slots.update({cap["parameter_slots"][k]: v for k, v in params.items()})
         return Reply(capability=cap_id, sentence=sentence, slots=slots)
 
     def route(self, key, text, available=lambda cap: True, today=None):
@@ -209,7 +215,10 @@ class Menu:
             if not self._available(cap_id, available):
                 return self._render(key, s.node, available, s.page)
             try:
-                params = parse_parameter(self.capabilities[cap_id]["parameter"], t, today or date.today())
+                cap = self.capabilities[cap_id]
+                current = today or date.today()
+                base_year = current.year - 1 if cap.get("parameter_year_offset") == -1 else current.year
+                params = parse_parameter(cap["parameter"], t, current, base_year=base_year)
             except ValueError:
                 return Reply("输入无效，请输入" + PROMPTS[self.capabilities[cap_id]["parameter"]] + "，或发送0返回。")
             s.pending = None

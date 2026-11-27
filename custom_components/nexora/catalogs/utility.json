@@ -162,7 +162,7 @@
       "id": "utility.water.history",
       "name": "水费历史查询",
       "parent": "utility.water",
-      "order": 1,
+      "order": 10000,
       "aliases": []
     },
     {
@@ -440,7 +440,12 @@
         "luxe_utility_property": "j",
         "utility_period": "explicit"
       },
-      "parameter": "date"
+      "parameter": "date",
+      "parameter_slots": {
+        "year": "luxe_utility_year",
+        "month": "luxe_utility_month",
+        "day": "luxe_utility_day"
+      }
     },
     {
       "id": "utility.electric.j.history.day.h_day_year",
@@ -456,7 +461,11 @@
         "luxe_utility_property": "j",
         "utility_period": "year"
       },
-      "parameter": "month_day"
+      "parameter": "month_day",
+      "parameter_slots": {
+        "month": "luxe_utility_month",
+        "day": "luxe_utility_day"
+      }
     },
     {
       "id": "utility.electric.j.history.h_month_usage.h_month_usage_current",
@@ -502,7 +511,10 @@
         "luxe_utility_property": "j",
         "utility_period": "year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.electric.j.history.h_month_usage.h_month_usage_last_year",
@@ -518,7 +530,11 @@
         "luxe_utility_property": "j",
         "utility_period": "last_year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      },
+      "parameter_year_offset": -1
     },
     {
       "id": "utility.electric.j.history.h_month_usage.h_month_usage_explicit",
@@ -534,7 +550,11 @@
         "luxe_utility_property": "j",
         "utility_period": "explicit"
       },
-      "parameter": "year_month"
+      "parameter": "year_month",
+      "parameter_slots": {
+        "year": "luxe_utility_year",
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.electric.j.history.h_month_cost.h_month_cost_current",
@@ -580,7 +600,10 @@
         "luxe_utility_property": "j",
         "utility_period": "year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.electric.j.history.h_month_cost.h_month_cost_last_year",
@@ -596,7 +619,11 @@
         "luxe_utility_property": "j",
         "utility_period": "last_year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      },
+      "parameter_year_offset": -1
     },
     {
       "id": "utility.electric.j.history.h_month_cost.h_month_cost_explicit",
@@ -612,7 +639,11 @@
         "luxe_utility_property": "j",
         "utility_period": "explicit"
       },
-      "parameter": "year_month"
+      "parameter": "year_month",
+      "parameter_slots": {
+        "year": "luxe_utility_year",
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.electric.j.history.h_year_usage.h_year_usage_year",
@@ -658,7 +689,10 @@
         "luxe_utility_property": "j",
         "utility_period": "explicit"
       },
-      "parameter": "year"
+      "parameter": "year",
+      "parameter_slots": {
+        "year": "luxe_utility_year"
+      }
     },
     {
       "id": "utility.electric.j.history.h_year_cost.h_year_cost_year",
@@ -704,7 +738,10 @@
         "luxe_utility_property": "j",
         "utility_period": "explicit"
       },
-      "parameter": "year"
+      "parameter": "year",
+      "parameter_slots": {
+        "year": "luxe_utility_year"
+      }
     },
     {
       "id": "utility.electric.j.history.h_avg_current",
@@ -906,7 +943,12 @@
         "luxe_utility_property": "l",
         "utility_period": "explicit"
       },
-      "parameter": "date"
+      "parameter": "date",
+      "parameter_slots": {
+        "year": "luxe_utility_year",
+        "month": "luxe_utility_month",
+        "day": "luxe_utility_day"
+      }
     },
     {
       "id": "utility.electric.l.history.day.h_day_year",
@@ -922,7 +964,11 @@
         "luxe_utility_property": "l",
         "utility_period": "year"
       },
-      "parameter": "month_day"
+      "parameter": "month_day",
+      "parameter_slots": {
+        "month": "luxe_utility_month",
+        "day": "luxe_utility_day"
+      }
     },
     {
       "id": "utility.electric.l.history.h_month_usage.h_month_usage_current",
@@ -968,7 +1014,10 @@
         "luxe_utility_property": "l",
         "utility_period": "year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.electric.l.history.h_month_usage.h_month_usage_last_year",
@@ -984,7 +1033,11 @@
         "luxe_utility_property": "l",
         "utility_period": "last_year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      },
+      "parameter_year_offset": -1
     },
     {
       "id": "utility.electric.l.history.h_month_usage.h_month_usage_explicit",
@@ -1000,7 +1053,11 @@
         "luxe_utility_property": "l",
         "utility_period": "explicit"
       },
-      "parameter": "year_month"
+      "parameter": "year_month",
+      "parameter_slots": {
+        "year": "luxe_utility_year",
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.electric.l.history.h_month_cost.h_month_cost_current",
@@ -1046,7 +1103,10 @@
         "luxe_utility_property": "l",
         "utility_period": "year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.electric.l.history.h_month_cost.h_month_cost_last_year",
@@ -1062,7 +1122,11 @@
         "luxe_utility_property": "l",
         "utility_period": "last_year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      },
+      "parameter_year_offset": -1
     },
     {
       "id": "utility.electric.l.history.h_month_cost.h_month_cost_explicit",
@@ -1078,7 +1142,11 @@
         "luxe_utility_property": "l",
         "utility_period": "explicit"
       },
-      "parameter": "year_month"
+      "parameter": "year_month",
+      "parameter_slots": {
+        "year": "luxe_utility_year",
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.electric.l.history.h_year_usage.h_year_usage_year",
@@ -1124,7 +1192,10 @@
         "luxe_utility_property": "l",
         "utility_period": "explicit"
       },
-      "parameter": "year"
+      "parameter": "year",
+      "parameter_slots": {
+        "year": "luxe_utility_year"
+      }
     },
     {
       "id": "utility.electric.l.history.h_year_cost.h_year_cost_year",
@@ -1170,7 +1241,10 @@
         "luxe_utility_property": "l",
         "utility_period": "explicit"
       },
-      "parameter": "year"
+      "parameter": "year",
+      "parameter_slots": {
+        "year": "luxe_utility_year"
+      }
     },
     {
       "id": "utility.electric.l.history.h_avg_current",
@@ -1204,11 +1278,11 @@
     {
       "id": "utility.water.balance",
       "category": "utility.water",
-      "name": "水费余额",
+      "name": "账户余额",
       "order": 63,
       "intent": "LuxeUtilityQuery",
       "read_only": true,
-      "sentence": "水费余额",
+      "sentence": "水费余额是多少",
       "slots": {
         "utility_kind": "w",
         "utility_metric": "balance",
@@ -1343,7 +1417,10 @@
         "luxe_utility_property": "j",
         "utility_period": "year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.water.history.history_usage.history_usage_last_year",
@@ -1359,7 +1436,11 @@
         "luxe_utility_property": "j",
         "utility_period": "last_year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      },
+      "parameter_year_offset": -1
     },
     {
       "id": "utility.water.history.history_cost.history_cost_current",
@@ -1405,7 +1486,10 @@
         "luxe_utility_property": "j",
         "utility_period": "year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.water.history.history_cost.history_cost_last_year",
@@ -1421,7 +1505,11 @@
         "luxe_utility_property": "j",
         "utility_period": "last_year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      },
+      "parameter_year_offset": -1
     },
     {
       "id": "utility.water.history.h_year_usage.h_year_usage_year",
@@ -1467,7 +1555,10 @@
         "luxe_utility_property": "j",
         "utility_period": "explicit"
       },
-      "parameter": "year"
+      "parameter": "year",
+      "parameter_slots": {
+        "year": "luxe_utility_year"
+      }
     },
     {
       "id": "utility.water.history.h_year_cost.h_year_cost_year",
@@ -1513,7 +1604,10 @@
         "luxe_utility_property": "j",
         "utility_period": "explicit"
       },
-      "parameter": "year"
+      "parameter": "year",
+      "parameter_slots": {
+        "year": "luxe_utility_year"
+      }
     },
     {
       "id": "utility.water.history.h_coverage",
@@ -1951,7 +2045,10 @@
         "luxe_utility_property": "j",
         "utility_period": "year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.gas.history.h_month_usage.h_month_usage_last_year",
@@ -1967,7 +2064,11 @@
         "luxe_utility_property": "j",
         "utility_period": "last_year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      },
+      "parameter_year_offset": -1
     },
     {
       "id": "utility.gas.history.h_month_usage.h_month_usage_explicit",
@@ -1983,7 +2084,11 @@
         "luxe_utility_property": "j",
         "utility_period": "explicit"
       },
-      "parameter": "year_month"
+      "parameter": "year_month",
+      "parameter_slots": {
+        "year": "luxe_utility_year",
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.gas.history.h_month_cost.h_month_cost_current",
@@ -2029,7 +2134,10 @@
         "luxe_utility_property": "j",
         "utility_period": "year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.gas.history.h_month_cost.h_month_cost_last_year",
@@ -2045,7 +2153,11 @@
         "luxe_utility_property": "j",
         "utility_period": "last_year"
       },
-      "parameter": "month"
+      "parameter": "month",
+      "parameter_slots": {
+        "month": "luxe_utility_month"
+      },
+      "parameter_year_offset": -1
     },
     {
       "id": "utility.gas.history.h_month_cost.h_month_cost_explicit",
@@ -2061,7 +2173,11 @@
         "luxe_utility_property": "j",
         "utility_period": "explicit"
       },
-      "parameter": "year_month"
+      "parameter": "year_month",
+      "parameter_slots": {
+        "year": "luxe_utility_year",
+        "month": "luxe_utility_month"
+      }
     },
     {
       "id": "utility.gas.history.h_year_usage.h_year_usage_year",
@@ -2107,7 +2223,10 @@
         "luxe_utility_property": "j",
         "utility_period": "explicit"
       },
-      "parameter": "year"
+      "parameter": "year",
+      "parameter_slots": {
+        "year": "luxe_utility_year"
+      }
     },
     {
       "id": "utility.gas.history.h_year_cost.h_year_cost_year",
@@ -2153,7 +2272,10 @@
         "luxe_utility_property": "j",
         "utility_period": "explicit"
       },
-      "parameter": "year"
+      "parameter": "year",
+      "parameter_slots": {
+        "year": "luxe_utility_year"
+      }
     },
     {
       "id": "utility.gas.history.h_coverage",
